@@ -16,15 +16,23 @@ export interface EmailAudience {
   id: string;
   name: string;
   description: string | null;
-  subscriber_count: number;
-  filters: any;
-  created_at: string;
-  updated_at: string;
+  subscriber_count: number | null;
+  filters: Record<string, unknown>;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export interface GetAudiencesResponse {
   audiences: EmailAudience[];
   total?: number;
+}
+
+/** Normalize DB Json filters to Record<string, unknown> for EmailAudience */
+function normalizeFilters(filters: unknown): Record<string, unknown> {
+  if (filters !== null && typeof filters === 'object' && !Array.isArray(filters)) {
+    return filters as Record<string, unknown>;
+  }
+  return {};
 }
 
 /**
@@ -91,7 +99,7 @@ export async function getAudiences(
         return audiences || [];
       }
     })() : await Promise.all(
-      (audiences || []).map(async (audience) => {
+      ((audiences ?? []) as unknown as EmailAudience[]).map(async (audience) => {
         let actualCount = 0;
 
         if (EMAIL_DEBUG) {
@@ -263,6 +271,13 @@ export async function createAudience(
   try {
     const supabase = await createClient();
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error("Unauthorized");
+    }
+
     // Note: RLS will enforce admin access - if user is not admin, queries will fail
     const { name, description, filters } = params;
 
@@ -304,7 +319,7 @@ export async function createAudience(
       throw new Error('Failed to create audience');
     }
 
-    return { audience };
+    return { audience: { ...audience, filters: normalizeFilters(audience.filters) } };
   } catch (error) {
     console.error('Error in createAudience:', error);
     throw error;
@@ -340,7 +355,7 @@ export async function getAudience(
       throw new Error('Failed to fetch audience');
     }
 
-    return { audience };
+    return { audience: { ...audience, filters: normalizeFilters(audience.filters) } };
   } catch (error) {
     console.error('Error in getAudience:', error);
     throw error;
@@ -396,7 +411,7 @@ export async function updateAudience(
       throw new Error('Failed to update audience');
     }
 
-    return { audience };
+    return { audience: { ...audience, filters: normalizeFilters(audience.filters) } };
   } catch (error) {
     console.error('Error in updateAudience:', error);
     throw error;

@@ -25,7 +25,7 @@ export interface AnalyticsData {
       id: string;
       name: string;
       type: string;
-      status: string;
+      status: string | null;
       sent: number;
       delivered: number;
       opens: number;
@@ -37,6 +37,8 @@ export interface AnalyticsData {
     }>;
   };
 }
+
+export type GetAnalyticsResponse = AnalyticsData;
 
 /**
  * Get email campaign analytics (admin only)

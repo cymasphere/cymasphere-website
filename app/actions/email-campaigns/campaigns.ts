@@ -24,7 +24,7 @@ export interface GetCampaignsParams {
 export interface Campaign {
   id: string;
   name: string;
-  subject: string;
+  subject: string | null;
   status: string;
   scheduled_at: string | null;
   sent_at: string | null;
@@ -238,13 +238,16 @@ export async function getCampaign(
     // Transform the data for frontend consumption
     const transformedCampaign = {
       ...campaign,
-      senderName: campaign.sender_name,
-      senderEmail: campaign.sender_email,
-      replyToEmail: campaign.reply_to_email,
-      preheader: campaign.preheader,
-      description: campaign.description,
-      htmlContent: campaign.html_content,
-      textContent: campaign.text_content,
+      status: campaign.status ?? 'draft',
+      created_at: campaign.created_at ?? '',
+      updated_at: campaign.updated_at ?? '',
+      senderName: campaign.sender_name ?? undefined,
+      senderEmail: campaign.sender_email ?? undefined,
+      replyToEmail: campaign.reply_to_email ?? undefined,
+      preheader: campaign.preheader ?? undefined,
+      description: campaign.description ?? undefined,
+      htmlContent: campaign.html_content ?? undefined,
+      textContent: campaign.text_content ?? undefined,
       audienceIds,
       excludedAudienceIds,
     };

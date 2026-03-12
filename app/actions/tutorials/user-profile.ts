@@ -151,9 +151,9 @@ export async function updateUserProfile(
         theoryLevel: result.theory_level,
         techLevel: result.tech_level,
         appMode: result.app_mode,
-        musicalGoals: result.musical_goals,
-        priorExperience: result.prior_experience
-      }
+        musicalGoals: result.musical_goals ?? [],
+        priorExperience: result.prior_experience ?? "",
+      },
     };
   } catch (error) {
     console.error('Unexpected error in updateUserProfile:', error);

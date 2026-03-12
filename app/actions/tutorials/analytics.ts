@@ -87,7 +87,11 @@ export async function getUserAnalytics(
       console.error('Error fetching progress data:', progressError);
     }
 
-    const progress = progressData?.progress_data || {};
+    const rawProgress = progressData?.progress_data;
+    const progress: Record<string, unknown> =
+      typeof rawProgress === "object" && rawProgress !== null && !Array.isArray(rawProgress)
+        ? (rawProgress as Record<string, unknown>)
+        : {};
 
     // Get user's completed videos
     const { data: completedVideos, error: completedError } = await supabase
@@ -115,11 +119,13 @@ export async function getUserAnalytics(
     }
 
     // Calculate user-specific metrics
-    const completedVideoIds = Object.keys(progress).filter(videoId => progress[videoId]?.completed);
+    const completedVideoIds = Object.keys(progress).filter(
+      (videoId) => (progress[videoId] as { completed?: boolean } | undefined)?.completed
+    );
     const totalVideosWatched = completedVideoIds.length;
     const totalTimeSpent = completedVideoIds.reduce((total, videoId) => {
-      const videoProgress = progress[videoId];
-      return total + (videoProgress?.timeSpent || 0);
+      const videoProgress = progress[videoId] as { timeSpent?: number } | undefined;
+      return total + (videoProgress?.timeSpent ?? 0);
     }, 0);
 
     // Get user's current playlist videos for completion rate calculation
@@ -140,7 +146,7 @@ export async function getUserAnalytics(
             tech_level_required
           )
         `)
-        .eq('playlist_id', userPath.current_playlist_id || '2509f80f-477f-4027-b02e-bcdba3c66511'); // Default to first playlist
+        .eq('playlist_id', userPath.generated_playlist_id ?? '2509f80f-477f-4027-b02e-bcdba3c66511'); // Default to first playlist
 
       if (!playlistError && playlistVideos) {
         userPlaylistVideos = playlistVideos.map(pv => pv.tutorial_videos).filter(Boolean);
@@ -188,10 +194,10 @@ export async function getUserAnalytics(
 
     // Get user's favorite categories
     const categoryStats: Record<string, number> = {};
-    completedVideoIds.forEach(videoId => {
-      const videoProgress = progress[videoId];
+    completedVideoIds.forEach((videoId) => {
+      const videoProgress = progress[videoId] as { category?: string } | undefined;
       if (videoProgress?.category) {
-        categoryStats[videoProgress.category] = (categoryStats[videoProgress.category] || 0) + 1;
+        categoryStats[videoProgress.category] = (categoryStats[videoProgress.category] ?? 0) + 1;
       }
     });
 

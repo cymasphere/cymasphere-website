@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from '@/utils/supabase/server';
+import type { Json } from '@/database.types';
 
 /**
  * Calculate total progress percentage
@@ -59,18 +60,22 @@ export async function getVideoProgress(
       throw new Error('Failed to fetch user progress');
     }
 
-    const progressData = userPath.progress_data || {};
+    const rawProgress = userPath.progress_data;
+    const progressData: Record<string, unknown> =
+      typeof rawProgress === "object" && rawProgress !== null && !Array.isArray(rawProgress)
+        ? (rawProgress as Record<string, unknown>)
+        : {};
     const totalProgress = calculateTotalProgress(progressData);
 
-    return { 
+    return {
       progress: progressData,
       totalProgress,
       userPath: {
         theoryLevel: userPath.theory_level,
         techLevel: userPath.tech_level,
         appMode: userPath.app_mode,
-        musicalGoals: userPath.musical_goals
-      }
+        musicalGoals: userPath.musical_goals ?? [],
+      },
     };
   } catch (error) {
     console.error('Unexpected error in getVideoProgress:', error);
@@ -148,7 +153,9 @@ export async function updateVideoProgress(
     }
 
     // Update progress data
-    const currentProgress = userPath.progress_data || {};
+    const raw = userPath.progress_data;
+    const currentProgress: Record<string, unknown> =
+      typeof raw === "object" && raw !== null && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
     const videoProgress = {
       videoId,
       progress: progress.progress || 0,
@@ -157,13 +164,13 @@ export async function updateVideoProgress(
       ...(progress.completed && { completedAt: new Date().toISOString() })
     };
 
-    currentProgress[videoId] = videoProgress;
+    (currentProgress as Record<string, Record<string, unknown>>)[videoId] = videoProgress as Record<string, unknown>;
 
     // Update user path with new progress
     const { error: updateError } = await supabase
       .from('user_tutorial_paths')
       .update({
-        progress_data: currentProgress,
+        progress_data: currentProgress as unknown as Json,
         updated_at: new Date().toISOString()
       })
       .eq('id', userPath.id);

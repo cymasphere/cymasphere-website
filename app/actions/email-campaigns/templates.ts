@@ -12,10 +12,10 @@ export interface EmailTemplate {
   id: string;
   name: string;
   description: string | null;
-  subject: string;
+  subject: string | null;
   template_type: string;
   status: string;
-  variables: any;
+  variables: unknown;
   created_by: string;
   last_used_at: string | null;
   created_at: string;
@@ -62,11 +62,11 @@ export async function getTemplates(
     }
 
     if (params?.type && ['welcome', 'newsletter', 'promotional', 'transactional', 'custom'].includes(params.type)) {
-      query = query.eq('template_type', params.type);
+      query = query.eq('template_type', params.type as 'custom' | 'welcome' | 'newsletter' | 'promotional' | 'transactional');
     }
 
     if (params?.status && ['draft', 'active', 'archived'].includes(params.status)) {
-      query = query.eq('status', params.status);
+      query = query.eq('status', params.status as 'draft' | 'active' | 'archived');
     }
 
     const { data: templates, error } = await query;
@@ -194,9 +194,17 @@ export async function getTemplate(templateId: string): Promise<GetTemplateRespon
     // Transform the data for frontend consumption
     const transformedTemplate = {
       ...template,
-      type: template.template_type,
-      htmlContent: template.html_content,
-      textContent: template.text_content,
+      template_type: template.template_type ?? 'custom',
+      type: template.template_type ?? 'custom',
+      status: template.status ?? 'draft',
+      created_by: template.created_by ?? '',
+      created_at: template.created_at ?? '',
+      updated_at: template.updated_at ?? '',
+      usage_count: template.usage_count ?? undefined,
+      html_content: template.html_content ?? undefined,
+      text_content: template.text_content ?? undefined,
+      htmlContent: template.html_content ?? undefined,
+      textContent: template.text_content ?? undefined,
       audienceIds,
       excludedAudienceIds,
     };

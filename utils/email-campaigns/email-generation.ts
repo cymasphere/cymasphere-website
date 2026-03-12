@@ -499,29 +499,29 @@ export function personalizeContent(content: string, subscriber: SubscriberRecord
   const encodedEmail = encodeURIComponent(subscriber.email);
   
   let personalized = content
-    .replace(/\{\{firstName\}\}/g, firstName)
-    .replace(/\{\{lastName\}\}/g, lastName)
-    .replace(/\{\{fullName\}\}/g, fullName)
+    .replace(/\{\{firstName\}\}/g, String(firstName))
+    .replace(/\{\{lastName\}\}/g, String(lastName))
+    .replace(/\{\{fullName\}\}/g, String(fullName))
     // Replace both unencoded and URL-encoded versions of {{email}}
-    .replace(/\{\{email\}\}/g, subscriber.email)
+    .replace(/\{\{email\}\}/g, String(subscriber.email))
     .replace(/%7B%7Bemail%7D%7D/g, encodedEmail)
-    .replace(/\{\{subscription\}\}/g, metadata.subscription || "none");
+    .replace(/\{\{subscription\}\}/g, String(metadata.subscription || "none"));
   
   // Replace unsubscribe URLs with tokenized version (handle both {{email}} and URL-encoded)
   personalized = personalized.replace(
     /href=["']([^"']*\/unsubscribe[^"']*)\{\{email\}\}([^"']*)["']/g,
-    () => `href="${unsubscribeUrl}"`
+    (_substring: string) => `href="${unsubscribeUrl}"`
   );
   
   personalized = personalized.replace(
     /href=["']([^"']*\/unsubscribe[^"']*)%7B%7Bemail%7D%7D([^"']*)["']/g,
-    () => `href="${unsubscribeUrl}"`
+    (_substring: string) => `href="${unsubscribeUrl}"`
   );
   
   // Replace other {{email}} in href attributes (non-unsubscribe URLs)
   personalized = personalized.replace(
     /href=["']([^"']*)\{\{email\}\}([^"']*)["']/g,
-    (match, before, after) => {
+    (_match: string, before: string, after: string) => {
       return `href="${before}${encodedEmail}${after}"`;
     }
   );
@@ -529,7 +529,7 @@ export function personalizeContent(content: string, subscriber: SubscriberRecord
   // Replace URL-encoded version in other href attributes
   personalized = personalized.replace(
     /href=["']([^"']*)%7B%7Bemail%7D%7D([^"']*)["']/g,
-    (match, before, after) => {
+    (_match: string, before: string, after: string) => {
       return `href="${before}${encodedEmail}${after}"`;
     }
   );
@@ -537,11 +537,11 @@ export function personalizeContent(content: string, subscriber: SubscriberRecord
   return personalized
     .replace(
       /\{\{lifetimePurchase\}\}/g,
-      metadata.lifetime_purchase || metadata.lifetimePurchase || "false"
+      String(metadata.lifetime_purchase ?? metadata.lifetimePurchase ?? "false")
     )
     .replace(
       /\{\{companyName\}\}/g,
-      metadata.company_name || metadata.companyName || ""
+      String(metadata.company_name ?? metadata.companyName ?? "")
     )
     .replace(
       /\{\{unsubscribeUrl\}\}/g,

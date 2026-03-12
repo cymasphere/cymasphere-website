@@ -5,8 +5,8 @@ import { createClient } from '@/utils/supabase/server';
 export interface PlaylistVideo {
   id: string;
   title: string;
-  description: string;
-  duration: number;
+  description: string | null;
+  duration: number | null;
   feature_category: string;
   theory_level_required: string;
   tech_level_required: string;
@@ -17,12 +17,12 @@ export interface PlaylistVideo {
 export interface Playlist {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   videoCount: number;
   totalDuration: string;
   views: number;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: string | null;
+  updatedAt: string | null;
   targetTheoryLevel: string;
   targetTechLevel: string;
   appModeFilter: string;
@@ -36,15 +36,41 @@ export interface GetPlaylistsResponse {
   playlists: Playlist[];
 }
 
-function calculateTotalDuration(videos: any[]): string {
-  const totalSeconds = videos.reduce((sum, video) => sum + (video.duration || 0), 0);
+function calculateTotalDuration(videos: { duration?: number | null }[]): string {
+  const totalSeconds = videos.reduce((sum, video) => sum + (video.duration ?? 0), 0);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
-  
   if (hours > 0) {
     return `${hours}h ${minutes}m`;
   }
   return `${minutes}m`;
+}
+
+/** Normalize DB video row to PlaylistVideo (app_mode_applicability may be string or string[]) */
+function toPlaylistVideo(v: {
+  id: string;
+  title: string;
+  description?: string | null;
+  duration?: number | null;
+  feature_category?: string;
+  theory_level_required?: string;
+  tech_level_required?: string;
+  app_mode_applicability?: string | string[] | null;
+  musical_context?: string;
+}): PlaylistVideo {
+  const appMode = v.app_mode_applicability;
+  const appModeArr = Array.isArray(appMode) ? appMode : (typeof appMode === 'string' && appMode ? [appMode] : []);
+  return {
+    id: v.id,
+    title: v.title,
+    description: v.description ?? null,
+    duration: v.duration ?? null,
+    feature_category: v.feature_category ?? '',
+    theory_level_required: v.theory_level_required ?? '',
+    tech_level_required: v.tech_level_required ?? '',
+    app_mode_applicability: appModeArr,
+    musical_context: v.musical_context ?? '',
+  };
 }
 
 /**
@@ -128,27 +154,28 @@ export async function getPlaylists(): Promise<GetPlaylistsResponse> {
 
     // Transform the data to match the expected format
     const transformedPlaylists = sortedPlaylists?.map(playlist => {
-      const videos = playlist.playlist_videos
+      const rawVideos = playlist.playlist_videos
         ?.sort((a, b) => a.sequence_order - b.sequence_order)
         .map(pv => pv.tutorial_videos)
-        .filter(Boolean) || [];
+        .filter(Boolean) ?? [];
+      const videos: PlaylistVideo[] = rawVideos.map((v) => toPlaylistVideo(v as Parameters<typeof toPlaylistVideo>[0]));
 
       return {
         id: playlist.id,
         title: playlist.name,
-        description: playlist.description,
+        description: playlist.description ?? null,
         videoCount: videos.length,
         totalDuration: calculateTotalDuration(videos),
         views: 0, // Placeholder for now
-        createdAt: playlist.created_at,
-        updatedAt: playlist.updated_at,
+        createdAt: playlist.created_at ?? null,
+        updatedAt: playlist.updated_at ?? null,
         targetTheoryLevel: playlist.target_theory_level,
         targetTechLevel: playlist.target_tech_level,
         appModeFilter: playlist.app_mode_filter,
         musicalGoal: playlist.musical_goal,
-        estimatedDuration: playlist.estimated_duration,
-        difficultyRating: playlist.difficulty_rating,
-        videos: videos
+        estimatedDuration: playlist.estimated_duration ?? 0,
+        difficultyRating: playlist.difficulty_rating ?? 0,
+        videos,
       };
     }) || [];
 
@@ -356,27 +383,28 @@ export async function getPlaylist(playlistId: string): Promise<Playlist> {
       throw new Error('Playlist not found');
     }
 
-    const videos = playlist.playlist_videos
+    const rawVideos = playlist.playlist_videos
       ?.sort((a, b) => a.sequence_order - b.sequence_order)
       .map(pv => pv.tutorial_videos)
-      .filter(Boolean) || [];
+      .filter(Boolean) ?? [];
+    const videos: PlaylistVideo[] = rawVideos.map((v: unknown) => toPlaylistVideo(v as Parameters<typeof toPlaylistVideo>[0]));
 
     return {
       id: playlist.id,
       title: playlist.name,
-      description: playlist.description,
+      description: playlist.description ?? null,
       videoCount: videos.length,
       totalDuration: calculateTotalDuration(videos),
       views: 0,
-      createdAt: playlist.created_at,
-      updatedAt: playlist.updated_at,
+      createdAt: playlist.created_at ?? null,
+      updatedAt: playlist.updated_at ?? null,
       targetTheoryLevel: playlist.target_theory_level,
       targetTechLevel: playlist.target_tech_level,
       appModeFilter: playlist.app_mode_filter,
       musicalGoal: playlist.musical_goal,
-      estimatedDuration: playlist.estimated_duration,
-      difficultyRating: playlist.difficulty_rating,
-      videos: videos
+      estimatedDuration: playlist.estimated_duration ?? 0,
+      difficultyRating: playlist.difficulty_rating ?? 0,
+      videos,
     };
   } catch (error) {
     console.error('Unexpected error in getPlaylist:', error);

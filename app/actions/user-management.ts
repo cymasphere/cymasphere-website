@@ -46,7 +46,7 @@ export interface UserManagementRecord {
  * // Returns: true if user is admin, false otherwise
  * ```
  */
-export async function checkAdmin(supabase: ReturnType<typeof createClient>) {
+export async function checkAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -643,7 +643,7 @@ export async function getUserByIdAdmin(userId: string): Promise<{
       customerId: profile.customer_id || undefined,
       subscriptionExpiration: profile.subscription_expiration || undefined,
       trialExpiration: profile.trial_expiration || undefined,
-      createdAt: profile.created_at || new Date().toISOString(),
+      createdAt: profile.updated_at ?? new Date().toISOString(),
       lastActive: lastActive || undefined,
       totalSpent: totalSpent[userId] || 0,
       hasNfr,
@@ -886,6 +886,16 @@ export async function createSupportTicketAdmin(data: {
       };
     }
 
+    const { data: ticketNumber, error: numError } = await supabase.rpc(
+      "generate_ticket_number"
+    );
+    if (numError || !ticketNumber) {
+      return {
+        success: false,
+        error: "Failed to generate ticket number",
+      };
+    }
+
     // Create the ticket
     const { data: ticket, error: ticketError } = await supabase
       .from("support_tickets")
@@ -894,6 +904,7 @@ export async function createSupportTicketAdmin(data: {
         description: data.description,
         user_id: data.userId,
         status: "open",
+        ticket_number: ticketNumber,
       })
       .select("id, ticket_number")
       .single();
@@ -2690,6 +2701,16 @@ export async function createSupportTicket(data: {
       };
     }
 
+    const { data: ticketNumber, error: numError } = await supabase.rpc(
+      "generate_ticket_number"
+    );
+    if (numError || !ticketNumber) {
+      return {
+        success: false,
+        error: "Failed to generate ticket number",
+      };
+    }
+
     // Create the ticket
     const { data: ticket, error: ticketError } = await supabase
       .from("support_tickets")
@@ -2698,6 +2719,7 @@ export async function createSupportTicket(data: {
         description: data.description,
         user_id: user.id,
         status: "open",
+        ticket_number: ticketNumber,
       })
       .select("id, ticket_number")
       .single();
@@ -2951,7 +2973,7 @@ export async function uploadSupportTicketAttachment(
 
     if (uploadError) {
       console.error("[Attachment Upload] Storage upload error:", uploadError);
-      console.error("[Attachment Upload] Error code:", uploadError.statusCode);
+      console.error("[Attachment Upload] Error code:", (uploadError as { statusCode?: number }).statusCode);
       console.error("[Attachment Upload] Error message:", uploadError.message);
 
       // If bucket doesn't exist, try to create it
@@ -3105,7 +3127,7 @@ export async function uploadSupportTicketAttachment(
               file_type: file.type,
               attachment_type: attachmentType,
               storage_path: storagePath,
-              url: publicUrl,
+              url: signedUrl,
             })
             .select("id")
             .single();
@@ -3186,10 +3208,12 @@ export async function getCustomerPurchasesAdmin(customerId: string): Promise<{
     });
 
     // Create a map of payment intent IDs to their invoices
-    const piToInvoiceMap = new Map<string, Stripe.Invoice>();
+    type StripeInvoice = (typeof invoices.data)[number];
+    const piToInvoiceMap = new Map<string, StripeInvoice>();
     invoices.data.forEach((inv) => {
-      if (inv.payment_intent && typeof inv.payment_intent === "string") {
-        piToInvoiceMap.set(inv.payment_intent, inv);
+      const piId = (inv as { payment_intent?: string }).payment_intent;
+      if (piId && typeof piId === "string") {
+        piToInvoiceMap.set(piId, inv);
       }
     });
 
@@ -3204,7 +3228,8 @@ export async function getCustomerPurchasesAdmin(customerId: string): Promise<{
       // Check if this payment intent is linked to an invoice (subscription payment)
       else if (piToInvoiceMap.has(pi.id)) {
         const invoice = piToInvoiceMap.get(pi.id)!;
-        if (invoice.subscription) {
+        const invSub = (invoice as { subscription?: string }).subscription;
+        if (invSub) {
           // It's a subscription payment
           description = "Subscription payment";
         } else {
@@ -3213,9 +3238,10 @@ export async function getCustomerPurchasesAdmin(customerId: string): Promise<{
       }
       // Check if payment intent has invoice in expanded data
       else if (
-        pi.invoice &&
-        typeof pi.invoice === "object" &&
-        "subscription" in pi.invoice
+        (pi as unknown as { invoice?: string | { subscription?: string } }).invoice &&
+        typeof (pi as unknown as { invoice?: unknown }).invoice === "object" &&
+        (pi as unknown as { invoice?: { subscription?: string } }).invoice &&
+        "subscription" in (pi as unknown as { invoice: { subscription?: string } }).invoice
       ) {
         description = "Subscription payment";
       } else if (pi.amount === 0) {

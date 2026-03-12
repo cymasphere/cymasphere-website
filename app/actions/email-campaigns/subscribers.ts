@@ -67,12 +67,13 @@ export interface GetSubscriberResponse {
     language: string;
     source: string;
     notes: string;
-    customFields: Record<string, any>;
-    engagementHistory: any[];
-    emailHistory: any[];
-    audiences: any[];
+    customFields: Record<string, unknown>;
+    engagementHistory: unknown[];
+    emailHistory: unknown[];
+    audiences: unknown[];
     subscriptionType?: string;
     userId?: string;
+    location?: string;
   };
 }
 
@@ -194,7 +195,7 @@ export async function getSubscribers(
         const profileUserIds = profileMatches?.map((p) => p.id) || [];
 
         // Get subscriber IDs that match profile user_ids (which reference auth.users)
-        let profileSubscriberMatches = { data: [] };
+        let profileSubscriberMatches: { data: { id: string }[] } = { data: [] };
         if (profileUserIds.length > 0) {
           const { data, error: subscriberError } = await supabase
               .from('subscribers')
@@ -429,7 +430,7 @@ export async function getSubscriber(subscriberId: string): Promise<GetSubscriber
       totalOpens: 0,
       totalClicks: 0,
       subscriptionType: profile?.subscription || 'none',
-      userId: subscriberData.user_id,
+      userId: subscriberData.user_id ?? undefined,
       joinedDate: subscriberData.subscribe_date || subscriberData.created_at || new Date().toISOString(),
       emailOptIn: subscriberData.status === 'active',
       smsOptIn: false,

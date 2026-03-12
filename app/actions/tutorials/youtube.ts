@@ -46,16 +46,17 @@ export async function getYouTubeDuration(
         .single();
 
       if (!cacheError && cachedVideo?.youtube_duration_cached) {
-        const lastUpdated = new Date(cachedVideo.youtube_duration_last_updated);
+        const lastUpdatedStr = cachedVideo.youtube_duration_last_updated;
+        const lastUpdated = lastUpdatedStr ? new Date(lastUpdatedStr) : new Date();
         const hoursSinceUpdate = (Date.now() - lastUpdated.getTime()) / (1000 * 60 * 60);
-        
+
         // Use cached duration if it's less than 24 hours old
         if (hoursSinceUpdate < 24) {
           console.log(`Using cached duration for ${videoId}: ${cachedVideo.youtube_duration_cached}s`);
-          return { 
+          return {
             duration: cachedVideo.youtube_duration_cached,
             cached: true,
-            lastUpdated: cachedVideo.youtube_duration_last_updated
+            lastUpdated: lastUpdatedStr ?? new Date().toISOString(),
           };
         }
       }

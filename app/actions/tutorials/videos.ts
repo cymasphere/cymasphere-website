@@ -14,7 +14,9 @@ export interface Video {
   id: string;
   title: string;
   description: string;
+  /** Alias for youtube_video_id from DB; populated when mapping rows */
   youtube_id: string;
+  youtube_video_id?: string | null;
   duration: number;
   feature_category: string;
   theory_level_required: string;
@@ -93,10 +95,26 @@ export async function getVideos(
 
     const uniqueCategories = [...new Set(categories?.map(c => c.feature_category) || [])];
 
+    const mappedVideos: Video[] = (videos || []).map((row) => ({
+      id: row.id,
+      title: row.title,
+      description: row.description ?? '',
+      youtube_id: row.youtube_video_id ?? '',
+      youtube_video_id: row.youtube_video_id,
+      duration: row.duration ?? 0,
+      feature_category: row.feature_category,
+      theory_level_required: row.theory_level_required,
+      tech_level_required: row.tech_level_required,
+      app_mode_applicability: Array.isArray(row.app_mode_applicability) ? row.app_mode_applicability : [row.app_mode_applicability].filter(Boolean),
+      musical_context: row.musical_context,
+      created_at: row.created_at ?? '',
+      updated_at: row.updated_at ?? '',
+    }));
+
     return {
-      videos: videos || [],
+      videos: mappedVideos,
       categories: uniqueCategories,
-      totalCount: videos?.length || 0
+      totalCount: mappedVideos.length
     };
   } catch (error) {
     console.error('Unexpected error in getVideos:', error);
@@ -134,15 +152,30 @@ export async function getVideo(videoId: string): Promise<Video & { script: strin
     }
 
     // Get video script
-    const { data: script, error: scriptError } = await supabase
+    const { data: scriptRow, error: scriptError } = await supabase
       .from('video_scripts')
-      .select('content')
+      .select('script_content')
       .eq('video_id', videoId)
       .single();
 
+    const base: Video = {
+      id: video.id,
+      title: video.title,
+      description: video.description ?? '',
+      youtube_id: video.youtube_video_id ?? '',
+      youtube_video_id: video.youtube_video_id,
+      duration: video.duration ?? 0,
+      feature_category: video.feature_category,
+      theory_level_required: video.theory_level_required,
+      tech_level_required: video.tech_level_required,
+      app_mode_applicability: Array.isArray(video.app_mode_applicability) ? video.app_mode_applicability : [video.app_mode_applicability].filter(Boolean),
+      musical_context: video.musical_context,
+      created_at: video.created_at ?? '',
+      updated_at: video.updated_at ?? '',
+    };
     return {
-      ...video,
-      script: script?.content || null
+      ...base,
+      script: scriptRow?.script_content ?? null,
     };
   } catch (error) {
     console.error('Unexpected error in getVideo:', error);
@@ -161,10 +194,22 @@ export async function updateVideo(
     const supabase = await createClient();
 
     // Note: RLS will enforce admin access - if user is not admin, queries will fail
-    // Update video data
+    // Map updates to DB columns (app_mode_applicability may be string in DB)
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    if (updates.duration !== undefined) dbUpdates.duration = updates.duration;
+    if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.youtube_id !== undefined) dbUpdates.youtube_video_id = updates.youtube_id;
+    if (updates.youtube_video_id !== undefined) dbUpdates.youtube_video_id = updates.youtube_video_id;
+    if (updates.feature_category !== undefined) dbUpdates.feature_category = updates.feature_category;
+    if (updates.theory_level_required !== undefined) dbUpdates.theory_level_required = updates.theory_level_required;
+    if (updates.tech_level_required !== undefined) dbUpdates.tech_level_required = updates.tech_level_required;
+    if (updates.musical_context !== undefined) dbUpdates.musical_context = updates.musical_context;
+    if (updates.app_mode_applicability !== undefined) dbUpdates.app_mode_applicability = Array.isArray(updates.app_mode_applicability) ? updates.app_mode_applicability : [updates.app_mode_applicability];
+
     const { data: video, error: videoError } = await supabase
       .from('tutorial_videos')
-      .update(updates)
+      .update(dbUpdates)
       .eq('id', videoId)
       .select()
       .single();
@@ -174,7 +219,21 @@ export async function updateVideo(
       throw new Error('Failed to update video');
     }
 
-    return video;
+    return {
+      id: video.id,
+      title: video.title,
+      description: video.description ?? '',
+      youtube_id: video.youtube_video_id ?? '',
+      youtube_video_id: video.youtube_video_id,
+      duration: video.duration ?? 0,
+      feature_category: video.feature_category,
+      theory_level_required: video.theory_level_required,
+      tech_level_required: video.tech_level_required,
+      app_mode_applicability: Array.isArray(video.app_mode_applicability) ? video.app_mode_applicability : [video.app_mode_applicability].filter(Boolean),
+      musical_context: video.musical_context,
+      created_at: video.created_at ?? '',
+      updated_at: video.updated_at ?? '',
+    };
   } catch (error) {
     console.error('Unexpected error in updateVideo:', error);
     throw error;
@@ -243,8 +302,8 @@ export async function getVideoScript(videoId: string): Promise<{
 export interface VideoWithDuration {
   id: string;
   title: string;
-  description: string;
-  youtube_video_id: string;
+  description: string | null;
+  youtube_video_id: string | null;
   duration: number;
   duration_cached: boolean;
   duration_last_updated: string | null;
