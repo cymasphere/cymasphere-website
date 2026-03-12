@@ -91,9 +91,10 @@ export function TranslationsProvider({ children }: { children: ReactNode }) {
       return cache[locale];
     }
 
-    // Check if already loading
-    if (loadingPromises[locale]) {
-      return loadingPromises[locale];
+    // Check if already loading (promise for this locale exists)
+    const existing = loadingPromises[locale];
+    if (existing !== undefined) {
+      return existing;
     }
 
     // Fetch and cache

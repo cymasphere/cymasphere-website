@@ -89,7 +89,7 @@ const BannerContent = styled.div<{
   }
 `;
 
-const BannerTitle = styled.h2<{ $accentColor: string }>`
+const BannerTitle = styled.h2<{ $accentColor: string; $variant?: "sticky" | "card" }>`
   font-size: 1.5rem;
   font-weight: 800;
   margin: 0;
@@ -144,7 +144,7 @@ const BannerTextContent = styled.div<{ $variant: "sticky" | "card" }>`
   }
 `;
 
-const BannerDescription = styled.p`
+const BannerDescription = styled.p<{ $variant?: "sticky" | "card" }>`
   font-size: 0.9rem;
   margin: 0;
   font-weight: 500;

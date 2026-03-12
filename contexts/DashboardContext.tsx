@@ -350,7 +350,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       }
 
       if (invoices) {
-        setInvoices(invoices);
+        setInvoices(
+          invoices.map((inv) => ({
+            ...inv,
+            created: typeof inv.created === "number" ? inv.created : (inv as { created?: string }).created ? Math.floor(new Date((inv as { created: string }).created).getTime() / 1000) : 0,
+          }))
+        );
       } else {
         setInvoices([]);
       }

@@ -15,10 +15,12 @@ import Toast from "@/components/common/Toast";
  * @description Defines the structure of a toast notification, including its unique ID,
  * message content, type, and display duration.
  */
+export type ToastType = "success" | "error" | "warning" | "info";
+
 export type ToastData = {
   id: string;
   message: string;
-  type: string;
+  type: ToastType;
   duration: number;
 };
 
@@ -28,7 +30,7 @@ export type ToastData = {
  * for showing and hiding toasts, and convenience methods for different toast types.
  */
 export type ToastContextType = {
-  showToast: (message: string, type: string, duration: number) => string;
+  showToast: (message: string, type: ToastType, duration: number) => string;
   hideToast: (id: string) => void;
   success: (message: string, duration: number) => string;
   error: (message: string, duration: number) => string;
@@ -57,7 +59,7 @@ export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
    * @param {number} [duration=3000] - Duration in milliseconds before auto-dismissing.
    * @returns {string} The unique ID of the created toast.
    */
-  const showToast = (message: string, type = "info", duration = 3000) => {
+  const showToast = (message: string, type: ToastType = "info", duration = 3000) => {
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, message, type, duration }]);
     return id;

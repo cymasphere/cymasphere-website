@@ -200,10 +200,23 @@ Cymasphere is designed to help overcome these challenges by:
 - Focus on one element at a time (harmony, then melody, then arrangement)
 `;
 
+/** NEPQ state extracted from conversation (see prototype implementation below). */
+interface NEPQState {
+  needs: string[];
+  pains: string[];
+  currentTools: string[];
+  experienceLevel: string;
+  budget: string;
+  decisionContext: string;
+}
+
 class CymasphereRAG {
   private vectorStore: FaissStore | null = null;
   private llm: ChatOpenAI;
   private embeddings: OpenAIEmbeddings;
+
+  /** Attached to prototype at module load; use for NEPQ tailoring. */
+  declare extractNEPQState: (conversationHistory: unknown[], latestUserMessage: string) => NEPQState;
 
   constructor() {
     this.llm = new ChatOpenAI({

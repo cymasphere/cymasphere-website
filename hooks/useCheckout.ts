@@ -91,6 +91,7 @@ export function useCheckout(
         willProvideCard?: boolean;
         hasHadTrial?: boolean;
         email?: string;
+        isPlanChange?: boolean;
         trialOption?: TrialOption;
       },
     ): Promise<{ success: boolean; error?: string }> => {
