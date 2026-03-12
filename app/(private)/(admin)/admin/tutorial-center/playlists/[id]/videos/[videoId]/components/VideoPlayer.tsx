@@ -436,11 +436,11 @@ export default function VideoPlayer({ video, script }: VideoPlayerProps) {
 
   // Save progress to API
   const saveProgress = async (progressValue: number, completed: boolean) => {
-    if (!user) return;
+    if (!user?.id) return;
 
     try {
-      await updateVideoProgress(video.id, {
-        progress_percentage: progressValue,
+      await updateVideoProgress(user.id, video.id, {
+        progress: progressValue,
         completed,
       });
     } catch (error) {

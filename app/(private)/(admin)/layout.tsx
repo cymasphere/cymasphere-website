@@ -584,7 +584,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }, [user]);
 
   const handleNavigation = (
-    e: React.MouseEvent<HTMLAnchorElement>,
+    e: React.MouseEvent<HTMLElement>,
     href: string
   ) => {
     e.preventDefault();
@@ -687,7 +687,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 fontSize="1.4rem"
                 onClick={(e: React.MouseEvent<HTMLElement>) =>
                   handleNavigation(
-                    e as React.MouseEvent<HTMLAnchorElement>,
+                    e,
                     "/admin"
                   )
                 }
@@ -794,7 +794,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  transition={{ duration: 0.3, ease: "easeInOut" as const }}
                 >
                   <Link href="/admin/email-campaigns/subscribers">
                     <SubNavItem
@@ -916,7 +916,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  transition={{ duration: 0.3, ease: "easeInOut" as const }}
                 >
                   <Link href="/admin/ad-manager">
                     <SubNavItem
@@ -1032,7 +1032,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 href="/admin"
                 onClick={(e: React.MouseEvent<HTMLElement>) =>
                   handleNavigation(
-                    e as React.MouseEvent<HTMLAnchorElement>,
+                    e,
                     "/admin"
                   )
                 }

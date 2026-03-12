@@ -451,10 +451,10 @@ interface Template {
   id: string;
   name: string;
   description: string | null;
-  subject: string;
+  subject: string | null;
   template_type: string;
   status: string;
-  variables: any;
+  variables: unknown;
   created_by: string;
   last_used_at: string | null;
   created_at: string;
@@ -527,7 +527,7 @@ function TemplatesPage() {
   const filteredTemplates = templates.filter(template =>
     template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (template.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    template.type.toLowerCase().includes(searchTerm.toLowerCase())
+    (template.type ?? '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const stats = [
@@ -536,11 +536,11 @@ function TemplatesPage() {
       label: "Total Templates",
     },
     {
-      value: templates.reduce((sum, t) => sum + t.usage_count, 0).toString(),
+      value: templates.reduce((sum, t) => sum + (t.usage_count ?? 0), 0).toString(),
       label: "Total Usage",
     },
     {
-      value: new Set(templates.map(t => t.type)).size.toString(),
+      value: new Set(templates.map(t => t.type ?? '')).size.toString(),
       label: "Template Types",
     },
     {
@@ -679,7 +679,7 @@ function TemplatesPage() {
                       <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', color: 'var(--text-secondary)' }}>
                         <motion.div
                           animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" as const }}
                           style={{ 
                             width: '20px', 
                             height: '20px', 
@@ -718,8 +718,8 @@ function TemplatesPage() {
                       <TemplateDescription>{template.description}</TemplateDescription>
                     </TableCell>
                     <TableCell>
-                      <TypeBadge type={template.type}>
-                        {template.type}
+                      <TypeBadge type={template.type ?? 'custom'}>
+                        {template.type ?? 'custom'}
                       </TypeBadge>
                     </TableCell>
                     <TableCell>
@@ -728,7 +728,7 @@ function TemplatesPage() {
                       </StatusBadge>
                     </TableCell>
                     <TableCell>
-                      <MetricValue>{template.usage_count}</MetricValue>
+                      <MetricValue>{template.usage_count ?? 0}</MetricValue>
                     </TableCell>
                     <TableCell>
                       {template.last_used_at ? new Date(template.last_used_at).toLocaleDateString() : 'Never'}

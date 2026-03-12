@@ -46,6 +46,9 @@ import {
   getUserByIdAdmin,
 } from "@/app/actions/user-management";
 import type { UserData } from "@/utils/stripe/admin-analytics";
+
+/** Sort field for users table; includes client-side-only column "supportTickets" */
+type UserSortField = keyof UserData | "supportTickets";
 import {
   refundPaymentIntent,
   refundInvoice,
@@ -1364,7 +1367,7 @@ export default function AdminCRM() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [previousSearchTerm, setPreviousSearchTerm] = useState("");
   const [subscriptionFilter, setSubscriptionFilter] = useState("all");
-  const [sortField, setSortField] = useState<keyof UserData>("createdAt");
+  const [sortField, setSortField] = useState<UserSortField>("createdAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -1380,7 +1383,7 @@ export default function AdminCRM() {
       ticket_number: string;
       subject: string;
       status: string;
-      priority: string;
+      priority?: string;
       created_at: string;
       updated_at: string;
     }>
@@ -1789,7 +1792,7 @@ export default function AdminCRM() {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  const handleSort = (field: keyof UserData) => {
+  const handleSort = (field: UserSortField) => {
     // All fields are now sortable
     // Some are sorted server-side (database fields), others are sorted client-side
     const serverSortableFields = [
@@ -1817,13 +1820,13 @@ export default function AdminCRM() {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
-      setSortField(field as keyof UserData);
+      setSortField(field);
       setSortDirection("asc");
     }
     setCurrentPage(1); // Reset to first page when sorting changes
   };
 
-  const getSortIcon = (field: keyof UserData) => {
+  const getSortIcon = (field: UserSortField) => {
     // All fields are sortable - show sort indicator for all
     const allSortableFields = [
       "firstName",
@@ -2809,7 +2812,7 @@ export default function AdminCRM() {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.6, ease: "easeOut" },
+      transition: { duration: 0.6, ease: "easeOut" as const },
     },
   };
 
@@ -2907,7 +2910,7 @@ export default function AdminCRM() {
                     transition={{
                       duration: 1,
                       repeat: Infinity,
-                      ease: "linear",
+                      ease: "linear" as const,
                     }}
                     style={{
                       width: "20px",
@@ -2971,7 +2974,7 @@ export default function AdminCRM() {
                     <TableHeaderCell
                       $sortable={true}
                       onClick={() =>
-                        handleSort("supportTickets" as keyof UserData)
+                        handleSort("supportTickets")
                       }
                     >
                       Support Tickets

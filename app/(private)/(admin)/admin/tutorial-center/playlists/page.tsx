@@ -8,6 +8,7 @@ import PlaylistViewer from "../components/PlaylistViewer";
 import VideoPlayer from "../components/VideoPlayer";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
 import { getPlaylists, getUserProfile, generatePlaylist } from "@/app/actions/tutorials";
+import type { Playlist as ApiPlaylist } from "@/app/actions/tutorials/playlists";
 // Removed loading spinner per request
 
 const Container = styled.div`
@@ -174,20 +175,10 @@ const ViewerHeader = styled.div`
 
 // Use shared LoadingSpinner component
 
-interface Playlist {
-  id: string;
-  title: string;
-  description: string;
-  targetTheoryLevel: string;
-  targetTechLevel: string;
-  estimatedDuration: number;
-  difficultyRating: number;
-}
-
 export default function PlaylistsPage() {
-  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [playlists, setPlaylists] = useState<ApiPlaylist[]>([]);
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
-  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<ApiPlaylist | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [personalizedPlaylist, setPersonalizedPlaylist] = useState<any>(null);
@@ -289,7 +280,7 @@ export default function PlaylistsPage() {
     setStateRestored(true);
   }, [playlists, searchParams, stateRestored]);
 
-  const handlePlaylistSelect = (playlist: Playlist) => {
+  const handlePlaylistSelect = (playlist: ApiPlaylist) => {
     setSelectedPlaylistId(playlist.id);
     setSelectedPlaylist(playlist);
     setShowPersonalized(false); // Switch from personalized to regular playlist

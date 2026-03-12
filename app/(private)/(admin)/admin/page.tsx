@@ -972,9 +972,8 @@ export default function AdminDashboard() {
                           marginLeft: '0.5rem', 
                           fontWeight: 'normal', 
                           opacity: 0.9,
-                          WebkitTextFillColor: 'white',
-                          textFillColor: 'white'
-                        }}>
+                          WebkitTextFillColor: 'white'
+                        } as React.CSSProperties}>
                           (MRR: {formatCurrency(mrr)})
                         </span>
                       )}
@@ -1113,9 +1112,8 @@ export default function AdminDashboard() {
                                 fontWeight: 'normal',
                                 opacity: 0.8,
                                 color: 'white',
-                                WebkitTextFillColor: 'white',
-                                textFillColor: 'white'
-                              }}>
+                                WebkitTextFillColor: 'white'
+                              } as React.CSSProperties}>
                                 {formatted.unit}
                               </span>
                             </>
@@ -1130,9 +1128,8 @@ export default function AdminDashboard() {
                             fontWeight: 'normal',
                             opacity: 0.8,
                             color: 'white',
-                            WebkitTextFillColor: 'white',
-                            textFillColor: 'white'
-                          }}>
+                            WebkitTextFillColor: 'white'
+                          } as React.CSSProperties}>
                             months
                           </span>
                         </>
@@ -1473,7 +1470,8 @@ function AnalyticsTab({
 
     const fetchFreshData = async () => {
       try {
-        const data = await getAnalyticsTimeSeries(timeRange);
+        const period = timeRange === 'projections' ? 'year' : timeRange;
+        const data = await getAnalyticsTimeSeries(period);
         setAnalyticsData(data);
         
         // Cache the data
@@ -1775,7 +1773,7 @@ function AnalyticsTab({
                       border: '1px solid rgba(255, 255, 255, 0.1)',
                       borderRadius: '8px'
                     }}
-                    formatter={(value: number) => formatCurrencyForChart(value)}
+                    formatter={(value: number | undefined) => formatCurrencyForChart(value ?? 0)}
                   />
                   <Legend />
                   <Line 

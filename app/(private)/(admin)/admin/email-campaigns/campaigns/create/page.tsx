@@ -1908,10 +1908,10 @@ interface Audience {
   id: string;
   name: string;
   description: string | null;
-  subscriber_count: number;
-  filters?: any;
-  created_at: string;
-  updated_at: string;
+  subscriber_count: number | null;
+  filters?: unknown;
+  created_at: string | null;
+  updated_at: string | null;
   type?: "static" | "dynamic";
 }
 
@@ -1920,10 +1920,10 @@ interface Template {
   id: string;
   name: string;
   description: string | null;
-  subject: string;
+  subject: string | null;
   template_type: string;
   status: string;
-  variables: any;
+  variables: unknown;
   created_by: string;
   last_used_at: string | null;
   created_at: string;
@@ -2383,7 +2383,7 @@ function CreateCampaignPage() {
       excludedAudienceIds: [],
     template: "",
     content: "",
-    scheduleType: scheduleTypeParam || "immediate", // Use URL parameter or default to "Send Now"
+    scheduleType: (scheduleTypeParam === "draft" || scheduleTypeParam === "scheduled" || scheduleTypeParam === "timezone" ? scheduleTypeParam : "immediate") as CampaignData["scheduleType"],
     scheduleDate: "",
     scheduleTime: "09:00" // Default send time to 9:00 AM
     };
@@ -2466,8 +2466,8 @@ function CreateCampaignPage() {
       // Fallback to simple calculation
       const includedAudiences = audiences.filter(a => campaignData.audienceIds.includes(a.id));
       const excludedAudiences = audiences.filter(a => campaignData.excludedAudienceIds.includes(a.id));
-      const totalIncluded = includedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
-      const totalExcluded = excludedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+      const totalIncluded = includedAudiences.reduce((sum, audience) => sum + (audience.subscriber_count ?? 0), 0);
+      const totalExcluded = excludedAudiences.reduce((sum, audience) => sum + (audience.subscriber_count ?? 0), 0);
       
       setReachData({
         totalIncluded,
@@ -2527,13 +2527,14 @@ function CreateCampaignPage() {
 
   // Handle URL parameter changes for scheduleType
   useEffect(() => {
-    if (scheduleTypeParam && scheduleTypeParam !== campaignData.scheduleType) {
+    const validScheduleType = scheduleTypeParam === "draft" || scheduleTypeParam === "scheduled" || scheduleTypeParam === "timezone" || scheduleTypeParam === "immediate";
+    if (validScheduleType && scheduleTypeParam !== campaignData.scheduleType) {
       setCampaignData(prev => ({
         ...prev,
         scheduleType: scheduleTypeParam
       }));
     }
-  }, [scheduleTypeParam]);
+  }, [scheduleTypeParam, campaignData.scheduleType]);
 
   // Load audiences from API
   useEffect(() => {
@@ -3346,14 +3347,18 @@ function CreateCampaignPage() {
         });
         
         // Load the template's visual elements directly (same as template editor)
-        if (template.variables?.visual_elements && Array.isArray(template.variables.visual_elements)) {
-          console.log('🎨 Loading template with visual elements:', template.variables.visual_elements.length);
+        const templateVars = template.variables as { visual_elements?: unknown[] } | null | undefined;
+        if (templateVars?.visual_elements && Array.isArray(templateVars.visual_elements)) {
+          console.log('🎨 Loading template with visual elements:', templateVars.visual_elements.length);
           
           // Generate new IDs for each element to avoid conflicts
-          const newElements = template.variables.visual_elements.map((element: any) => ({
-            ...element,
-            id: element.type + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
-          }));
+          const newElements = templateVars.visual_elements.map((element: unknown) => {
+            const el = element as { type?: string; id?: string; [key: string]: unknown };
+            return {
+              ...el,
+              id: (el.type ?? 'element') + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+            };
+          });
           
           // Add a brand header at the top if it doesn't already exist
           const hasBrandHeader = newElements.some((el: any) => el.type === 'brand-header');
@@ -3451,8 +3456,8 @@ function CreateCampaignPage() {
     const excludedAudiences = audiences.filter(a => campaignData.excludedAudienceIds.includes(a.id));
     
     // Calculate fallback totals from audience subscriber_count
-    const fallbackTotalIncluded = includedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
-    const fallbackTotalExcluded = excludedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+    const fallbackTotalIncluded = includedAudiences.reduce((sum, audience) => sum + (audience.subscriber_count ?? 0), 0);
+    const fallbackTotalExcluded = excludedAudiences.reduce((sum, audience) => sum + (audience.subscriber_count ?? 0), 0);
     
     return {
       totalIncluded: reachData.isLoading ? fallbackTotalIncluded : (reachData.totalIncluded || fallbackTotalIncluded),
@@ -4343,10 +4348,10 @@ function CreateCampaignPage() {
                               <AudienceDetails>
                                 <AudienceCount>
                                   <FaUsers />
-                                  {audience.subscriber_count.toLocaleString()} subscribers
+                                  {(audience.subscriber_count ?? 0).toLocaleString()} subscribers
                                 </AudienceCount>
-                                <AudienceType $type={audience.type}>
-                                  {audience.type}
+                                <AudienceType $type={audience.type ?? 'static'}>
+                                  {audience.type ?? 'static'}
                                 </AudienceType>
                               </AudienceDetails>
                             </AudienceInfo>
@@ -4828,7 +4833,7 @@ function CreateCampaignPage() {
                 {isSending && (
                   <LoadingSpinner
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" as const }}
                   />
                 )}
                 {campaignData.scheduleType === 'immediate' && <FaPaperPlane />}
@@ -5353,7 +5358,7 @@ function CreateCampaignPage() {
                   >
                     {isSending ? (
                       <>
-                        <LoadingSpinner animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} />
+                        <LoadingSpinner animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" as const }} />
                         Sending...
                       </>
                     ) : (
@@ -5408,7 +5413,7 @@ function CreateCampaignPage() {
                     {isDeleting && (
                       <LoadingSpinner
                         animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" as const }}
                       />
                     )}
                     <FaTrash />

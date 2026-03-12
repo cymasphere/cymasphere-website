@@ -195,9 +195,9 @@ const EmptyState = styled.div`
 `;
 
 interface ProgressData {
-  progress: { [videoId: string]: any };
-  totalProgress: number;
-  userPath: {
+  progress: Record<string, { progress?: number; completed?: boolean; video_id?: string; progress_percentage?: number; lastWatched?: string; [key: string]: unknown }>;
+  totalProgress?: number;
+  userPath?: {
     theoryLevel: string;
     techLevel: string;
     appMode: string;
@@ -223,17 +223,26 @@ export default function ProgressTracker({ className }: ProgressTrackerProps) {
         // Handle both array and object responses
         if (Array.isArray(progressData)) {
           // Convert array to object format
-          const progressObj: Record<string, any> = {};
-          progressData.forEach((p: any) => {
-            progressObj[p.video_id] = {
-              progress: p.progress_percentage || 0,
-              completed: p.completed || false,
-              lastWatched: p.last_watched || new Date().toISOString(),
-            };
+          const progressObj: ProgressData['progress'] = {};
+          progressData.forEach((p: { video_id?: string; progress_percentage?: number; completed?: boolean; last_watched?: string }) => {
+            const vid = p.video_id;
+            if (vid) {
+              progressObj[vid] = {
+                progress: p.progress_percentage ?? 0,
+                completed: p.completed ?? false,
+                lastWatched: p.last_watched ?? new Date().toISOString(),
+                video_id: vid,
+                progress_percentage: p.progress_percentage,
+              };
+            }
           });
           setProgressData({ progress: progressObj });
         } else {
-          setProgressData({ progress: { [progressData.video_id]: progressData } });
+          const p = progressData as { video_id?: string; progress_percentage?: number; completed?: boolean };
+          const vid = p.video_id ?? '';
+          setProgressData({
+            progress: vid ? { [vid]: { ...p, video_id: vid, progress_percentage: p.progress_percentage } } : {},
+          });
         }
       } catch (error) {
         console.error('Failed to fetch progress:', error);
@@ -263,10 +272,11 @@ export default function ProgressTracker({ className }: ProgressTrackerProps) {
       .map(([videoId, videoProgress]) => ({
         videoId,
         ...videoProgress,
-        type: videoProgress.completed ? 'completed' : 
-              videoProgress.progress > 0 ? 'started' : 'progress'
+        type: (videoProgress as { completed?: boolean; progress?: number }).completed ? 'completed' : 
+              ((videoProgress as { progress?: number }).progress ?? 0) > 0 ? 'started' : 'progress',
+        lastWatched: (videoProgress as { lastWatched?: string }).lastWatched
       }))
-      .sort((a, b) => new Date(b.lastWatched).getTime() - new Date(a.lastWatched).getTime())
+      .sort((a, b) => new Date(b.lastWatched ?? 0).getTime() - new Date(a.lastWatched ?? 0).getTime())
       .slice(0, 5);
 
     return activities;
@@ -314,7 +324,7 @@ export default function ProgressTracker({ className }: ProgressTrackerProps) {
         <ProgressStats>
           <StatItem>
             <FaUser />
-            {progressData.userPath.theoryLevel} • {progressData.userPath.techLevel}
+            {progressData.userPath?.theoryLevel ?? '—'} • {progressData.userPath?.techLevel ?? '—'}
           </StatItem>
           <StatItem>
             <FaTrophy />
@@ -325,15 +335,15 @@ export default function ProgressTracker({ className }: ProgressTrackerProps) {
 
       <ProgressBar>
         <ProgressFill 
-          $progress={progressData.totalProgress}
+          $progress={progressData.totalProgress ?? 0}
           initial={{ width: 0 }}
-          animate={{ width: `${progressData.totalProgress}%` }}
-          transition={{ duration: 1, ease: "easeOut" }}
+          animate={{ width: `${progressData.totalProgress ?? 0}%` }}
+          transition={{ duration: 1, ease: "easeOut" as const }}
         />
       </ProgressBar>
 
       <ProgressText>
-        <ProgressPercentage>{progressData.totalProgress}%</ProgressPercentage>
+        <ProgressPercentage>{progressData.totalProgress ?? 0}%</ProgressPercentage>
         <ProgressLabel>{completedVideos} of {totalVideos} videos completed</ProgressLabel>
       </ProgressText>
 
@@ -364,7 +374,7 @@ export default function ProgressTracker({ className }: ProgressTrackerProps) {
                   </ActivityDescription>
                 </ActivityContent>
                 <ActivityTime>
-                  {formatTimeAgo(activity.lastWatched)}
+                  {formatTimeAgo(activity.lastWatched ?? '')}
                 </ActivityTime>
               </ActivityItem>
             ))}

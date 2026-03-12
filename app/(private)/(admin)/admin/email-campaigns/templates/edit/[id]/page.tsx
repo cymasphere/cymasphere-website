@@ -686,10 +686,10 @@ interface Audience {
   id: string;
   name: string;
   description: string | null;
-  subscriber_count: number;
-  filters?: any;
-  created_at: string;
-  updated_at: string;
+  subscriber_count: number | null;
+  filters?: unknown;
+  created_at: string | null;
+  updated_at: string | null;
   type?: "static" | "dynamic";
 }
 
@@ -898,17 +898,18 @@ function EditTemplatePage() {
       
       try {
         setIsLoading(true);
-        console.log('Loading template data for ID:', params.id);
-        console.log('Making fetch request to:', `/api/email-campaigns/templates/${params.id}`);
-        const data = await getTemplate(params.id);
+        const templateId = typeof params.id === 'string' ? params.id : (Array.isArray(params.id) ? params.id[0] : '');
+        console.log('Loading template data for ID:', templateId);
+        console.log('Making fetch request to:', `/api/email-campaigns/templates/${templateId}`);
+        const data = await getTemplate(templateId);
         console.log('Raw API response:', data);
         const template = data.template;
         
         if (template) {
           
           console.log('Loaded template data:', template);
-          console.log('Template audiences:', template.audiences);
-          console.log('Template excluded audiences:', template.excludedAudiences);
+          console.log('Template audiences:', template.audienceIds);
+          console.log('Template excluded audiences:', template.excludedAudienceIds);
           
           // Update template data state
           setTemplateData({
@@ -934,9 +935,10 @@ function EditTemplatePage() {
             const htmlContent = template.htmlContent;
             
             // Check if template has visual_elements in variables (new format)
-            if (template.variables?.visual_elements && Array.isArray(template.variables.visual_elements)) {
-              console.log('🎨 Loading template with visual elements:', template.variables.visual_elements.length);
-              setEmailElements(template.variables.visual_elements);
+            const vars = template.variables as { visual_elements?: unknown[] } | null | undefined;
+            if (vars?.visual_elements && Array.isArray(vars.visual_elements)) {
+              console.log('🎨 Loading template with visual elements:', vars.visual_elements.length);
+              setEmailElements(vars.visual_elements as typeof emailElements);
             } else {
               // Fallback: Parse HTML content back to structured elements
               const parsedElements = parseHtmlToElements(htmlContent);
@@ -1335,8 +1337,8 @@ function EditTemplatePage() {
     const includedAudiences = audiences.filter(a => templateData.audienceIds.includes(a.id));
     const excludedAudiences = audiences.filter(a => templateData.excludedAudienceIds.includes(a.id));
     
-    const totalIncluded = includedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
-    const totalExcluded = excludedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+    const totalIncluded = includedAudiences.reduce((sum, audience) => sum + (audience.subscriber_count ?? 0), 0);
+    const totalExcluded = excludedAudiences.reduce((sum, audience) => sum + (audience.subscriber_count ?? 0), 0);
     
     return {
       includedCount: includedAudiences.length,
@@ -1356,7 +1358,7 @@ function EditTemplatePage() {
     return audiences.filter(audience => 
       audience.name.toLowerCase().includes(searchTerm) ||
       audience.description?.toLowerCase().includes(searchTerm) ||
-      audience.type.toLowerCase().includes(searchTerm)
+      (audience.type ?? '').toLowerCase().includes(searchTerm)
     );
   };
 
@@ -1563,10 +1565,10 @@ function EditTemplatePage() {
                               <AudienceDetails>
                                 <AudienceCount>
                                   <FaUsers />
-                                  {audience.subscriber_count.toLocaleString()} subscribers
+                                  {(audience.subscriber_count ?? 0).toLocaleString()} subscribers
                                 </AudienceCount>
-                                <AudienceType $type={audience.type}>
-                                  {audience.type}
+                                <AudienceType $type={audience.type ?? 'static'}>
+                                  {audience.type ?? 'static'}
                                 </AudienceType>
                               </AudienceDetails>
                             </AudienceInfo>

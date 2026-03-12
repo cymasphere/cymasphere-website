@@ -1641,8 +1641,8 @@ interface Ticket {
   status: string;
   user_id: string;
   user_email: string | null;
-  user_first_name: string | null;
-  user_last_name: string | null;
+  user_first_name?: string | null;
+  user_last_name?: string | null;
   user_subscription?: string;
   user_has_nfr?: boolean;
   last_reply_is_admin?: boolean;
@@ -1938,11 +1938,12 @@ function SupportTicketsPage() {
     let aValue = a[sortField as keyof typeof a];
     let bValue = b[sortField as keyof typeof b];
     
-    if (typeof aValue === 'string') aValue = aValue.toLowerCase();
-    if (typeof bValue === 'string') bValue = bValue.toLowerCase();
-    
-    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    if (aValue != null && typeof aValue === 'string') aValue = aValue.toLowerCase();
+    if (bValue != null && typeof bValue === 'string') bValue = bValue.toLowerCase();
+    const aStr = aValue != null ? String(aValue) : '';
+    const bStr = bValue != null ? String(bValue) : '';
+    if (aStr < bStr) return sortDirection === 'asc' ? -1 : 1;
+    if (aStr > bStr) return sortDirection === 'asc' ? 1 : -1;
     return 0;
   });
 
@@ -1958,7 +1959,7 @@ function SupportTicketsPage() {
     visible: (i: number) => ({
       opacity: 1,
       y: 0,
-      transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" },
+      transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" as const },
     }),
   };
 
@@ -2156,7 +2157,7 @@ function SupportTicketsPage() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ticketDetails.get(selectedTicketId)?.messages?.length, selectedTicketId]);
+  }, [selectedTicketId ? ticketDetails.get(selectedTicketId)?.messages?.length : undefined, selectedTicketId]);
 
   // Close status dropdown when clicking outside
   useEffect(() => {
@@ -2747,7 +2748,7 @@ function SupportTicketsPage() {
                         {updatingStatus === ticket.id && (
                           <motion.div
                             animate={{ rotate: 360 }}
-                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" as const }}
                             style={{
                               width: "12px",
                               height: "12px",
@@ -2957,7 +2958,7 @@ function SupportTicketsPage() {
                         <>
                           <motion.div
                             animate={{ rotate: 360 }}
-                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" as const }}
                             style={{
                               width: "16px",
                               height: "16px",
@@ -3099,7 +3100,7 @@ function SupportTicketsPage() {
                       <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                         <motion.div
                           animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" as const }}
                           style={{ 
                             width: '20px', 
                             height: '20px', 
@@ -3276,7 +3277,7 @@ function SupportTicketsPage() {
                               </div>
                             </Message>
                           ))}
-                          {(!ticketDetails.get(selectedTicketId)?.messages || ticketDetails.get(selectedTicketId)!.messages.length === 0) && (
+                          {(!selectedTicketId || !ticketDetails.get(selectedTicketId)?.messages || (ticketDetails.get(selectedTicketId)?.messages?.length ?? 0) === 0) && (
                             <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                               No messages yet. Start the conversation below.
                             </div>
