@@ -9,6 +9,12 @@
  */
 
 import { SESClient, SendRawEmailCommand } from "@aws-sdk/client-ses";
+import { SUPPORT_EMAIL as SUPPORT_EMAIL_CONFIG } from "@/config/email";
+
+/** Re-export for call sites that import from utils/email. */
+export const SUPPORT_EMAIL = SUPPORT_EMAIL_CONFIG;
+/** Default From header for support emails. */
+export const SUPPORT_EMAIL_FROM = `Cymasphere Support <${SUPPORT_EMAIL}>`;
 
 let sesClientInstance: SESClient | null = null;
 
@@ -38,6 +44,17 @@ function encodeQuotedPrintable(input: string): string {
     lines.push(line.endsWith(" ") || line.endsWith("\t") ? line + "=" : line);
   }
   return lines.join("\r\n");
+}
+
+/**
+ * @brief Strips CR/LF and other control chars from header values to prevent header injection
+ *
+ * @param value Raw header value (e.g. from, to, subject)
+ * @returns Value with \\r, \\n, and other control characters removed
+ * @note Prevents CRLF injection when value is interpolated into email headers
+ */
+function sanitizeHeaderValue(value: string): string {
+  return value.replace(/[\r\n\x00-\x1f\x7f]/g, "");
 }
 
 /**
@@ -101,7 +118,8 @@ interface SendBatchEmailParams {
  * @returns Promise with message ID from AWS SES
  * @note Uses AWS SES with credentials from environment variables
  * @note Default region is us-east-1
- * @note Default sender is "Cymasphere Support <support@cymasphere.com>"
+ * @note Default sender uses SUPPORT_EMAIL_FROM from this module
+ * @note Header values (from, to, subject, replyTo) are sanitized to prevent CRLF injection
  * @note Includes List-Unsubscribe headers for Gmail deliverability
  * @note Generates unique Message-ID for each email
  * @note Supports both HTML and text content (multipart/alternative)
@@ -122,7 +140,7 @@ export async function sendEmail({
   subject,
   text,
   html,
-  from = "Cymasphere Support <support@cymasphere.com>", // Default sender
+  from = SUPPORT_EMAIL_FROM,
   replyTo,
   listUnsubscribe,
   source,
@@ -131,11 +149,11 @@ export async function sendEmail({
   try {
     const sesClient = getSESClient();
 
-    // Format recipient email addresses
-    const toAddresses = Array.isArray(to) ? to : [to];
-    
-    // Format reply to addresses if provided
-    const replyToAddresses = replyTo ? (Array.isArray(replyTo) ? replyTo : [replyTo]) : [from.match(/<(.+)>/)?.[1] || from];
+    // Sanitize header values to prevent CRLF injection
+    const safeFrom = sanitizeHeaderValue(from);
+    const toAddresses = (Array.isArray(to) ? to : [to]).map(sanitizeHeaderValue);
+    const safeSubject = sanitizeHeaderValue(subject);
+    const replyToAddresses = (replyTo ? (Array.isArray(replyTo) ? replyTo : [replyTo]) : [from.match(/<(.+)>/)?.[1] || from]).map(sanitizeHeaderValue);
 
     // Generate Message-ID for better deliverability
     const messageId = `<${Date.now()}-${Math.random().toString(36).substring(7)}@cymasphere.com>`;
@@ -143,9 +161,9 @@ export async function sendEmail({
 
     // Build email headers
     const headers: string[] = [
-      `From: ${from}`,
+      `From: ${safeFrom}`,
       `To: ${toAddresses.join(', ')}`,
-      `Subject: ${subject}`,
+      `Subject: ${safeSubject}`,
       `Date: ${date}`,
       `Message-ID: ${messageId}`,
       `MIME-Version: 1.0`,
@@ -156,7 +174,7 @@ export async function sendEmail({
 
     // Add List-Unsubscribe headers for better deliverability (Gmail requirement)
     if (listUnsubscribe) {
-      headers.push(`List-Unsubscribe: <${listUnsubscribe}>`);
+      headers.push(`List-Unsubscribe: <${sanitizeHeaderValue(listUnsubscribe)}>`);
       headers.push(`List-Unsubscribe-Post: List-Unsubscribe=One-Click`);
     } else {
       // Default unsubscribe URL
@@ -286,7 +304,7 @@ export async function sendBatchEmail({
   subject,
   text,
   html,
-  from = "Cymasphere Support <support@cymasphere.com>",
+  from = SUPPORT_EMAIL_FROM,
   replyTo,
   listUnsubscribe,
 }: SendBatchEmailParams) {
@@ -308,13 +326,13 @@ export async function sendBatchEmail({
   try {
     const sesClient = getSESClient();
 
-    // Format reply to addresses
-    const replyToAddresses = replyTo ? (Array.isArray(replyTo) ? replyTo : [replyTo]) : [from.match(/<(.+)>/)?.[1] || from];
-
+    // Sanitize header values to prevent CRLF injection
+    const safeFrom = sanitizeHeaderValue(from);
+    const replyToAddresses = (replyTo ? (Array.isArray(replyTo) ? replyTo : [replyTo]) : [from.match(/<(.+)>/)?.[1] || from]).map(sanitizeHeaderValue);
     const fromEmail = from.match(/<(.+)>/)?.[1] || from;
-
-    // Use sender's email as the "To" address (required by SES), all actual recipients go in BCC
-    const toAddress = fromEmail;
+    const toAddress = sanitizeHeaderValue(fromEmail);
+    const safeBcc = bcc.map(sanitizeHeaderValue);
+    const safeSubject = sanitizeHeaderValue(subject);
 
     // Generate Message-ID
     const messageId = `<${Date.now()}-${Math.random().toString(36).substring(7)}@cymasphere.com>`;
@@ -322,10 +340,10 @@ export async function sendBatchEmail({
 
     // Build email headers with BCC
     const headers: string[] = [
-      `From: ${from}`,
+      `From: ${safeFrom}`,
       `To: ${toAddress}`, // Required by SES, but recipients won't see this
-      `Bcc: ${bcc.join(', ')}`, // All actual recipients in BCC for privacy
-      `Subject: ${subject}`,
+      `Bcc: ${safeBcc.join(', ')}`, // All actual recipients in BCC for privacy
+      `Subject: ${safeSubject}`,
       `Date: ${date}`,
       `Message-ID: ${messageId}`,
       `MIME-Version: 1.0`,
@@ -336,7 +354,7 @@ export async function sendBatchEmail({
 
     // Add List-Unsubscribe headers
     if (listUnsubscribe) {
-      headers.push(`List-Unsubscribe: <${listUnsubscribe}>`);
+      headers.push(`List-Unsubscribe: <${sanitizeHeaderValue(listUnsubscribe)}>`);
       headers.push(`List-Unsubscribe-Post: List-Unsubscribe=One-Click`);
     } else {
       const defaultUnsubscribe = `https://www.cymasphere.com/support`;
@@ -379,7 +397,7 @@ export async function sendBatchEmail({
       RawMessage: {
         Data: Buffer.from(rawMessage),
       },
-      Destinations: [toAddress, ...bcc], // SES requires all recipients (To + BCC) in Destinations
+      Destinations: [toAddress, ...safeBcc], // SES requires all recipients (To + BCC) in Destinations
       ConfigurationSetName: 'cymasphere-email-events',
     });
 
@@ -401,7 +419,7 @@ export async function sendBatchEmail({
           RawMessage: {
             Data: Buffer.from(rawMessage),
           },
-          Destinations: [toAddress, ...bcc],
+          Destinations: [toAddress, ...safeBcc],
         });
         
         try {

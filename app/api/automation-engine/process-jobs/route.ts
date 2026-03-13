@@ -563,7 +563,7 @@ function personalizeEmailContent(content: any, subscriber: any): any {
 async function sendAutomationEmail(subscriber: any, content: any, automationId: string): Promise<any> {
   try {
     // Import the email utility
-    const { sendEmail } = await import('../../../../utils/email');
+    const { sendEmail, SUPPORT_EMAIL, SUPPORT_EMAIL_FROM } = await import('../../../../utils/email');
     
     // Override email for testing - send to ryan@cymasphere.com instead of subscriber
     const testEmailOverride = process.env.AUTOMATION_TEST_EMAIL_OVERRIDE || 'ryan@cymasphere.com';
@@ -611,8 +611,8 @@ async function sendAutomationEmail(subscriber: any, content: any, automationId: 
       subject: emailSubject,
       html: emailHtml,
       text: personalizedContent.text_content,
-      from: 'Cymasphere Support <support@cymasphere.com>',
-      replyTo: 'support@cymasphere.com'
+      from: SUPPORT_EMAIL_FROM,
+      replyTo: SUPPORT_EMAIL
     });
 
     if (emailResult.success) {

@@ -9,23 +9,10 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { sendEmail } from "@/utils/email";
+import { sendEmail, SUPPORT_EMAIL } from "@/utils/email";
+import { escapeHtml } from "@/utils/escape-html";
 import { checkRateLimit, getClientIp } from "@/utils/rate-limit";
 import { isAllowedOrigin } from "@/utils/request-validation";
-
-/**
- * @brief Escapes a string for safe use in HTML
- * @param str Raw string (e.g. user input)
- * @returns HTML-encoded string
- */
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
 
 /**
  * @brief POST endpoint to handle contact form submissions
@@ -78,10 +65,12 @@ function escapeHtml(str: string): string {
  * 
  * @param request Next.js request object containing JSON body with form data
  * @returns NextResponse with success status and message ID or error
- * @note Sends email to support@cymasphere.com
+ * @note Sends email to SUPPORT_EMAIL (see utils/email)
  * @note Sets reply-to header to user's email for direct responses
  * @note Includes HTML email template with Cymasphere branding
- * 
+ * @note Enforces max body size (100 KB) and field length limits (name/subject 500, message 10k)
+ * @note All user input is HTML-escaped before inclusion in email body
+ *
  * @example
  * ```typescript
  * // POST /api/contact
@@ -106,6 +95,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Enforce max body size to avoid large-payload DoS (100 KB)
+    const contentLength = request.headers.get("content-length");
+    if (contentLength && parseInt(contentLength, 10) > 100 * 1024) {
+      return NextResponse.json(
+        { success: false, error: "Request body too large" },
+        { status: 413 }
+      );
+    }
+
     // Parse the request body
     const body = await request.json();
     const { name, email, subject, message, userId = null } = body;
@@ -114,6 +112,20 @@ export async function POST(request: NextRequest) {
     if (!email || !subject || !message) {
       return NextResponse.json(
         { success: false, error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // Field length limits
+    const MAX_NAME = 500;
+    const MAX_SUBJECT = 500;
+    const MAX_MESSAGE = 10_000;
+    const nameStr = (name ?? "").toString();
+    const subjectStr = subject.toString();
+    const messageStr = message.toString();
+    if (nameStr.length > MAX_NAME || subjectStr.length > MAX_SUBJECT || messageStr.length > MAX_MESSAGE) {
+      return NextResponse.json(
+        { success: false, error: "One or more fields exceed maximum length" },
         { status: 400 }
       );
     }
@@ -406,7 +418,7 @@ ${message}
 
     // Send email using AWS SES
     const result = await sendEmail({
-      to: "support@cymasphere.com",
+      to: SUPPORT_EMAIL,
       subject: emailSubject,
       text: textContent,
       html: htmlContent,

@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { SUPPORT_EMAIL } from "@/config/email";
 import NextSEO from "@/components/NextSEO";
 import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
@@ -815,7 +816,7 @@ function EditTemplatePage() {
     name: isNewTemplate ? "" : "Welcome Email Template",
     subject: isNewTemplate ? "" : "Welcome to Cymasphere! 🎵",
     senderName: "Cymasphere Team",
-    senderEmail: "support@cymasphere.com",
+    senderEmail: SUPPORT_EMAIL,
     replyToEmail: "",
     preheader: isNewTemplate ? "" : "We're excited to have you join our community",
     description: isNewTemplate ? "" : "A warm welcome message for new subscribers",
@@ -917,7 +918,7 @@ function EditTemplatePage() {
             name: template.name || '',
             subject: template.subject || '',
             senderName: template.sender_name || 'Cymasphere Team',
-            senderEmail: template.sender_email || 'support@cymasphere.com',
+            senderEmail: template.sender_email || SUPPORT_EMAIL,
             replyToEmail: template.reply_to_email || '',
             preheader: template.preheader || '',
             description: template.description || '',
@@ -1417,7 +1418,7 @@ function EditTemplatePage() {
                     type="email"
                     value={templateData.senderEmail}
                     onChange={(e) => setTemplateData({...templateData, senderEmail: e.target.value})}
-                    placeholder="e.g. support@cymasphere.com"
+                    placeholder={`e.g. ${SUPPORT_EMAIL}`}
                   />
                 </FormGroup>
               </FormGrid>

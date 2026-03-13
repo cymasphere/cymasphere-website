@@ -18,7 +18,8 @@ import {
   getAdditionalUserData,
 } from "@/utils/stripe/admin-analytics";
 import { fetchProfile } from "@/utils/supabase/actions";
-import { sendEmail } from "@/utils/email";
+import { sendEmail, SUPPORT_EMAIL, SUPPORT_EMAIL_FROM } from "@/utils/email";
+import { escapeHtml } from "@/utils/escape-html";
 
 /**
  * User management record interface
@@ -1837,9 +1838,10 @@ async function sendSupportTicketEmailNotification(
               att.file_type || "image/png"
             );
             if (base64Image) {
+              const safeFileName = escapeHtml(att.file_name ?? "attachment");
               imagesHtml += `
                 <div style="margin-top: 10px; margin-bottom: 10px;">
-                  <img src="${base64Image}" alt="${att.file_name}" style="max-width: 100%; height: auto; border-radius: 4px; border: 1px solid #ddd; display: block;" />
+                  <img src="${base64Image}" alt="${safeFileName}" style="max-width: 100%; height: auto; border-radius: 4px; border: 1px solid #ddd; display: block;" />
                 </div>
               `;
               console.log(
@@ -1851,6 +1853,9 @@ async function sendSupportTicketEmailNotification(
           }
         }
 
+        const safeSenderName = escapeHtml(senderName);
+        const safeMessageDate = escapeHtml(messageDate);
+        const safeContent = escapeHtml(msg.content).replace(/\n/g, "<br>");
         return `
           <div style="margin-bottom: 20px; padding: 15px; background-color: ${
             isAdmin ? "#f0f7ff" : "#f9f9f9"
@@ -1858,17 +1863,17 @@ async function sendSupportTicketEmailNotification(
           isAdmin ? "#4a90e2" : "#ccc"
         }; border-radius: 4px;">
             <div style="font-weight: 600; color: #333; margin-bottom: 8px;">
-              ${senderName} ${
+              ${safeSenderName} ${
           isAdmin
             ? '<span style="color: #4a90e2; font-size: 0.85em;">(Support)</span>'
             : ""
         }
             </div>
             <div style="font-size: 0.85em; color: #666; margin-bottom: 10px;">
-              ${messageDate}
+              ${safeMessageDate}
             </div>
             <div style="color: #333; line-height: 1.6; white-space: pre-wrap;">
-              ${msg.content.replace(/\n/g, "<br>")}
+              ${safeContent}
             </div>
             ${imagesHtml}
           </div>
@@ -1882,7 +1887,11 @@ async function sendSupportTicketEmailNotification(
     const baseUrl = "https://www.cymasphere.com";
     const ticketUrl = `${baseUrl}/support?ticket=${ticketId}`;
 
-    // Create email HTML
+    const safeUserName = escapeHtml(userName ?? "there");
+    const safeTicketNumber = escapeHtml(ticket.ticket_number);
+    const safeTicketSubject = escapeHtml(ticket.subject);
+
+    // Create email HTML (all user- and ticket-derived content escaped)
     const emailHtml = `
 <!DOCTYPE html>
 <html lang="en">
@@ -1909,12 +1918,10 @@ async function sendSupportTicketEmailNotification(
                                 New Response to Your Support Ticket
                             </h1>
                             <p style="color: #666; line-height: 1.6; margin: 0 0 20px 0;">
-                                Hi ${userName || "there"},
+                                Hi ${safeUserName},
                             </p>
                             <p style="color: #666; line-height: 1.6; margin: 0 0 20px 0;">
-                                You have received a new response to your support ticket <strong>${
-                                  ticket.ticket_number
-                                }</strong>: "${ticket.subject}".
+                                You have received a new response to your support ticket <strong>${safeTicketNumber}</strong>: "${safeTicketSubject}".
                             </p>
                             
                             <!-- Message Chain -->
@@ -2001,8 +2008,8 @@ This is an automated notification from Cymasphere Support.
       subject: `New Response: ${ticket.ticket_number} - ${ticket.subject}`,
       html: emailHtml,
       text: emailText,
-      from: "Cymasphere Support <support@cymasphere.com>",
-      replyTo: "support@cymasphere.com",
+      from: SUPPORT_EMAIL_FROM,
+      replyTo: SUPPORT_EMAIL,
     });
 
     if (emailResult.success) {
@@ -2188,15 +2195,19 @@ async function sendSupportTicketEmailNotificationToAdmin(
               att.file_type || "image/png"
             );
             if (base64Image) {
+              const safeFileName = escapeHtml(att.file_name ?? "attachment");
               imagesHtml += `
                 <div style="margin-top: 10px; margin-bottom: 10px;">
-                  <img src="${base64Image}" alt="${att.file_name}" style="max-width: 100%; height: auto; border-radius: 4px; border: 1px solid #ddd; display: block;" />
+                  <img src="${base64Image}" alt="${safeFileName}" style="max-width: 100%; height: auto; border-radius: 4px; border: 1px solid #ddd; display: block;" />
                 </div>
               `;
             }
           }
         }
 
+        const safeSenderName = escapeHtml(senderName);
+        const safeMessageDate = escapeHtml(messageDate);
+        const safeContent = escapeHtml(msg.content).replace(/\n/g, "<br>");
         return `
           <div style="margin-bottom: 20px; padding: 15px; background-color: ${
             isAdmin ? "#f0f7ff" : "#f9f9f9"
@@ -2204,17 +2215,17 @@ async function sendSupportTicketEmailNotificationToAdmin(
           isAdmin ? "#4a90e2" : "#ccc"
         }; border-radius: 4px;">
             <div style="font-weight: 600; color: #333; margin-bottom: 8px;">
-              ${senderName} ${
+              ${safeSenderName} ${
           isAdmin
             ? '<span style="color: #4a90e2; font-size: 0.85em;">(Support)</span>'
             : ""
         }
             </div>
             <div style="font-size: 0.85em; color: #666; margin-bottom: 10px;">
-              ${messageDate}
+              ${safeMessageDate}
             </div>
             <div style="color: #333; line-height: 1.6; white-space: pre-wrap;">
-              ${msg.content.replace(/\n/g, "<br>")}
+              ${safeContent}
             </div>
             ${imagesHtml}
           </div>
@@ -2234,24 +2245,29 @@ async function sendSupportTicketEmailNotificationToAdmin(
       : `New User Response: ${ticket.ticket_number} - ${ticket.subject}`;
     const emailIntro = isNewTicket
       ? `A new support ticket has been created: <strong>${
-          ticket.ticket_number
-        }</strong>: "${ticket.subject}".`
+          escapeHtml(ticket.ticket_number)
+        }</strong>: "${escapeHtml(ticket.subject)}".`
       : `A user has responded to support ticket <strong>${
-          ticket.ticket_number
-        }</strong>: "${ticket.subject}".`;
+          escapeHtml(ticket.ticket_number)
+        }</strong>: "${escapeHtml(ticket.subject)}".`;
 
     // Generate admin ticket view URL - opens ticket modal
     const baseUrl = "https://www.cymasphere.com";
     const ticketUrl = `${baseUrl}/admin/support-tickets?ticket=${ticketId}`;
 
-    // Create email HTML
+    const safeEmailTitle = escapeHtml(emailTitle);
+    const safeUserName = escapeHtml(userName ?? userEmail ?? "Unknown");
+    const safeUserEmail = escapeHtml(userEmail);
+    const safeTicketStatus = escapeHtml(ticket.status);
+
+    // Create email HTML (all user- and ticket-derived content escaped)
     const emailHtml = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${emailTitle}</title>
+    <title>${safeEmailTitle}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #f7f7f7; font-family: Arial, sans-serif;">
     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f7f7f7; padding: 20px 0;">
@@ -2268,17 +2284,15 @@ async function sendSupportTicketEmailNotificationToAdmin(
                     <tr>
                         <td style="padding: 30px 24px;">
                             <h1 style="font-size: 1.5rem; color: #333; margin: 0 0 20px 0; font-weight: 600;">
-                                ${emailTitle}
+                                ${safeEmailTitle}
                             </h1>
                             <p style="color: #666; line-height: 1.6; margin: 0 0 20px 0;">
                                 ${emailIntro}
                             </p>
                             <p style="color: #666; line-height: 1.6; margin: 0 0 20px 0;">
-                                <strong>User:</strong> ${
-                                  userName || userEmail
-                                }<br>
-                                <strong>Email:</strong> ${userEmail}<br>
-                                <strong>Status:</strong> ${ticket.status}
+                                <strong>User:</strong> ${safeUserName}<br>
+                                <strong>Email:</strong> ${safeUserEmail}<br>
+                                <strong>Status:</strong> ${safeTicketStatus}
                             </p>
                             
                             <!-- Message Chain -->
@@ -2367,11 +2381,11 @@ This is an automated notification from Cymasphere Support.
 
     // Send email to admin
     const emailResult = await sendEmail({
-      to: "support@cymasphere.com",
+      to: SUPPORT_EMAIL,
       subject: emailSubject,
       html: emailHtml,
       text: emailText,
-      from: "Cymasphere Support <support@cymasphere.com>",
+      from: SUPPORT_EMAIL_FROM,
       replyTo: userEmail,
     });
 
@@ -2757,7 +2771,7 @@ export async function createSupportTicket(data: {
         // Ticket was created but message failed - still return success
         // as the ticket exists
       } else if (message) {
-        // Send email notification to support@cymasphere.com when user creates a ticket
+        // Send email notification to SUPPORT_EMAIL when user creates a ticket
         try {
           await sendSupportTicketEmailNotificationToAdmin(ticket.id, message.id);
         } catch (emailError) {

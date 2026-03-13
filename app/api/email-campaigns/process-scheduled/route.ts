@@ -12,7 +12,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { sendEmail, sendBatchEmail } from "@/utils/email";
+import { sendEmail, sendBatchEmail, SUPPORT_EMAIL } from "@/utils/email";
 import { personalizeContent } from "@/utils/email-campaigns/email-generation";
 import { getSubscribersForAudiences } from "@/utils/email-campaigns/get-subscribers";
 
@@ -418,7 +418,7 @@ export async function POST(request: NextRequest) {
                   html: personalizedHtml,
                   text: personalizedText,
                   from: `${campaign.sender_name || "Cymasphere"} <${
-                    campaign.sender_email || "support@cymasphere.com"
+                    campaign.sender_email || SUPPORT_EMAIL
                   }>`,
                   replyTo: campaign.reply_to_email || undefined,
                 });
@@ -519,7 +519,7 @@ export async function POST(request: NextRequest) {
               html: personalizedHtml,
               text: personalizedText,
               from: `${campaign.sender_name || "Cymasphere"} <${
-                campaign.sender_email || "support@cymasphere.com"
+                campaign.sender_email || SUPPORT_EMAIL
               }>`,
               replyTo: campaign.reply_to_email || undefined,
             });

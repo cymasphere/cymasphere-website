@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { SUPPORT_EMAIL } from "@/config/email";
 import NextSEO from "@/components/NextSEO";
 import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
@@ -2374,7 +2375,7 @@ function CreateCampaignPage() {
     name: "",
     subject: "",
       senderName: "Cymasphere",
-      senderEmail: "support@cymasphere.com",
+      senderEmail: SUPPORT_EMAIL,
       replyToEmail: "",
     preheader: "",
     description: "",
@@ -2623,7 +2624,7 @@ function CreateCampaignPage() {
               name: campaign.name || '',
               subject: campaign.subject || '',
               senderName: campaign.senderName || 'Cymasphere',
-              senderEmail: campaign.senderEmail || 'support@cymasphere.com',
+              senderEmail: campaign.senderEmail || SUPPORT_EMAIL,
               replyToEmail: campaign.replyToEmail || '',
               preheader: campaign.preheader || '',
               description: campaign.description || '',
@@ -4216,7 +4217,7 @@ function CreateCampaignPage() {
                   type="email"
                   value={campaignData.senderEmail}
                   onChange={(e) => setCampaignData({...campaignData, senderEmail: e.target.value})}
-                  placeholder="e.g. support@cymasphere.com"
+                  placeholder={`e.g. ${SUPPORT_EMAIL}`}
                 />
               </FormGroup>
             </FormGrid>

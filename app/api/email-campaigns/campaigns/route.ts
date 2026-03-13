@@ -9,6 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { SUPPORT_EMAIL } from "@/config/email";
 import { createClient } from "@/utils/supabase/server";
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
 
@@ -152,7 +153,7 @@ export async function GET(request: NextRequest) {
  * - name: Campaign name (required)
  * - subject: Email subject line (required)
  * - senderName: Sender display name (optional, default: "Cymasphere")
- * - senderEmail: Sender email address (optional, default: "support@cymasphere.com")
+ * - senderEmail: Sender email address (optional, default: SUPPORT_EMAIL from config/email)
  * - replyToEmail: Reply-to email address (optional)
  * - preheader: Email preheader text (optional)
  * - description: Campaign description (optional)
@@ -241,8 +242,8 @@ export async function POST(request: NextRequest) {
         name,
         subject,
         sender_name: senderName || "Cymasphere",
-        sender_email: senderEmail || "support@cymasphere.com",
-        reply_to_email: replyToEmail || senderEmail || "support@cymasphere.com",
+        sender_email: senderEmail || SUPPORT_EMAIL,
+        reply_to_email: replyToEmail || senderEmail || SUPPORT_EMAIL,
         preheader: preheader || null,
         description: description || null,
         html_content: htmlContent || null,

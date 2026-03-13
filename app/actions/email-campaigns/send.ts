@@ -11,7 +11,8 @@
 
 "use server";
 
-import { sendEmail } from "@/utils/email";
+import { checkAdmin } from "@/app/actions/user-management";
+import { sendEmail, SUPPORT_EMAIL, SUPPORT_EMAIL_FROM } from "@/utils/email";
 import { createClient } from "@/utils/supabase/server";
 import { generateHtmlFromElements, generateTextFromElements, personalizeContent } from "@/utils/email-campaigns/email-generation";
 import type { EmailElement, SubscriberRecord } from "@/types/email-campaigns";
@@ -165,7 +166,7 @@ async function getSubscribersForAudiences(
  * 
  * @param params Campaign parameters including content, audiences, and schedule
  * @returns Promise with send results, statistics, and any errors
- * @note Requires admin access (enforced by RLS policies)
+ * @note Requires admin access (checkAdmin at start; RLS enforces on DB access)
  * @note Respects subscriber status (only sends to active subscribers)
  * @note Handles excluded audiences (removes subscribers from excluded audiences)
  * @note Creates campaign record in database if campaignId not provided
@@ -187,8 +188,10 @@ export async function sendCampaign(
   params: SendCampaignParams
 ): Promise<SendCampaignResponse> {
   try {
-    // Note: RLS will enforce admin access - if user is not admin, queries will fail
     const supabase = await createClient();
+    if (!(await checkAdmin(supabase))) {
+      return { success: false, error: "Unauthorized" };
+    }
 
     const {
       campaignId,
@@ -243,7 +246,7 @@ export async function sendCampaign(
               name: name || "Test Campaign",
               subject: subjectWithTest,
               sender_name: "Cymasphere",
-              sender_email: "support@cymasphere.com",
+              sender_email: SUPPORT_EMAIL,
               status: "draft"
             })
             .select("id")
@@ -275,7 +278,7 @@ export async function sendCampaign(
         subject: subjectWithTest,
         html: baseHtmlContentForTest,
         text: textContentForTest,
-        from: "Cymasphere Support <support@cymasphere.com>",
+        from: SUPPORT_EMAIL_FROM,
       });
 
       console.log(`📧 Test email send result:`, JSON.stringify(result, null, 2));
@@ -535,7 +538,7 @@ export async function sendCampaign(
           name,
           subject,
           sender_name: "Cymasphere",
-          sender_email: "support@cymasphere.com",
+          sender_email: SUPPORT_EMAIL,
           html_content: generateHtmlFromElements(
             emailElements,
             subject,
@@ -660,7 +663,7 @@ export async function sendCampaign(
           subject: personalizedSubject,
           html: personalizedHtml,
           text: personalizedText,
-          from: "Cymasphere Support <support@cymasphere.com>",
+          from: SUPPORT_EMAIL_FROM,
         });
 
         if (result.success) {
