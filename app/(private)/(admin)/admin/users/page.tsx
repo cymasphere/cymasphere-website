@@ -2794,10 +2794,9 @@ export default function AdminCRM() {
   // Show page immediately - no early returns
   const showContent = !languageLoading && user;
 
-  // Temporarily disabled admin check for testing
-  // if (user.profile?.subscription !== "admin") {
-  //   return null;
-  // }
+  if (user && !user.is_admin) {
+    return null;
+  }
 
   if (error) {
     return (

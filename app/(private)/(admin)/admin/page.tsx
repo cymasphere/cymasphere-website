@@ -775,14 +775,9 @@ export default function AdminDashboard() {
     return () => clearInterval(notificationInterval);
   }, []);
 
-  if (!user) {
+  if (!user || !user.is_admin) {
     return null;
   }
-
-  // Temporarily disabled admin check for testing
-  // if (user.profile?.subscription !== "admin") {
-  //   return null;
-  // }
 
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },

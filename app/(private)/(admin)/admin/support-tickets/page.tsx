@@ -1827,10 +1827,9 @@ function SupportTicketsPage() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  // Temporarily disabled admin check for testing
-  // if (user.profile?.subscription !== "admin") {
-  //   return null;
-  // }
+  if (user && !user.is_admin) {
+    return null;
+  }
 
   const handleSort = (field: string) => {
     if (sortField === field) {

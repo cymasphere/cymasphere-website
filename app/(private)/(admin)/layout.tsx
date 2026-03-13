@@ -567,12 +567,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
   const sidebarRef = useRef<HTMLDivElement>(null);
 
-  // Check if user is admin
+  // Redirect non-admins to dashboard (is_admin from admins table via AuthContext)
   useEffect(() => {
-    // Temporarily disabled admin check for testing
-    // if (user && user.profile?.subscription !== "admin") {
-    //   router.push("/dashboard");
-    // }
     if (user && !user.is_admin) {
       router.push("/dashboard");
     }
@@ -670,11 +666,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   if (!user || !user.is_admin) {
     return null;
   }
-
-  // Temporarily disabled admin check for testing
-  // if (user.profile?.subscription !== "admin") {
-  //   return null;
-  // }
 
   return (
     <LayoutContainer>
