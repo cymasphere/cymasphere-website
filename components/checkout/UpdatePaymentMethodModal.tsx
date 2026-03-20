@@ -143,7 +143,7 @@ function UpdatePaymentForm({
     const result = await stripe.confirmSetup({
       elements,
       confirmParams: {
-        return_url: typeof window !== "undefined" ? `${window.location.origin}/dashboard/billing` : "",
+        return_url: typeof window !== "undefined" ? `${window.location.origin}/billing` : "",
       },
     });
 

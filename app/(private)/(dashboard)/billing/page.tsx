@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -11,6 +11,7 @@ import {
   FaGift,
   FaExternalLinkAlt,
   FaApple,
+  FaCreditCard,
 } from "react-icons/fa";
 import PlanSelectionModal from "@/components/modals/PlanSelectionModal";
 import { SubscriptionType } from "@/utils/supabase/types";
@@ -25,6 +26,7 @@ import { useDashboard } from "@/contexts/DashboardContext";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import { useTranslation } from "react-i18next";
 import dynamic from "next/dynamic";
+import { loadStripe } from "@stripe/stripe-js";
 
 // Type definitions for CymasphereLogo component
 interface CymasphereLogoProps {
@@ -117,15 +119,11 @@ const CardContent = styled.div`
 `;
 
 const ButtonContainer = styled.div`
-  display: grid !important;
-  grid-template-columns: 1fr 1fr !important;
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
   width: 100%;
   margin-top: 1.5rem;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr !important;
-  }
 `;
 
 const PlanDetails = styled.div`
@@ -419,6 +417,106 @@ const TrialBadgeSubtext = styled.div`
   margin-top: 0.25rem;
 `;
 
+const PaymentMethodPanel = styled.div`
+  margin-top: 1.25rem;
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+`;
+
+const PaymentMethodTitle = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+
+  svg {
+    color: var(--primary);
+    flex-shrink: 0;
+  }
+`;
+
+/** @note Row keeps card details and update control grouped; wraps on narrow viewports. */
+const PaymentMethodRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+`;
+
+const PaymentMethodDetailsCol = styled.div`
+  flex: 1 1 12rem;
+  min-width: 0;
+`;
+
+const PaymentMethodUpdateBtn = styled(Button)`
+  width: auto;
+  max-width: 100%;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  align-self: flex-start;
+`;
+
+const PaymentMethodDetail = styled.div`
+  font-size: 1rem;
+  color: var(--text);
+  letter-spacing: 0.02em;
+`;
+
+const PaymentMethodMeta = styled.div`
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 0.35rem;
+`;
+
+/** @brief Matches GET /api/stripe/customer-portal/default-payment-method JSON. */
+type BillingPaymentMethodSummary =
+  | {
+      kind: "card";
+      brand: string;
+      last4: string;
+      expMonth: number;
+      expYear: number;
+    }
+  | { kind: "other"; label: string };
+
+/**
+ * @brief Human-readable card brand from Stripe’s lowercase code.
+ * @param brand Stripe card.brand value
+ * @returns Label for the billing UI
+ */
+function formatCardBrandForDisplay(brand: string): string {
+  const b = brand.toLowerCase();
+  if (b === "amex") return "American Express";
+  if (b === "diners") return "Diners Club";
+  if (b === "unionpay") return "UnionPay";
+  return brand
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (ch) => ch.toUpperCase());
+}
+
+/**
+ * @brief Formats a major-unit amount (e.g. dollars) for display.
+ * @param amount Value in major currency units
+ * @param currencyCode ISO 4217 code from Stripe
+ * @returns Localized currency string
+ */
+function formatMajorCurrencyAmount(amount: number, currencyCode: string): string {
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: currencyCode,
+    }).format(amount);
+  } catch {
+    return `${currencyCode} ${amount.toFixed(2)}`;
+  }
+}
+
 export default function BillingPage() {
   const { t } = useTranslation();
   const [showPlanModal, setShowPlanModal] = useState(false);
@@ -432,6 +530,13 @@ export default function BillingPage() {
   const [inlineCheckoutParams, setInlineCheckoutParams] =
     useState<InlineCheckoutParams | null>(null);
   const [showUpdatePaymentModal, setShowUpdatePaymentModal] = useState(false);
+  const [defaultPaymentMethod, setDefaultPaymentMethod] =
+    useState<BillingPaymentMethodSummary | null>(null);
+  const [isLoadingDefaultPaymentMethod, setIsLoadingDefaultPaymentMethod] =
+    useState(false);
+  const [defaultPaymentMethodError, setDefaultPaymentMethodError] = useState<
+    string | null
+  >(null);
   const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
@@ -598,6 +703,65 @@ export default function BillingPage() {
     ]);
   };
 
+  /** @note Keeps latest refresh for one-shot effects (e.g. Stripe return URL) without re-running on every render. */
+  const refreshAllDataRef = useRef(refreshAllData);
+  refreshAllDataRef.current = refreshAllData;
+
+  const shouldLoadDefaultPaymentMethod = useMemo(
+    () =>
+      Boolean(userSubscription.customer_id) &&
+      userSubscription.subscription_source !== "ios" &&
+      userSubscription.subscription !== "lifetime" &&
+      !isSubscriptionNone(userSubscription.subscription),
+    [
+      userSubscription.customer_id,
+      userSubscription.subscription_source,
+      userSubscription.subscription,
+    ],
+  );
+
+  /**
+   * @brief Loads default card/payment summary from the customer-portal API.
+   */
+  const fetchDefaultPaymentMethod = useCallback(async () => {
+    if (!shouldLoadDefaultPaymentMethod) {
+      setDefaultPaymentMethod(null);
+      setDefaultPaymentMethodError(null);
+      setIsLoadingDefaultPaymentMethod(false);
+      return;
+    }
+    setIsLoadingDefaultPaymentMethod(true);
+    setDefaultPaymentMethodError(null);
+    try {
+      const res = await fetch(
+        "/api/stripe/customer-portal/default-payment-method",
+      );
+      const data: {
+        success?: boolean;
+        paymentMethod?: BillingPaymentMethodSummary | null;
+        error?: string;
+      } = await res.json();
+      if (!data.success) {
+        setDefaultPaymentMethodError(data.error ?? "Failed to load");
+        setDefaultPaymentMethod(null);
+        return;
+      }
+      setDefaultPaymentMethod(data.paymentMethod ?? null);
+    } catch {
+      setDefaultPaymentMethodError("Failed to load payment method");
+      setDefaultPaymentMethod(null);
+    } finally {
+      setIsLoadingDefaultPaymentMethod(false);
+    }
+  }, [shouldLoadDefaultPaymentMethod]);
+
+  const fetchDefaultPaymentMethodRef = useRef(fetchDefaultPaymentMethod);
+  fetchDefaultPaymentMethodRef.current = fetchDefaultPaymentMethod;
+
+  useEffect(() => {
+    void fetchDefaultPaymentMethod();
+  }, [fetchDefaultPaymentMethod]);
+
   // Add a separate handler for when users click X or outside the modal
   const handleDismissConfirmation = () => {
     setShowConfirmationModal(false);
@@ -734,9 +898,11 @@ export default function BillingPage() {
   };
 
   // Format the date for display
-  const formatDate = (date: string | number | null | undefined) => {
-    if (!date) return "";
-    return new Date(date).toLocaleDateString(t("common.locale", "en-US"), {
+  const formatDate = (date: string | number | Date | null | undefined) => {
+    if (date == null || date === "") return "";
+    const d = date instanceof Date ? date : new Date(date);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleDateString(t("common.locale", "en-US"), {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -754,6 +920,45 @@ export default function BillingPage() {
 
     return price !== null ? price.toString() : "--";
   };
+
+  /** @brief Plan headline uses Stripe upcoming invoice when available so promos/discounts match the next charge. */
+  const planHeadlineMoney = useMemo(() => {
+    if (
+      hasNfr ||
+      isSubscriptionLifetime(userSubscription.subscription) ||
+      isSubscriptionNone(userSubscription.subscription)
+    ) {
+      return null;
+    }
+    const cur = upcomingInvoice.currency ?? "USD";
+    if (!isLoadingUpcomingInvoice && !upcomingInvoice.error) {
+      const amt = upcomingInvoice.amount;
+      const sub = upcomingInvoice.subtotal;
+      if (amt != null && amt > 0) {
+        return {
+          primary: formatMajorCurrencyAmount(amt, cur),
+          compareAt:
+            sub != null && sub > amt + 0.005
+              ? formatMajorCurrencyAmount(sub, cur)
+              : null,
+        };
+      }
+    }
+    return {
+      primary: `$${getCurrentPrice()}`,
+      compareAt: null as string | null,
+    };
+  }, [
+    hasNfr,
+    userSubscription.subscription,
+    isLoadingUpcomingInvoice,
+    upcomingInvoice.amount,
+    upcomingInvoice.subtotal,
+    upcomingInvoice.error,
+    upcomingInvoice.currency,
+    prices.monthly,
+    prices.yearly,
+  ]);
 
   const handlePlanChange = () => {
     // Reset to current interval when opening modal
@@ -892,6 +1097,160 @@ export default function BillingPage() {
     }
   }, []);
 
+  /**
+   * @brief After confirmSetup redirects (e.g. 3DS), complete updating the default payment method.
+   * @note The modal submit handler does not run after a full-page return; retrieve SetupIntent here.
+   */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const clientSecret = params.get("setup_intent_client_secret");
+    const redirectStatus = params.get("redirect_status");
+    if (!clientSecret || redirectStatus === null) return;
+
+    const stripSetupParams = () => {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("setup_intent");
+      url.searchParams.delete("setup_intent_client_secret");
+      url.searchParams.delete("redirect_status");
+      const qs = url.searchParams.toString();
+      window.history.replaceState({}, "", url.pathname + (qs ? `?${qs}` : ""));
+    };
+
+    let cancelled = false;
+
+    const run = async () => {
+      const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim();
+      if (!publishableKey) {
+        stripSetupParams();
+        return;
+      }
+
+      if (redirectStatus === "failed") {
+        stripSetupParams();
+        if (!cancelled) {
+          setConfirmationTitle(t("dashboard.billing.error", "Error"));
+          setConfirmationMessage(
+            t(
+              "dashboard.billing.paymentMethodUpdateFailed",
+              "Your payment method could not be verified. Please try again.",
+            ),
+          );
+          setShowConfirmationModal(true);
+        }
+        return;
+      }
+
+      if (redirectStatus !== "succeeded") {
+        stripSetupParams();
+        return;
+      }
+
+      const stripe = await loadStripe(publishableKey);
+      if (cancelled) return;
+      if (!stripe) {
+        stripSetupParams();
+        return;
+      }
+
+      const { setupIntent, error: retrieveError } =
+        await stripe.retrieveSetupIntent(clientSecret);
+      if (cancelled) return;
+
+      if (retrieveError || !setupIntent || setupIntent.status !== "succeeded") {
+        stripSetupParams();
+        if (!cancelled) {
+          setConfirmationTitle(t("dashboard.billing.error", "Error"));
+          setConfirmationMessage(
+            retrieveError?.message ??
+              t(
+                "dashboard.billing.paymentMethodUpdateFailed",
+                "Your payment method could not be verified. Please try again.",
+              ),
+          );
+          setShowConfirmationModal(true);
+        }
+        return;
+      }
+
+      const pm = setupIntent.payment_method;
+      const paymentMethodId =
+        typeof pm === "string"
+          ? pm
+          : pm && typeof pm === "object" && "id" in pm
+            ? String((pm as { id: string }).id)
+            : null;
+      if (!paymentMethodId) {
+        stripSetupParams();
+        if (!cancelled) {
+          setConfirmationTitle(t("dashboard.billing.error", "Error"));
+          setConfirmationMessage(
+            t(
+              "dashboard.billing.paymentMethodUpdateFailed",
+              "Your payment method could not be verified. Please try again.",
+            ),
+          );
+          setShowConfirmationModal(true);
+        }
+        return;
+      }
+
+      try {
+        const res = await fetch(
+          "/api/stripe/customer-portal/set-default-payment-method",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ paymentMethodId }),
+          },
+        );
+        const data: { success?: boolean; error?: string } = await res.json();
+        if (cancelled) return;
+
+        stripSetupParams();
+
+        if (data.success) {
+          await refreshAllDataRef.current();
+          await fetchDefaultPaymentMethodRef.current();
+          setConfirmationTitle(
+            t("dashboard.billing.paymentMethodUpdated", "Payment method updated"),
+          );
+          setConfirmationMessage(
+            t(
+              "dashboard.billing.paymentMethodUpdatedMessage",
+              "Your default payment method has been saved.",
+            ),
+          );
+          setShowConfirmationModal(true);
+        } else {
+          setConfirmationTitle(t("dashboard.billing.error", "Error"));
+          setConfirmationMessage(
+            data.error ??
+              t(
+                "dashboard.billing.paymentMethodUpdateFailed",
+                "Your payment method could not be verified. Please try again.",
+              ),
+          );
+          setShowConfirmationModal(true);
+        }
+      } catch (e) {
+        if (cancelled) return;
+        stripSetupParams();
+        setConfirmationTitle(t("dashboard.billing.error", "Error"));
+        setConfirmationMessage(
+          e instanceof Error ? e.message : "Failed to update payment method",
+        );
+        setShowConfirmationModal(true);
+      }
+    };
+
+    void run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [t]);
+
   // Debug: Log customer_id to help diagnose issues
   useEffect(() => {
     console.log("[BillingPage] customer_id:", userSubscription.customer_id);
@@ -923,7 +1282,13 @@ export default function BillingPage() {
                 daysLeft: daysLeftInTrial,
                 amount: isLoadingUpcomingInvoice
                   ? "..."
-                  : (upcomingInvoice.amount?.toFixed(2) || getCurrentPrice()),
+                  : upcomingInvoice.amount != null &&
+                      upcomingInvoice.amount > 0
+                    ? formatMajorCurrencyAmount(
+                        upcomingInvoice.amount,
+                        upcomingInvoice.currency,
+                      )
+                    : `$${getCurrentPrice()}`,
                 date: formatDate(userSubscription.trial_expiration),
               }
             )}
@@ -1102,11 +1467,30 @@ export default function BillingPage() {
                         <PlanPrice>
                           {isSubscriptionNone(userSubscription.subscription)
                             ? "$0.00"
-                            : `$${getCurrentPrice()} / ${
-                                subscriptionInterval === "month"
-                                  ? t("dashboard.billing.month", "month")
-                                  : t("dashboard.billing.year", "year")
-                              }`}
+                            : (
+                                <>
+                                  {planHeadlineMoney?.compareAt != null && (
+                                    <span
+                                      style={{
+                                        textDecoration: "line-through",
+                                        opacity: 0.55,
+                                        fontSize: "1.35rem",
+                                        marginRight: "0.45rem",
+                                        fontWeight: 600,
+                                      }}
+                                    >
+                                      {planHeadlineMoney.compareAt}
+                                    </span>
+                                  )}
+                                  <span>
+                                    {planHeadlineMoney?.primary ?? `$${getCurrentPrice()}`}{" "}
+                                    /{" "}
+                                    {subscriptionInterval === "month"
+                                      ? t("dashboard.billing.month", "month")
+                                      : t("dashboard.billing.year", "year")}
+                                  </span>
+                                </>
+                              )}
                         </PlanPrice>
                       </>
                     )}
@@ -1201,56 +1585,108 @@ export default function BillingPage() {
                   </TrialBadge>
                 )}
 
-                {/* Next billing date */}
+                {/* Next bill amount and date (Stripe upcoming invoice includes subscription discounts) */}
                 {!isSubscriptionNone(userSubscription.subscription) &&
                   !isSubscriptionLifetime(userSubscription.subscription) &&
                   hasNfr !== true && (
-                    <div style={{ marginTop: "0" }}>
-                      {/* First line: Label and trial message */}
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap", marginBottom: "0.25rem" }}>
+                    <div
+                      style={{
+                        marginTop: isInTrialPeriod ? "1rem" : "0",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "flex-start",
+                        gap: "0.65rem",
+                      }}
+                    >
+                      <div>
                         <div
                           style={{
                             fontSize: "0.9rem",
                             color: "var(--text-secondary)",
+                            marginBottom: "0.2rem",
                           }}
                         >
                           {t(
-                            "dashboard.billing.nextBilling",
-                            "Next billing date"
+                            "dashboard.billing.nextBillAmount",
+                            "Next bill",
+                          )}
+                        </div>
+                        {isLoadingUpcomingInvoice ? (
+                          <LoadingComponent
+                            size="20px"
+                            text={t(
+                              "dashboard.billing.loadingNextBill",
+                              "Loading…",
+                            )}
+                          />
+                        ) : upcomingInvoice.error ? (
+                          <div style={{ fontSize: "0.95rem", color: "var(--text-secondary)" }}>
+                            {t(
+                              "dashboard.billing.nextBillUnavailable",
+                              "Unable to load the next charge. Your renewal date is below.",
+                            )}
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: "1.05rem", fontWeight: 600 }}>
+                            {upcomingInvoice.subtotal != null &&
+                            upcomingInvoice.amount != null &&
+                            upcomingInvoice.subtotal >
+                              upcomingInvoice.amount + 0.009 ? (
+                              <>
+                                <span
+                                  style={{
+                                    textDecoration: "line-through",
+                                    opacity: 0.55,
+                                    marginRight: "0.45rem",
+                                  }}
+                                >
+                                  {formatMajorCurrencyAmount(
+                                    upcomingInvoice.subtotal,
+                                    upcomingInvoice.currency,
+                                  )}
+                                </span>
+                                <span>
+                                  {formatMajorCurrencyAmount(
+                                    upcomingInvoice.amount,
+                                    upcomingInvoice.currency,
+                                  )}
+                                </span>
+                                <PaymentMethodMeta style={{ marginTop: "0.35rem" }}>
+                                  {t(
+                                    "dashboard.billing.nextBillIncludesPromo",
+                                    "Includes your subscription promotion.",
+                                  )}
+                                </PaymentMethodMeta>
+                              </>
+                            ) : (
+                              formatMajorCurrencyAmount(
+                                upcomingInvoice.amount ?? 0,
+                                upcomingInvoice.currency,
+                              )
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <div
+                          style={{
+                            fontSize: "0.9rem",
+                            color: "var(--text-secondary)",
+                            marginBottom: "0.2rem",
+                          }}
+                        >
+                          {t(
+                            "dashboard.billing.nextBillingDateLabel",
+                            "Renewal date",
                           )}
                           :
                         </div>
-                        
-                        {/* Trial Status - show if we know the status, but not for lifetime or Elite access */}
-                        {hasHadTrial !== null &&
-                          !hasNfr &&
-                          !isSubscriptionLifetime(userSubscription.subscription) && (
-                            <div
-                              style={{
-                                padding: "0.75rem",
-                                background: "rgba(16, 185, 129, 0.1)",
-                                borderRadius: "6px",
-                                fontSize: "0.9rem",
-                                display: "flex",
-                                alignItems: "center",
-                                color: "var(--success)",
-                                flexShrink: 0,
-                              }}
-                            >
-                              <FaCheck
-                                style={{ marginRight: "0.5rem", flexShrink: 0 }}
-                              />
-                              {t(
-                                "dashboard.billing.usedFreeTrial",
-                                "You used your free trial to start this subscription"
-                              )}
-                            </div>
+                        <div style={{ fontSize: "1.05rem", fontWeight: 600 }}>
+                          {formatDate(
+                            upcomingInvoice.due_date ??
+                              userSubscription.subscription_expiration,
                           )}
-                      </div>
-                      
-                      {/* Second line: Date */}
-                      <div>
-                        {formatDate(userSubscription.subscription_expiration)}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1285,6 +1721,75 @@ export default function BillingPage() {
               </div>
             </PlanDetails>
 
+            {shouldLoadDefaultPaymentMethod && (
+              <PaymentMethodPanel>
+                <PaymentMethodTitle>
+                  <FaCreditCard aria-hidden />
+                  {t("dashboard.billing.paymentMethodTitle", "Payment method")}
+                </PaymentMethodTitle>
+                <PaymentMethodRow>
+                  <PaymentMethodDetailsCol>
+                    {isLoadingDefaultPaymentMethod ? (
+                      <div style={{ padding: "0.15rem 0" }}>
+                        <LoadingComponent
+                          size="24px"
+                          text={t(
+                            "dashboard.billing.loadingPaymentMethod",
+                            "Loading…",
+                          )}
+                        />
+                      </div>
+                    ) : defaultPaymentMethodError ? (
+                      <PaymentMethodMeta style={{ color: "var(--error)" }}>
+                        {defaultPaymentMethodError}
+                      </PaymentMethodMeta>
+                    ) : defaultPaymentMethod === null ? (
+                      <PaymentMethodMeta>
+                        {t(
+                          "dashboard.billing.noPaymentMethodOnFile",
+                          "No payment method on file.",
+                        )}
+                      </PaymentMethodMeta>
+                    ) : defaultPaymentMethod.kind === "card" ? (
+                      <>
+                        <PaymentMethodDetail>
+                          {formatCardBrandForDisplay(defaultPaymentMethod.brand)}{" "}
+                          ····{defaultPaymentMethod.last4}
+                        </PaymentMethodDetail>
+                        <PaymentMethodMeta>
+                          {t(
+                            "dashboard.billing.cardExpiresShort",
+                            "Expires {{month}}/{{year}}",
+                            {
+                              month: String(
+                                defaultPaymentMethod.expMonth,
+                              ).padStart(2, "0"),
+                              year: String(defaultPaymentMethod.expYear).slice(
+                                -2,
+                              ),
+                            },
+                          )}
+                        </PaymentMethodMeta>
+                      </>
+                    ) : (
+                      <PaymentMethodDetail>
+                        {defaultPaymentMethod.label}
+                      </PaymentMethodDetail>
+                    )}
+                  </PaymentMethodDetailsCol>
+                  <PaymentMethodUpdateBtn
+                    type="button"
+                    onClick={() => setShowUpdatePaymentModal(true)}
+                  >
+                    {t(
+                      "dashboard.billing.updatePaymentMethod",
+                      "Update payment method",
+                    )}
+                  </PaymentMethodUpdateBtn>
+                </PaymentMethodRow>
+              </PaymentMethodPanel>
+            )}
+
             <ButtonContainer>
               {userSubscription.subscription_source === "ios" ? (
                 <Button onClick={handleManageBillingAppStore}>
@@ -1293,7 +1798,8 @@ export default function BillingPage() {
               ) : (
                 <>
                   {userSubscription.subscription !== "lifetime" &&
-                    userSubscription.customer_id && (
+                    userSubscription.customer_id &&
+                    !shouldLoadDefaultPaymentMethod && (
                       <Button onClick={() => setShowUpdatePaymentModal(true)}>
                         {t("dashboard.billing.updatePaymentMethod", "Update payment method")}
                       </Button>
@@ -1316,7 +1822,6 @@ export default function BillingPage() {
                         disabled={isReactivating}
                         style={{
                           background: "rgba(78, 205, 196, 0.2)",
-                          gridColumn: "1 / -1",
                         }}
                       >
                         {isReactivating
@@ -1329,7 +1834,6 @@ export default function BillingPage() {
                         style={{
                           background: "rgba(255, 87, 51, 0.2)",
                           color: "var(--warning)",
-                          gridColumn: "1 / -1",
                         }}
                       >
                         {t("dashboard.billing.cancelSubscription", "Cancel subscription")}
@@ -1620,7 +2124,10 @@ export default function BillingPage() {
       <UpdatePaymentMethodModal
         open={showUpdatePaymentModal}
         onClose={() => setShowUpdatePaymentModal(false)}
-        onSuccess={refreshAllData}
+        onSuccess={async () => {
+          await refreshAllData();
+          await fetchDefaultPaymentMethod();
+        }}
       />
 
       <CheckoutModal
