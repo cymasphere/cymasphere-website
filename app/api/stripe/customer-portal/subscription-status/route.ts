@@ -2,7 +2,8 @@
  * @fileoverview Returns the signed-in user’s active or trialing Stripe subscription flags for billing UI.
  * @module api/stripe/customer-portal/subscription-status
  *
- * Uses the same active/trialing merge logic as cancel and reactivate routes so the dashboard
+ * Uses the same active/trialing merge logic as cancel-subscription and reactivate-subscription
+ * routes so the dashboard
  * can show “cancel at period end” and hide cancel when no recurring subscription exists.
  */
 

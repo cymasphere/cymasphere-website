@@ -2,8 +2,11 @@
  * @fileoverview Remove cancel-at-period-end from the current user's subscription (in-app).
  * @module api/stripe/customer-portal/reactivate-subscription
  *
- * Requires auth. Resolves customer_id and subscription set to cancel, then updates
- * subscription with cancel_at_period_end: false.
+ * Requires auth. Resolves customer_id and an active or trialing subscription with
+ * cancel_at_period_end, then updates it with cancel_at_period_end: false.
+ *
+ * @note Must list trialing as well as active — same merge as cancel-subscription and
+ * subscription-status — or trial users who scheduled cancel get a false “not found” error.
  */
 
 import { NextResponse } from "next/server";
@@ -63,12 +66,23 @@ export async function POST(request: Request) {
       );
     }
 
-    const subscriptions = await stripe.subscriptions.list({
+    const active = await stripe.subscriptions.list({
       customer: customerId,
       status: "active",
       limit: 10,
     });
-    const toReactivate = subscriptions.data.find(
+    const trialing = await stripe.subscriptions.list({
+      customer: customerId,
+      status: "trialing",
+      limit: 10,
+    });
+    const activeOrTrialing = [
+      ...active.data,
+      ...trialing.data.filter(
+        (s) => !active.data.some((a) => a.id === s.id),
+      ),
+    ];
+    const toReactivate = activeOrTrialing.find(
       (s) => s.cancel_at_period_end === true,
     );
     if (!toReactivate) {
