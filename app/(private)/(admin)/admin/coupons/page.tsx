@@ -601,7 +601,8 @@ export default function AdminCoupons() {
   const [sortField, setSortField] = useState<'code' | 'name' | 'discount' | 'status' | 'used' | 'created' | 'expires'>('created');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<{ id: string; code: string; type: 'promotion_code' | 'coupon' } | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{ id: string; code: string; type: 'promotion_code' | 'coupon'; couponId?: string } | null>(null);
+  const [deleteAction, setDeleteAction] = useState<'deactivate' | 'delete'>('deactivate');
   const [deleting, setDeleting] = useState(false);
   
   // Modal state
@@ -632,18 +633,22 @@ export default function AdminCoupons() {
       
       if (promotionCodesResult.error) {
         console.error("Error fetching promotion codes:", promotionCodesResult.error);
+        setPromotionCodes([]);
       } else {
-        setPromotionCodes(promotionCodesResult.promotionCodes as PromotionCodeData[]);
+        setPromotionCodes((promotionCodesResult.promotionCodes ?? []) as PromotionCodeData[]);
       }
 
       if (couponsResult.error) {
         console.error("Error fetching coupons:", couponsResult.error);
+        setCoupons([]);
       } else {
-        setCoupons(couponsResult.coupons as CouponData[]);
+        setCoupons((couponsResult.coupons ?? []) as CouponData[]);
       }
     } catch (err) {
       console.error("Error fetching coupons/promotion codes:", err);
       setError("Failed to load coupons");
+      const message = err instanceof Error ? err.message : "Failed to load coupons";
+      showNotification("error", message.includes("reading '") ? "Failed to load coupons. Please try again." : message);
     } finally {
       setLoading(false);
     }
@@ -698,8 +703,15 @@ export default function AdminCoupons() {
     }
   };
 
-  const handleDeactivateClick = (itemId: string, itemCode: string, itemType: 'promotion_code' | 'coupon') => {
-    setItemToDelete({ id: itemId, code: itemCode, type: itemType });
+  const handleDeactivateClick = (itemId: string, itemCode: string, itemType: 'promotion_code' | 'coupon', couponId?: string) => {
+    setItemToDelete({ id: itemId, code: itemCode, type: itemType, couponId });
+    setDeleteAction('deactivate');
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteClick = (itemId: string, itemCode: string, itemType: 'promotion_code' | 'coupon', couponId?: string) => {
+    setItemToDelete({ id: itemId, code: itemCode, type: itemType, couponId });
+    setDeleteAction('delete');
     setShowDeleteModal(true);
   };
 
@@ -710,25 +722,40 @@ export default function AdminCoupons() {
 
     try {
       if (itemToDelete.type === 'promotion_code') {
-        // Deactivate promotion code
-        const result = await deactivatePromotionCode(itemToDelete.id);
-      
-      if (result.success) {
-          showNotification('success', 'Promotion code deactivated successfully');
-          setShowDeleteModal(false);
-          setItemToDelete(null);
-        fetchPromotionCodes();
-      } else {
-          showNotification('error', result.error || 'Failed to deactivate promotion code');
+        if (deleteAction === 'delete' && itemToDelete.couponId) {
+          // Delete: deactivate promotion code then delete underlying coupon
+          const deactivateResult = await deactivatePromotionCode(itemToDelete.id);
+          if (!deactivateResult.success) {
+            showNotification('error', deactivateResult.error || 'Failed to deactivate promotion code');
+            setDeleting(false);
+            return;
+          }
+          const response = await fetch(`/api/stripe/coupons/${itemToDelete.couponId}`, { method: 'DELETE' });
+          const data = await response.json();
+          if (data.success) {
+            showNotification('success', 'Promotion code and coupon deleted');
+            setShowDeleteModal(false);
+            setItemToDelete(null);
+            fetchPromotionCodes();
+          } else {
+            showNotification('error', data.error || 'Failed to delete coupon');
+          }
+        } else {
+          // Deactivate only
+          const result = await deactivatePromotionCode(itemToDelete.id);
+          if (result.success) {
+            showNotification('success', 'Promotion code deactivated successfully');
+            setShowDeleteModal(false);
+            setItemToDelete(null);
+            fetchPromotionCodes();
+          } else {
+            showNotification('error', result.error || 'Failed to deactivate promotion code');
+          }
         }
       } else {
-        // Delete coupon via Stripe API
-        const response = await fetch(`/api/stripe/coupons/${itemToDelete.id}`, {
-          method: 'DELETE',
-        });
-        
+        // Coupon row: delete coupon
+        const response = await fetch(`/api/stripe/coupons/${itemToDelete.id}`, { method: 'DELETE' });
         const data = await response.json();
-        
         if (data.success) {
           showNotification('success', 'Coupon deleted successfully');
           setShowDeleteModal(false);
@@ -786,37 +813,43 @@ export default function AdminCoupons() {
     return new Date(timestamp * 1000).toLocaleDateString();
   };
 
-  // Combine promotion codes and coupons for display
-  // Convert coupons to a format similar to promotion codes for unified display
+  // Normalize coupon shape so .id and other fields are always safe to read
+  const safeCoupon = (c: { id?: string; name?: string | null; percent_off?: number | null; amount_off?: number | null; currency?: string | null } | null | undefined) =>
+    c && (c.id != null || c.name != null || c.percent_off != null || c.amount_off != null)
+      ? { id: c.id ?? "", name: c.name ?? null, percent_off: c.percent_off ?? null, amount_off: c.amount_off ?? null, currency: c.currency ?? null }
+      : { id: "", name: null, percent_off: null, amount_off: null, currency: null };
+
+  // Coupon IDs that already have a promotion code — show only the promotion code, not the raw coupon
+  const couponIdsWithPromoCode = new Set(
+    promotionCodes.map(pc => safeCoupon(pc?.coupon).id).filter(Boolean)
+  );
+
+  // Combine promotion codes + only "orphan" coupons (no promotion code), so one create = one row
   const allCoupons = [
     ...promotionCodes.map(pc => ({
-      id: pc.id,
-      code: pc.code,
+      id: pc?.id ?? "",
+      code: pc?.code ?? "",
       type: 'promotion_code' as const,
-      coupon: pc.coupon,
-      active: pc.active,
-      created: pc.created,
-      expires_at: pc.expires_at,
-      times_redeemed: pc.times_redeemed,
-      max_redemptions: pc.max_redemptions,
+      coupon: safeCoupon(pc?.coupon),
+      active: pc?.active ?? false,
+      created: pc?.created ?? 0,
+      expires_at: pc?.expires_at ?? null,
+      times_redeemed: pc?.times_redeemed ?? 0,
+      max_redemptions: pc?.max_redemptions ?? null,
     })),
-    ...coupons.map(c => ({
-      id: c.id,
-      code: c.id, // Coupon ID can be used as code
-      type: 'coupon' as const,
-      coupon: {
-        id: c.id,
-        name: c.name,
-        percent_off: c.percent_off,
-        amount_off: c.amount_off,
-        currency: c.currency,
-      },
-      active: c.valid,
-      created: c.created,
-      expires_at: c.redeem_by,
-      times_redeemed: c.times_redeemed,
-      max_redemptions: c.max_redemptions,
-    }))
+    ...coupons
+      .filter(c => c?.id && !couponIdsWithPromoCode.has(c.id))
+      .map(c => ({
+        id: c?.id ?? "",
+        code: c?.id ?? "",
+        type: 'coupon' as const,
+        coupon: safeCoupon(c ? { id: c.id, name: c.name, percent_off: c.percent_off, amount_off: c.amount_off, currency: c.currency } : null),
+        active: c?.valid ?? false,
+        created: c?.created ?? 0,
+        expires_at: c?.redeem_by ?? null,
+        times_redeemed: c?.times_redeemed ?? 0,
+        max_redemptions: c?.max_redemptions ?? null,
+      }))
   ];
 
   const handleSort = (field: typeof sortField) => {
@@ -1023,13 +1056,26 @@ export default function AdminCoupons() {
                   <FaCopy />
                 </ActionButton>
                 {code.active && (
-                  <ActionButton
+                  <>
+                    {code.type === 'promotion_code' && (
+                      <ActionButton
                         $variant="danger"
-                        onClick={() => handleDeactivateClick(code.id, code.code, code.type)}
-                        title={code.type === 'coupon' ? 'Delete' : 'Deactivate'}
-                  >
-                        {code.type === 'coupon' ? <FaTrash /> : <FaBan />}
-                  </ActionButton>
+                        onClick={() => handleDeactivateClick(code.id, code.code, code.type, code.coupon?.id)}
+                        title="Deactivate (code won't work, coupon remains)"
+                      >
+                        <FaBan />
+                      </ActionButton>
+                    )}
+                    <ActionButton
+                      $variant="danger"
+                      onClick={() => code.type === 'promotion_code'
+                        ? handleDeleteClick(code.id, code.code, code.type, code.coupon?.id || undefined)
+                        : handleDeactivateClick(code.id, code.code, code.type)}
+                      title={code.type === 'coupon' ? 'Delete coupon' : 'Delete code and coupon'}
+                    >
+                      <FaTrash />
+                    </ActionButton>
+                  </>
                 )}
                   </ActionButtons>
                 </Td>
@@ -1158,7 +1204,11 @@ export default function AdminCoupons() {
                 <ModalHeader>
                   <ModalTitle style={{ color: '#ff5e62', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <FaExclamationTriangle />
-                    {itemToDelete.type === 'coupon' ? 'Delete Coupon' : 'Deactivate Promotion Code'}
+                    {itemToDelete.type === 'coupon'
+                      ? 'Delete Coupon'
+                      : deleteAction === 'delete'
+                        ? 'Delete Promotion Code & Coupon'
+                        : 'Deactivate Promotion Code'}
                   </ModalTitle>
                   <CloseButton onClick={handleDeleteCancel}>
                     <FaTimes />
@@ -1167,9 +1217,11 @@ export default function AdminCoupons() {
 
                 <div style={{ padding: '24px' }}>
                   <p style={{ marginBottom: '16px', color: 'var(--text)', fontSize: '16px', lineHeight: '1.6' }}>
-                    {itemToDelete.type === 'coupon' 
+                    {itemToDelete.type === 'coupon'
                       ? 'Are you sure you want to permanently delete this coupon? This action cannot be undone.'
-                      : 'Are you sure you want to deactivate this promotion code? Customers will no longer be able to use it.'}
+                      : deleteAction === 'delete'
+                        ? 'This will deactivate the promotion code and permanently delete the underlying coupon. This cannot be undone.'
+                        : 'Are you sure you want to deactivate this promotion code? Customers will no longer be able to use it. The coupon will remain in Stripe.'}
                   </p>
                   
                   <div style={{
@@ -1202,12 +1254,16 @@ export default function AdminCoupons() {
                       {deleting ? (
                         <>
                           <SpinningIcon />
-                          {itemToDelete.type === 'coupon' ? 'Deleting...' : 'Deactivating...'}
+                          {deleteAction === 'delete' || itemToDelete.type === 'coupon' ? 'Deleting...' : 'Deactivating...'}
                         </>
                       ) : (
                         <>
-                          {itemToDelete.type === 'coupon' ? <FaTrash /> : <FaBan />}
-                          {itemToDelete.type === 'coupon' ? 'Delete' : 'Deactivate'}
+                          {deleteAction === 'delete' || itemToDelete.type === 'coupon' ? <FaTrash /> : <FaBan />}
+                          {itemToDelete.type === 'coupon'
+                            ? 'Delete'
+                            : deleteAction === 'delete'
+                              ? 'Delete'
+                              : 'Deactivate'}
                         </>
                       )}
                     </Button>
