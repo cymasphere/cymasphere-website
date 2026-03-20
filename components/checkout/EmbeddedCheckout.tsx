@@ -3,7 +3,8 @@
  * @module components/checkout/EmbeddedCheckout
  *
  * Renders the same checkout UI as the standalone /checkout page: plan card,
- * email, promo, Continue, then Stripe PaymentElement + Pay now. Can be used
+ * email, promo (apply to commit a single active code, then Pay now uses that
+ * code only), Continue, then Stripe PaymentElement + Pay now. Can be used
  * inline (e.g. in a modal) with onClose or on a full page with a back link.
  *
  * @example
@@ -33,7 +34,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
-import { loadStripe } from "@stripe/stripe-js";
+import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import {
   Elements,
   PaymentElement,
@@ -48,9 +49,15 @@ import { FaCheckCircle } from "react-icons/fa";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
 
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "",
-);
+/** HMR re-evaluates modules; reuse one Promise so <Elements> never sees a new `stripe` prop on the same tree. */
+const globalForStripe = globalThis as typeof globalThis & {
+  __cymasphereStripePromise?: Promise<Stripe | null>;
+};
+const stripePromise =
+  globalForStripe.__cymasphereStripePromise ??
+  (globalForStripe.__cymasphereStripePromise = loadStripe(
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "",
+  ));
 
 /** Dark theme for Stripe Payment Element to match app (purple/dark background). */
 const STRIPE_APPEARANCE = {
@@ -373,6 +380,23 @@ const ApplyPromoButton = styled.button`
   }
 `;
 
+/** Clears an applied promo so the user can enter a different code. */
+const RemoveAppliedPromoButton = styled.button`
+  padding: 0 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.2));
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  &:hover:not(:disabled) {
+    color: var(--text);
+    border-color: var(--text-secondary);
+  }
+`;
+
 const PromoFeedback = styled.p<{ $success?: boolean }>`
   font-size: 0.85rem;
   margin-top: 0.35rem;
@@ -541,14 +565,14 @@ function PaymentFormInner({
       typeof window !== "undefined"
         ? `${window.location.origin}/checkout-success?isLifetime=${planType === "lifetime"}`
         : "";
-    const confirmParams = {
-      return_url: returnUrl,
-      payment_method_data: {
-        billing_details: {
-          email: emailForPayment,
-        },
-      },
-    };
+    const confirmParams = { return_url: returnUrl };
+    const { error: submitError } = await elements.submit();
+    if (submitError) {
+      setError(submitError.message ?? "Check your payment details.");
+      submittingRef.current = false;
+      setSubmitting(false);
+      return;
+    }
     if (intentType === "setup_intent") {
       const { error: confirmError } = await stripe.confirmSetup({
         elements,
@@ -582,6 +606,11 @@ function PaymentFormInner({
         <PaymentElement
           options={{
             layout: "tabs",
+            defaultValues: {
+              billingDetails: {
+                email: emailForPayment,
+              },
+            },
           }}
         />
       </PaymentElementWrapper>
@@ -636,9 +665,11 @@ function SetupIntentCheckoutForm({
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const setupIntentFetchGenRef = useRef(0);
 
   useEffect(() => {
     if (!email?.trim()) return;
+    const generation = ++setupIntentFetchGenRef.current;
     let cancelled = false;
     (async () => {
       try {
@@ -651,24 +682,26 @@ function SetupIntentCheckoutForm({
           }),
         });
         const data = await res.json();
-        if (cancelled) return;
+        if (cancelled || generation !== setupIntentFetchGenRef.current) return;
         if (data.success && data.clientSecret) {
           setSetupClientSecret(data.clientSecret);
         } else {
           setError(data.message ?? data.error ?? "Failed to load payment form");
         }
       } catch (e) {
-        if (!cancelled)
+        if (!cancelled && generation === setupIntentFetchGenRef.current)
           setError(
             e instanceof Error ? e.message : "Failed to load payment form",
           );
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && generation === setupIntentFetchGenRef.current)
+          setLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
+    // customerId in deps keeps HMR hook arity stable; generation ref ignores stale responses when it hydrates.
   }, [email, customerId]);
 
   if (loading && !setupClientSecret) {
@@ -699,7 +732,7 @@ function SetupIntentCheckoutForm({
           <LoginRedirectLink href="/dashboard">Go to dashboard</LoginRedirectLink>
         )}
         {isInvalidPlanChange && (
-          <LoginRedirectLink href="/dashboard/billing">Manage billing</LoginRedirectLink>
+          <LoginRedirectLink href="/billing">Manage billing</LoginRedirectLink>
         )}
       </>
     );
@@ -708,6 +741,7 @@ function SetupIntentCheckoutForm({
 
   return (
     <Elements
+      key={setupClientSecret}
       stripe={stripePromise}
       options={{
         clientSecret: setupClientSecret,
@@ -715,6 +749,7 @@ function SetupIntentCheckoutForm({
       }}
     >
       <SetupIntentSubmitForm
+        elementsClientSecret={setupClientSecret}
         planType={planType}
         email={email}
         firstName={firstName}
@@ -730,11 +765,14 @@ function SetupIntentCheckoutForm({
 }
 
 interface SetupIntentSubmitFormProps extends SetupIntentCheckoutFormProps {
+  /** Matches Elements clientSecret; when it changes, cached payment method from a prior confirm is cleared. */
+  elementsClientSecret: string;
   /** When payment succeeds in-page, call with optional data. Parent shows inline success view. */
   onSuccess?: (data?: { inviteSent?: boolean }) => void;
 }
 
 function SetupIntentSubmitForm({
+  elementsClientSecret,
   planType,
   email,
   firstName,
@@ -750,6 +788,12 @@ function SetupIntentSubmitForm({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const submittingRef = useRef(false);
+  /** After confirmSetup succeeds, the SetupIntent is consumed; retries must call subscription/payment APIs only. */
+  const confirmedPaymentMethodIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    confirmedPaymentMethodIdRef.current = null;
+  }, [elementsClientSecret]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -759,18 +803,6 @@ function SetupIntentSubmitForm({
     setSubmitting(true);
     setError(null);
     try {
-      const promoCodeToValidate = promotionCode?.trim() ?? "";
-      if (promoCodeToValidate) {
-        const promoCheck = await validatePromoCodeForCheckout(
-          planType,
-          promoCodeToValidate,
-        );
-        if (!promoCheck.valid) {
-          setError(promoCheck.message);
-          return;
-        }
-      }
-
       const returnUrl =
         typeof window !== "undefined"
           ? `${window.location.origin}/checkout-success?isLifetime=${planType === "lifetime"}`
@@ -796,37 +828,45 @@ function SetupIntentSubmitForm({
         }
       }
 
-      const setupResult = await stripe.confirmSetup({
-        elements,
-        confirmParams: {
-          return_url: returnUrl,
-          payment_method_data: {
-            billing_details: {
-              email: email.trim(),
-            },
-          },
-        },
-        redirect: "if_required",
-      });
-      if (setupResult.error) {
-        setError(setupResult.error.message ?? "Payment setup failed");
-        return;
-      }
-      if (!("setupIntent" in setupResult) || !setupResult.setupIntent) {
-        setError("Could not save payment method");
-        return;
-      }
-      const setupIntent = setupResult.setupIntent as {
-        payment_method?: string | { id?: string } | null;
-      };
-      const paymentMethodId =
-        typeof setupIntent.payment_method === "string"
-          ? setupIntent.payment_method
-          : setupIntent.payment_method?.id;
+      let paymentMethodId = confirmedPaymentMethodIdRef.current;
+
       if (!paymentMethodId) {
-        setError("Could not save payment method");
-        return;
+        const { error: submitError } = await elements.submit();
+        if (submitError) {
+          setError(submitError.message ?? "Check your payment details.");
+          return;
+        }
+
+        const setupResult = await stripe.confirmSetup({
+          elements,
+          confirmParams: {
+            return_url: returnUrl,
+          },
+          redirect: "if_required",
+        });
+        if (setupResult.error) {
+          setError(setupResult.error.message ?? "Payment setup failed");
+          return;
+        }
+        if (!("setupIntent" in setupResult) || !setupResult.setupIntent) {
+          setError("Could not save payment method");
+          return;
+        }
+        const setupIntent = setupResult.setupIntent as {
+          payment_method?: string | { id?: string } | null;
+        };
+        const extracted =
+          typeof setupIntent.payment_method === "string"
+            ? setupIntent.payment_method
+            : setupIntent.payment_method?.id;
+        if (!extracted) {
+          setError("Could not save payment method");
+          return;
+        }
+        paymentMethodId = extracted;
+        confirmedPaymentMethodIdRef.current = paymentMethodId;
       }
+
       const apiUrl =
         planType === "lifetime"
           ? "/api/stripe/payment-intent"
@@ -881,6 +921,7 @@ function SetupIntentSubmitForm({
             // ignore
           }
         }
+        confirmedPaymentMethodIdRef.current = null;
         onSuccess?.({ inviteSent: data.inviteSent });
         return;
       }
@@ -917,7 +958,16 @@ function SetupIntentSubmitForm({
   return (
     <form onSubmit={handleSubmit}>
       <PaymentElementWrapper>
-        <PaymentElement options={{ layout: "tabs" }} />
+        <PaymentElement
+          options={{
+            layout: "tabs",
+            defaultValues: {
+              billingDetails: {
+                email: email.trim(),
+              },
+            },
+          }}
+        />
       </PaymentElementWrapper>
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {isServerBlockError && (
@@ -925,7 +975,7 @@ function SetupIntentSubmitForm({
           {error.includes("LIFETIME_ALREADY_PURCHASED") ? (
             <LoginRedirectLink href="/dashboard">Go to dashboard</LoginRedirectLink>
           ) : error.includes("INVALID_PLAN_CHANGE") ? (
-            <LoginRedirectLink href="/dashboard/billing">Manage billing</LoginRedirectLink>
+            <LoginRedirectLink href="/billing">Manage billing</LoginRedirectLink>
           ) : (
             <LoginRedirectLink href="/login?redirect=/dashboard">
               Log in to your account
@@ -1098,7 +1148,7 @@ function UnifiedCheckoutForm({
           </LoginRedirectLink>
         )}
         {isInvalidPlanChange && (
-          <LoginRedirectLink href="/dashboard/billing">Manage billing</LoginRedirectLink>
+          <LoginRedirectLink href="/billing">Manage billing</LoginRedirectLink>
         )}
       </>
     );
@@ -1149,10 +1199,10 @@ interface PromoValidationResult {
 }
 
 /**
- * @brief Validates promo codes before checkout submission.
- * @param {PlanType} planType - Plan being purchased.
- * @param {string} promotionCode - Promo code entered by the user.
- * @returns {Promise<PromoValidationResult>} Normalized validation result.
+ * @brief Validates a promo for Apply and trial-start; Pay now relies on server only.
+ * @param planType - Plan being purchased.
+ * @param promotionCode - Promo code entered by the user.
+ * @returns Normalized validation result.
  */
 async function validatePromoCodeForCheckout(
   planType: PlanType,
@@ -1282,9 +1332,23 @@ function CheckoutPlanCard({
     currency?: string;
     duration?: PromoValidationDuration;
     durationInMonths?: number | null;
+    /** Set when Apply succeeds; APIs and Pay now use this, not draft input text. */
+    appliedCode?: string;
   }>({ status: "idle" });
   const hasAutofilledPromoRef = useRef(false);
   const trialSubmittingRef = useRef(false);
+
+  const committedPromoCode = useMemo(() => {
+    if (
+      promoValidation.status !== "success" ||
+      !promoValidation.appliedCode?.trim()
+    ) {
+      return null;
+    }
+    return promoValidation.appliedCode.trim();
+  }, [promoValidation.status, promoValidation.appliedCode]);
+
+  const promoInputLocked = committedPromoCode !== null;
 
   const handleInlinePaymentSuccess = useCallback(
     (data?: { inviteSent?: boolean }) => {
@@ -1295,6 +1359,14 @@ function CheckoutPlanCard({
     [refreshUser],
   );
 
+  /**
+   * @brief Drops the applied promo and clears the field so another code can be entered.
+   */
+  const removeAppliedPromo = useCallback(() => {
+    setCheckoutPromo("");
+    setPromoValidation({ status: "idle" });
+  }, []);
+
   const start7DayTrial = useCallback(async () => {
     if (!resolvedEmail?.trim()) return;
     if (trialSubmittingRef.current) return;
@@ -1304,7 +1376,7 @@ function CheckoutPlanCard({
     const firstNameToSend = committedFirstName || checkoutFirstName.trim();
     const lastNameToSend = committedLastName || checkoutLastName.trim();
     try {
-      const promoCodeToValidate = checkoutPromo?.trim() ?? "";
+      const promoCodeToValidate = committedPromoCode ?? "";
       if (promoCodeToValidate) {
         const promoCheck = await validatePromoCodeForCheckout(
           planType,
@@ -1325,7 +1397,7 @@ function CheckoutPlanCard({
           firstName: firstNameToSend || undefined,
           lastName: lastNameToSend || undefined,
           customerId: customerId ?? undefined,
-          promotionCode: checkoutPromo?.trim() || undefined,
+          promotionCode: committedPromoCode ?? undefined,
           collectPaymentMethod: false,
           isPlanChange,
         }),
@@ -1356,12 +1428,13 @@ function CheckoutPlanCard({
     checkoutFirstName,
     checkoutLastName,
     customerId,
-    checkoutPromo,
+    committedPromoCode,
     isPlanChange,
     refreshUser,
   ]);
 
   const applyPromo = useCallback(async (): Promise<boolean> => {
+    if (promoInputLocked) return true;
     setPromoValidation((prev) => ({
       ...prev,
       status: "loading",
@@ -1375,6 +1448,7 @@ function CheckoutPlanCard({
           message: undefined,
         });
       } else {
+        const code = checkoutPromo.trim();
         setPromoValidation({
           status: "success",
           message: promoCheck.message,
@@ -1382,6 +1456,7 @@ function CheckoutPlanCard({
           currency: promoCheck.currency ?? "usd",
           duration: promoCheck.duration,
           durationInMonths: promoCheck.durationInMonths ?? null,
+          appliedCode: code,
         });
       }
       return true;
@@ -1391,7 +1466,7 @@ function CheckoutPlanCard({
       message: promoCheck.message,
     });
     return false;
-  }, [planType, checkoutPromo]);
+  }, [planType, checkoutPromo, promoInputLocked]);
 
   const handleContinueClick = useCallback(() => {
     if (!canProceedWithEmail) return;
@@ -1418,55 +1493,14 @@ function CheckoutPlanCard({
     }
   }, [user]);
 
+  /**
+   * @brief Clears trial/payment setup errors when the promo field changes.
+   * @note Must not reset promoValidation on success; doing so (e.g. by
+   * depending on promoValidation.status) clears Apply feedback immediately.
+   */
   useEffect(() => {
-    if (promoValidation.status === "success") {
-      setPromoValidation({ status: "idle" });
-    }
-    if (paymentSetupError) {
-      setPaymentSetupError(null);
-    }
-  }, [checkoutPromo, paymentSetupError, promoValidation.status]);
-
-  useEffect(() => {
-    const fetchPrices = async () => {
-      setPricesLoading(true);
-      try {
-        const response = await fetch("/api/stripe/prices");
-        const result = await response.json();
-        if (result.success && result.prices) setPrices(result.prices);
-      } catch {
-        // leave prices null
-      } finally {
-        setPricesLoading(false);
-      }
-    };
-    fetchPrices();
-  }, []);
-
-  useEffect(() => {
-    const fetchPromotion = async () => {
-      try {
-        const response = await fetch(`/api/promotions/active?plan=${planType}`);
-        const data = await response.json();
-        if (data.success && data.promotion) {
-          setActivePromotion(data.promotion as ActivePromotion);
-          if (
-            data.suggested_promo_code &&
-            typeof data.suggested_promo_code === "string" &&
-            !hasAutofilledPromoRef.current
-          ) {
-            setCheckoutPromo(data.suggested_promo_code);
-            hasAutofilledPromoRef.current = true;
-          }
-        } else {
-          setActivePromotion(null);
-        }
-      } catch {
-        setActivePromotion(null);
-      }
-    };
-    fetchPromotion();
-  }, [planType]);
+    setPaymentSetupError(null);
+  }, [checkoutPromo]);
 
   useEffect(() => {
     const fetchPrices = async () => {
@@ -1783,24 +1817,6 @@ function CheckoutPlanCard({
                   <strong style={{ color: "var(--text)" }}>
                     {resolvedEmail}
                   </strong>
-                  {checkoutPromo?.trim() && (
-                    <>
-                      {" · "}
-                      {t("checkout.promoLabel", "Promo")}: {checkoutPromo.trim()}
-                      {promoValidation.status === "success" &&
-                        promoValidation.amountAfterDiscount != null && (
-                          <>
-                            {" — "}
-                            {t("checkout.promoApplied", "Code applied")} $
-                            {(promoValidation.amountAfterDiscount / 100).toFixed(
-                              0,
-                            )}
-                            {promoDurationLabel != null &&
-                              ` · ${promoDurationLabel}`}
-                          </>
-                        )}
-                    </>
-                  )}
                 </span>
                 {!isLoggedIn && (
                   <EditLink
@@ -1826,20 +1842,33 @@ function CheckoutPlanCard({
                     type="text"
                     placeholder={t("checkout.promoPlaceholder", "Enter code")}
                     value={checkoutPromo}
+                    disabled={promoInputLocked}
                     onChange={(e) => {
+                      if (promoInputLocked) return;
                       setCheckoutPromo(e.target.value);
-                      setPromoValidation({ status: "idle" });
+                      if (promoValidation.status === "error") {
+                        setPromoValidation({ status: "idle" });
+                      }
                     }}
                   />
-                  <ApplyPromoButton
-                    type="button"
-                    disabled={promoValidation.status === "loading"}
-                    onClick={applyPromo}
-                  >
-                    {promoValidation.status === "loading"
-                      ? "…"
-                      : t("checkout.applyPromo", "Apply")}
-                  </ApplyPromoButton>
+                  {promoInputLocked ? (
+                    <RemoveAppliedPromoButton
+                      type="button"
+                      onClick={removeAppliedPromo}
+                    >
+                      {t("checkout.removePromo", "Remove promo")}
+                    </RemoveAppliedPromoButton>
+                  ) : (
+                    <ApplyPromoButton
+                      type="button"
+                      disabled={promoValidation.status === "loading"}
+                      onClick={applyPromo}
+                    >
+                      {promoValidation.status === "loading"
+                        ? "…"
+                        : t("checkout.applyPromo", "Apply")}
+                    </ApplyPromoButton>
+                  )}
                 </PromoApplyRow>
                 {promoValidation.status === "success" && (
                   <PromoFeedback $success>
@@ -1933,7 +1962,7 @@ function CheckoutPlanCard({
                       </LoginRedirectLink>
                     )}
                     {paymentSetupError.includes("INVALID_PLAN_CHANGE") && (
-                      <LoginRedirectLink href="/dashboard/billing">
+                      <LoginRedirectLink href="/billing">
                         Manage billing
                       </LoginRedirectLink>
                     )}
@@ -1968,7 +1997,7 @@ function CheckoutPlanCard({
                   (committedLastName || checkoutLastName.trim()) || undefined
                 }
                 customerId={customerId}
-                promotionCode={checkoutPromo || null}
+                promotionCode={committedPromoCode}
                 collectPaymentMethod={collectPaymentMethod}
                 isPlanChange={isPlanChange}
                 onPaymentSuccess={handleInlinePaymentSuccess}
