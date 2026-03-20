@@ -2,14 +2,16 @@
  * @fileoverview Set the default payment method for the current user's subscription.
  * @module api/stripe/customer-portal/set-default-payment-method
  *
- * Requires auth. Accepts paymentMethodId from a confirmed SetupIntent, resolves user's
- * active subscription, and updates subscription.default_payment_method.
+ * Requires auth. Accepts paymentMethodId from a confirmed SetupIntent, verifies it belongs
+ * to the customer, sets invoice_settings.default_payment_method, and updates every active
+ * or trialing subscription’s default_payment_method so billing UI and renewals stay aligned.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/utils/supabase/server";
 import { checkRateLimit, getClientIp } from "@/utils/rate-limit";
+import { listActiveTrialingSubscriptionsNewestFirst } from "@/utils/stripe/active-subscriptions";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -74,22 +76,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "active",
-      limit: 5,
-    });
-    const trialing = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "trialing",
-      limit: 5,
-    });
-    const activeOrTrialing = [
-      ...subscriptions.data,
-      ...trialing.data.filter(
-        (s) => !subscriptions.data.some((a) => a.id === s.id),
-      ),
-    ];
+    const activeOrTrialing =
+      await listActiveTrialingSubscriptionsNewestFirst(stripe, customerId);
     if (activeOrTrialing.length === 0) {
       return NextResponse.json(
         {
@@ -100,10 +88,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const subscriptionId = activeOrTrialing[0].id;
-    await stripe.subscriptions.update(subscriptionId, {
-      default_payment_method: paymentMethodId,
+    const pm = await stripe.paymentMethods.retrieve(paymentMethodId);
+    const pmCustomer =
+      typeof pm.customer === "string" ? pm.customer : pm.customer?.id;
+    if (pmCustomer !== customerId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "This payment method does not belong to your account. Complete the card form again.",
+        },
+        { status: 400 },
+      );
+    }
+
+    await stripe.customers.update(customerId, {
+      invoice_settings: { default_payment_method: paymentMethodId },
     });
+
+    await Promise.all(
+      activeOrTrialing.map((sub) =>
+        stripe.subscriptions.update(sub.id, {
+          default_payment_method: paymentMethodId,
+        }),
+      ),
+    );
 
     return NextResponse.json({ success: true });
   } catch (error) {
