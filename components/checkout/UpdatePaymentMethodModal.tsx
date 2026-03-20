@@ -140,26 +140,45 @@ function UpdatePaymentForm({
     setSubmitting(true);
     setError(null);
 
-    const result = await stripe.confirmSetup({
-      elements,
-      confirmParams: {
-        return_url: typeof window !== "undefined" ? `${window.location.origin}/billing` : "",
-      },
-    });
-
-    if (result.error) {
-      setError(result.error.message ?? "Setup failed");
+    const { error: submitError } = await elements.submit();
+    if (submitError) {
+      setError(submitError.message ?? "Check your payment details.");
       submittingRef.current = false;
       setSubmitting(false);
       return;
     }
 
-    type SetupIntentWithPaymentMethod = { payment_method?: string | { id?: string } };
-    const setupIntent = (result as { setupIntent?: SetupIntentWithPaymentMethod }).setupIntent;
+    const returnUrl =
+      typeof window !== "undefined" ? `${window.location.origin}/billing` : "";
+    const setupResult = await stripe.confirmSetup({
+      elements,
+      confirmParams: {
+        return_url: returnUrl,
+      },
+      redirect: "if_required",
+    });
+
+    if (setupResult.error) {
+      setError(setupResult.error.message ?? "Setup failed");
+      submittingRef.current = false;
+      setSubmitting(false);
+      return;
+    }
+
+    if (!("setupIntent" in setupResult) || !setupResult.setupIntent) {
+      setError("Payment method could not be saved.");
+      submittingRef.current = false;
+      setSubmitting(false);
+      return;
+    }
+
+    const setupIntent = setupResult.setupIntent as {
+      payment_method?: string | { id?: string } | null;
+    };
     const paymentMethodId =
-      typeof setupIntent?.payment_method === "string"
+      typeof setupIntent.payment_method === "string"
         ? setupIntent.payment_method
-        : (setupIntent?.payment_method as { id?: string } | null)?.id;
+        : setupIntent.payment_method?.id;
     if (!paymentMethodId) {
       setError("Payment method could not be saved.");
       submittingRef.current = false;
