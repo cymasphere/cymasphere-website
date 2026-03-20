@@ -87,10 +87,11 @@ export async function POST(request: NextRequest) {
     }
 
     const createSetupIntentWithCustomer = async (customerId: string) => {
+      // Card-only avoids automatic_payment_methods (Link/wallets) edge cases with off_session + Payment Element confirm.
       return stripe.setupIntents.create({
         customer: customerId,
         usage: "off_session",
-        automatic_payment_methods: { enabled: true },
+        payment_method_types: ["card"],
       });
     };
 

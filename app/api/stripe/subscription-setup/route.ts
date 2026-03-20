@@ -255,14 +255,17 @@ export async function POST(request: NextRequest) {
       null;
     const eventId = randomUUID();
 
+    // default_payment_method is a root Subscription create param, not payment_settings (Stripe: parameter_unknown).
     const subscriptionParams: Stripe.SubscriptionCreateParams = {
       customer: resolvedCustomerId,
       items: [{ price: priceId }],
       payment_behavior: "default_incomplete",
       payment_settings: {
         save_default_payment_method: "on_subscription",
-        ...(paymentMethodId ? { default_payment_method: paymentMethodId } : {}),
       },
+      ...(paymentMethodId
+        ? { default_payment_method: paymentMethodId }
+        : {}),
       expand: paymentMethodId
         ? ["latest_invoice"]
         : [
