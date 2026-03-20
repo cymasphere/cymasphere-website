@@ -11,6 +11,9 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/utils/supabase/server";
 import { checkRateLimit, getClientIp } from "@/utils/rate-limit";
+import { listActiveTrialingSubscriptionsNewestFirst } from "@/utils/stripe/active-subscriptions";
+
+export const dynamic = "force-dynamic";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -112,22 +115,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "active",
-      limit: 5,
-    });
-    const trialing = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "trialing",
-      limit: 5,
-    });
-    const activeOrTrialing = [
-      ...subscriptions.data,
-      ...trialing.data.filter(
-        (s) => !subscriptions.data.some((a) => a.id === s.id),
-      ),
-    ];
+    const activeOrTrialing =
+      await listActiveTrialingSubscriptionsNewestFirst(stripe, customerId);
 
     let paymentMethodId: string | null = null;
     if (activeOrTrialing.length > 0) {
@@ -160,10 +149,17 @@ export async function GET(request: NextRequest) {
     const pm = await stripe.paymentMethods.retrieve(paymentMethodId);
     const summary = toSummary(pm);
 
-    return NextResponse.json({
-      success: true,
-      paymentMethod: summary,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        paymentMethod: summary,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, max-age=0",
+        },
+      },
+    );
   } catch (error) {
     console.error("Default payment method GET error:", error);
     const msg =

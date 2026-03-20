@@ -870,6 +870,7 @@ export default function BillingPage() {
     try {
       const res = await fetch(
         "/api/stripe/customer-portal/default-payment-method",
+        { cache: "no-store" },
       );
       const data: {
         success?: boolean;
