@@ -31,7 +31,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
  */
 function getUpdatePaymentUrl(): string {
   const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com';
-  return `${base}/dashboard/billing?action=update_payment`;
+  return `${base}/billing?action=update_payment`;
 }
 
 /**

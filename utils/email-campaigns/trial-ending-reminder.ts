@@ -14,7 +14,7 @@ export interface TrialEndingReminderData {
   trialDays: number; // 7 or 14
   planName: string; // e.g., "Monthly Subscription"
   monthlyPrice: number; // e.g., 6.00
-  /** In-app billing URL (e.g. /dashboard/billing?action=update_payment) so user updates payment without leaving the app. */
+  /** In-app billing URL (e.g. /billing?action=update_payment) so user updates payment without leaving the app. */
   updatePaymentUrl: string;
 }
 
