@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Billing and subscription management for dashboard users (plans, payment method, cancel/reactivate).
+ * @module app/(private)/(dashboard)/billing/page
+ */
 "use client";
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import styled from "styled-components";
@@ -55,13 +59,20 @@ interface ProfileWithSubscriptionDetails {
   subscription: SubscriptionType;
   subscription_interval?: "month" | "year" | null;
   subscription_source?: "stripe" | "ios" | "nfr" | "none" | null;
-  cancel_at_period_end?: boolean;
   trial_expiration: string | null;
   subscription_expiration: string | null;
   customer_id: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
+
+/** @brief Matches GET /api/stripe/customer-portal/subscription-status JSON subscription field. */
+type BillingStripeSubscriptionSnapshot = {
+  id: string;
+  status: string;
+  cancelAtPeriodEnd: boolean;
+  currentPeriodEnd: string | null;
+};
 
 // Helper functions for safely checking subscription status
 const isSubscriptionNone = (subscription: SubscriptionType): boolean => {
@@ -188,7 +199,8 @@ const PlanPrice = styled.div`
   }
 `;
 
-const PlanDescription = styled.p`
+/** @note Uses div (not p) so status badges and App Store row can use block layout without invalid HTML. */
+const PlanDescription = styled.div`
   color: var(--text-secondary);
   margin-bottom: 0.5rem;
 `;
@@ -540,6 +552,14 @@ export default function BillingPage() {
   const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
+  const [stripeRecurringSub, setStripeRecurringSub] =
+    useState<BillingStripeSubscriptionSnapshot | null>(null);
+  const [isLoadingStripeRecurring, setIsLoadingStripeRecurring] =
+    useState(false);
+  const [stripeRecurringLoadError, setStripeRecurringLoadError] = useState<
+    string | null
+  >(null);
+  const profileResyncForEndedSubRef = useRef(false);
 
   const { user: userAuth, refreshUser: refreshUserFromAuth } = useAuth();
   const user = userAuth!;
@@ -577,6 +597,100 @@ export default function BillingPage() {
 
   // Get subscription data from user object and cast to extended profile type
   const userSubscription = user.profile as unknown as ProfileWithSubscriptionDetails;
+
+  /**
+   * @brief Whether this user may have a Stripe recurring sub we must reflect from the API (cancel/undo, ended state).
+   */
+  const needsStripeRecurringSnapshot = useMemo(() => {
+    if (hasNfr === true) return false;
+    if (userSubscription.subscription === "lifetime") return false;
+    if (userSubscription.subscription_source === "ios") return false;
+    if (
+      userSubscription.subscription !== "monthly" &&
+      userSubscription.subscription !== "annual"
+    ) {
+      return false;
+    }
+    return Boolean(userSubscription.customer_id);
+  }, [
+    hasNfr,
+    userSubscription.customer_id,
+    userSubscription.subscription,
+    userSubscription.subscription_source,
+  ]);
+
+  /**
+   * @brief Loads active/trialing Stripe subscription flags (cancel at period end) for billing actions.
+   */
+  const fetchStripeRecurringStatus = useCallback(async () => {
+    if (!needsStripeRecurringSnapshot) {
+      setStripeRecurringSub(null);
+      setStripeRecurringLoadError(null);
+      setIsLoadingStripeRecurring(false);
+      return;
+    }
+    setIsLoadingStripeRecurring(true);
+    setStripeRecurringLoadError(null);
+    try {
+      const res = await fetch(
+        "/api/stripe/customer-portal/subscription-status",
+      );
+      const data: {
+        success?: boolean;
+        subscription?: BillingStripeSubscriptionSnapshot | null;
+        error?: string;
+      } = await res.json();
+      if (!data.success) {
+        setStripeRecurringLoadError(data.error ?? "Failed to load");
+        setStripeRecurringSub(null);
+        return;
+      }
+      setStripeRecurringSub(data.subscription ?? null);
+    } catch {
+      setStripeRecurringLoadError("Failed to load subscription status");
+      setStripeRecurringSub(null);
+    } finally {
+      setIsLoadingStripeRecurring(false);
+    }
+  }, [needsStripeRecurringSnapshot]);
+
+  const cancelScheduledWithStripe =
+    stripeRecurringSub?.cancelAtPeriodEnd === true;
+
+  const periodEndForCancelNotice =
+    stripeRecurringSub?.currentPeriodEnd ??
+    userSubscription.subscription_expiration ??
+    null;
+
+  const recurringProfileExpirationPassed = useMemo(() => {
+    if (
+      userSubscription.subscription !== "monthly" &&
+      userSubscription.subscription !== "annual"
+    ) {
+      return false;
+    }
+    if (!userSubscription.subscription_expiration) return false;
+    return new Date(userSubscription.subscription_expiration) < new Date();
+  }, [
+    userSubscription.subscription,
+    userSubscription.subscription_expiration,
+  ]);
+
+  /**
+   * @brief Stripe reports no active/trialing sub while profile still shows a recurring plan (stale or fully ended).
+   */
+  const stripeReportsNoRecurringButProfileShowsPlan =
+    needsStripeRecurringSnapshot &&
+    !isLoadingStripeRecurring &&
+    stripeRecurringLoadError === null &&
+    stripeRecurringSub === null;
+
+  const canUseStripeCancelOrReactivate =
+    needsStripeRecurringSnapshot &&
+    !isLoadingStripeRecurring &&
+    stripeRecurringLoadError === null &&
+    stripeRecurringSub !== null &&
+    !recurringProfileExpirationPassed;
 
   // Define a function to determine if the user is in a trial period
   const isInTrialPeriod = useMemo(() => {
@@ -690,6 +804,26 @@ export default function BillingPage() {
     // Removed checkTrialStatus from dependencies - it's stable based on user?.email
   ]);
 
+  useEffect(() => {
+    void fetchStripeRecurringStatus();
+  }, [fetchStripeRecurringStatus]);
+
+  /**
+   * @brief One-shot profile refresh when Stripe has no recurring sub but the profile still shows monthly/annual.
+   */
+  useEffect(() => {
+    if (!stripeReportsNoRecurringButProfileShowsPlan) {
+      profileResyncForEndedSubRef.current = false;
+      return;
+    }
+    if (profileResyncForEndedSubRef.current) return;
+    profileResyncForEndedSubRef.current = true;
+    void refreshUserFromAuth();
+  }, [
+    stripeReportsNoRecurringButProfileShowsPlan,
+    refreshUserFromAuth,
+  ]);
+
   // Function to refresh all data
   const refreshAllData = async () => {
     // Refresh user data from auth context
@@ -701,6 +835,7 @@ export default function BillingPage() {
       refreshUpcomingInvoice(),
       refreshInvoices(),
     ]);
+    await fetchStripeRecurringStatus();
   };
 
   /** @note Keeps latest refresh for one-shot effects (e.g. Stripe return URL) without re-running on every render. */
@@ -1539,6 +1674,53 @@ export default function BillingPage() {
                       </span>
                     </div>
                   )}
+                  {cancelScheduledWithStripe && (
+                    <div
+                      style={{
+                        marginTop: "0.65rem",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.35rem",
+                        padding: "0.35rem 0.65rem",
+                        borderRadius: "6px",
+                        fontSize: "0.85rem",
+                        fontWeight: 600,
+                        background: "rgba(255, 87, 51, 0.15)",
+                        color: "var(--warning)",
+                        border: "1px solid rgba(255, 87, 51, 0.35)",
+                      }}
+                    >
+                      <FaInfoCircle aria-hidden />
+                      {t(
+                        "dashboard.billing.statusCancelScheduled",
+                        "Cancellation scheduled — access until {{date}}",
+                        { date: formatDate(periodEndForCancelNotice) },
+                      )}
+                    </div>
+                  )}
+                  {stripeReportsNoRecurringButProfileShowsPlan && (
+                    <div
+                      style={{
+                        marginTop: "0.65rem",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.35rem",
+                        padding: "0.35rem 0.65rem",
+                        borderRadius: "6px",
+                        fontSize: "0.85rem",
+                        fontWeight: 600,
+                        background: "rgba(255, 87, 51, 0.12)",
+                        color: "var(--warning)",
+                        border: "1px solid rgba(255, 87, 51, 0.35)",
+                      }}
+                    >
+                      <FaTimes aria-hidden />
+                      {t(
+                        "dashboard.billing.statusSubscriptionEnded",
+                        "Subscription canceled",
+                      )}
+                    </div>
+                  )}
                 </PlanDescription>
               </div>
 
@@ -1691,7 +1873,34 @@ export default function BillingPage() {
                     </div>
                   )}
 
-                {userSubscription.cancel_at_period_end && (
+                {stripeReportsNoRecurringButProfileShowsPlan && (
+                  <div
+                    style={{
+                      marginTop: "0.75rem",
+                      padding: "0.85rem 1rem",
+                      background: "rgba(255, 87, 51, 0.12)",
+                      border: "1px solid rgba(255, 87, 51, 0.35)",
+                      borderRadius: "8px",
+                      color: "var(--warning)",
+                      fontSize: "0.95rem",
+                      lineHeight: 1.45,
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    <FaInfoCircle
+                      style={{ marginTop: "0.15rem", flexShrink: 0 }}
+                    />
+                    <span>
+                      {t(
+                        "dashboard.billing.subscriptionEndedNotice",
+                        "Your subscription has been canceled and is no longer active. If this page still shows an old plan, it should update in a moment—you can subscribe again below.",
+                      )}
+                    </span>
+                  </div>
+                )}
+                {cancelScheduledWithStripe && (
                   <div
                     style={{
                       marginTop: "0.75rem",
@@ -1709,11 +1918,9 @@ export default function BillingPage() {
                     />
                     {t(
                       "dashboard.billing.cancelNotice",
-                      "Your subscription will be canceled on {{date}}. You will have access until then.",
+                      "Your subscription will end on {{date}}. You will have access until then.",
                       {
-                        date: formatDate(
-                          userSubscription.subscription_expiration
-                        ),
+                        date: formatDate(periodEndForCancelNotice),
                       }
                     )}
                   </div>
@@ -1790,6 +1997,19 @@ export default function BillingPage() {
               </PaymentMethodPanel>
             )}
 
+            {stripeRecurringLoadError && needsStripeRecurringSnapshot && (
+              <AlertBanner style={{ marginTop: "1rem" }}>
+                <FaInfoCircle />
+                <p>
+                  {t(
+                    "dashboard.billing.subscriptionStatusLoadError",
+                    "We couldn’t verify your subscription with Stripe. Refresh the page or try again shortly. {{detail}}",
+                    { detail: stripeRecurringLoadError },
+                  )}
+                </p>
+              </AlertBanner>
+            )}
+
             <ButtonContainer>
               {userSubscription.subscription_source === "ios" ? (
                 <Button onClick={handleManageBillingAppStore}>
@@ -1814,9 +2034,18 @@ export default function BillingPage() {
                       {t("dashboard.billing.changePlan", "Change Plan")}
                     </Button>
                   )}
+                  {needsStripeRecurringSnapshot && isLoadingStripeRecurring && (
+                    <PaymentMethodMeta style={{ textAlign: "center", width: "100%" }}>
+                      {t(
+                        "dashboard.billing.loadingSubscriptionActions",
+                        "Loading subscription actions…",
+                      )}
+                    </PaymentMethodMeta>
+                  )}
                   {userSubscription.subscription !== "lifetime" &&
                     userSubscription.customer_id &&
-                    (userSubscription.cancel_at_period_end ? (
+                    canUseStripeCancelOrReactivate &&
+                    (cancelScheduledWithStripe ? (
                       <Button
                         onClick={handleReactivateSubscription}
                         disabled={isReactivating}
@@ -2091,10 +2320,10 @@ export default function BillingPage() {
                     "Your subscription will be canceled at the end of your current billing period. You will have access until then. No further charges will be applied."
                   )}
                 </p>
-                {userSubscription.subscription_expiration && (
+                {periodEndForCancelNotice && (
                   <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
                     {t("dashboard.billing.accessUntil", "Access until")}:{" "}
-                    {formatDate(userSubscription.subscription_expiration)}
+                    {formatDate(periodEndForCancelNotice)}
                   </p>
                 )}
               </ModalBody>
