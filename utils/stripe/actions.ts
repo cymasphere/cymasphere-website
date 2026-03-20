@@ -713,48 +713,85 @@ export async function getCheckoutSessionResult(sessionId: string): Promise<{
 }
 
 /**
- * Gets the upcoming invoice for a customer to show accurate first charge amount
+ * Gets the next invoice preview for a customer’s active/trialing subscription
+ * (includes coupons/promos in amount_due and subtotal). Uses invoices.createPreview;
+ * retrieveUpcoming was removed in Stripe API / stripe-node v20+.
  */
 export async function getUpcomingInvoice(customerId: string | null): Promise<{
+  /** @brief Amount due on the next invoice in major currency units (after discounts). */
   amount: number;
+  /** @brief Subtotal before invoice-level discounts, same units; null if absent. */
+  subtotal: number | null;
+  /** @brief ISO currency code (e.g. USD). */
+  currency: string;
   error: string | null;
   due_date: Date | null;
 }> {
+  const empty = {
+    amount: 0,
+    subtotal: null as number | null,
+    currency: "USD",
+    error: null as string | null,
+    due_date: null as Date | null,
+  };
+
   try {
     if (!customerId) {
-      return { amount: 0, error: "No customer ID provided", due_date: null };
+      return { ...empty, error: "No customer ID provided" };
     }
 
-    const upcomingInvoice = await (
-      stripe.invoices as unknown as {
-        retrieveUpcoming: (p: { customer: string }) => Promise<Stripe.Invoice>;
-      }
-    ).retrieveUpcoming({ customer: customerId });
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customerId,
+      status: "active",
+      limit: 5,
+    });
+    const trialing = await stripe.subscriptions.list({
+      customer: customerId,
+      status: "trialing",
+      limit: 5,
+    });
+    const activeOrTrialing = [
+      ...subscriptions.data,
+      ...trialing.data.filter(
+        (s) => !subscriptions.data.some((a) => a.id === s.id),
+      ),
+    ];
+    const subscriptionId = activeOrTrialing[0]?.id;
+    if (!subscriptionId) {
+      return { ...empty };
+    }
+
+    const preview = await stripe.invoices.createPreview({
+      customer: customerId,
+      subscription: subscriptionId,
+    });
+
+    const subtotal =
+      typeof preview.subtotal === "number" ? preview.subtotal / 100 : null;
 
     return {
-      amount: upcomingInvoice.amount_due / 100,
+      amount: preview.amount_due / 100,
+      subtotal,
+      currency: (preview.currency ?? "usd").toUpperCase(),
       error: null,
-      due_date: upcomingInvoice.due_date
-        ? new Date(upcomingInvoice.due_date * 1000)
+      due_date: preview.due_date
+        ? new Date(preview.due_date * 1000)
         : null,
     };
   } catch (error: unknown) {
-    // Handle the case where there are no upcoming invoices gracefully
-    // This is common for lifetime customers, canceled subscriptions, or customers without active subscriptions
     const errorMessage = error instanceof Error ? error.message : String(error);
 
     if (
       errorMessage.includes("No upcoming invoices") ||
       errorMessage.includes("no upcoming invoice") ||
-      errorMessage.includes("No invoice found")
+      errorMessage.includes("No invoice found") ||
+      errorMessage.includes("does not have an active subscription")
     ) {
-      // This is not really an error - just means no upcoming charges
-      return { amount: 0, error: null, due_date: null };
+      return { ...empty };
     }
 
-    // For other types of errors, still log them but don't expose the full error to the UI
-    console.error("Error fetching upcoming invoice:", error);
-    return { amount: 0, error: null, due_date: null };
+    console.error("Error fetching upcoming invoice preview:", error);
+    return { ...empty };
   }
 }
 

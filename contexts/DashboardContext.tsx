@@ -22,6 +22,8 @@ interface StripePrices {
 
 interface UpcomingInvoice {
   amount: number | null;
+  subtotal: number | null;
+  currency: string;
   due_date: Date | null;
   error: string | null;
 }
@@ -124,6 +126,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   // Upcoming invoice state
   const [upcomingInvoice, setUpcomingInvoice] = useState<UpcomingInvoice>({
     amount: null,
+    subtotal: null,
+    currency: "USD",
     due_date: null,
     error: null,
   });
@@ -297,16 +301,25 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     if (!user?.profile?.customer_id || isLoadingUpcomingInvoice) return;
     
     setIsLoadingUpcomingInvoice(true);
-    setUpcomingInvoice({ amount: null, due_date: null, error: null });
+    setUpcomingInvoice({
+      amount: null,
+      subtotal: null,
+      currency: "USD",
+      due_date: null,
+      error: null,
+    });
     
     try {
       // Use the same function that billing page was using
       const { getUpcomingInvoice } = await import("@/utils/stripe/actions");
-      const { amount, error, due_date } = await getUpcomingInvoice(user.profile.customer_id);
+      const { amount, subtotal, currency, error, due_date } =
+        await getUpcomingInvoice(user.profile.customer_id);
 
       if (error) {
         setUpcomingInvoice({
           amount: null,
+          subtotal: null,
+          currency: "USD",
           due_date: null,
           error: error,
         });
@@ -314,14 +327,18 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       }
 
       setUpcomingInvoice({
-        amount: amount,
-        due_date: due_date,
+        amount,
+        subtotal,
+        currency,
+        due_date,
         error: null,
       });
     } catch (err) {
       console.error("Error fetching upcoming invoice:", err);
       setUpcomingInvoice({
         amount: null,
+        subtotal: null,
+        currency: "USD",
         due_date: null,
         error: "Failed to load upcoming invoice",
       });
