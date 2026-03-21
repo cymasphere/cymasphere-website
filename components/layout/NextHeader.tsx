@@ -736,8 +736,12 @@ const NextHeader = ({ hasActiveBanner = false }: NextHeaderProps = {}) => {
   const handleLogout = async (e: React.MouseEvent) => {
     e.preventDefault();
     try {
-      await signOut("local");
-      router.push("/");
+      const { error } = await signOut("local");
+      if (error) {
+        console.error("Logout failed:", error);
+        return;
+      }
+      router.replace("/login");
     } catch (error) {
       console.error("Logout failed:", error);
     }

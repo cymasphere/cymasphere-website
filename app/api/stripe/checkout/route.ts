@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { PlanType } from "@/types/stripe";
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
+import { createClient } from "@/utils/supabase/server";
 import { checkRateLimit, getClientIp } from "@/utils/rate-limit";
 import { hasCustomerPurchasedLifetime } from "@/utils/stripe/actions";
 import { randomUUID } from "crypto";
@@ -178,6 +179,74 @@ export async function POST(request: NextRequest) {
       embedded?: boolean;
     } = body;
 
+    if (customerId?.trim()) {
+      const supabaseAuth = await createClient();
+      const {
+        data: { user },
+      } = await supabaseAuth.auth.getUser();
+      if (!user?.id) {
+        return NextResponse.json(
+          {
+            url: null,
+            error: "Unauthorized",
+            message: "Sign in to continue checkout with your saved billing profile.",
+          },
+          { status: 401 },
+        );
+      }
+      const cid = customerId.trim();
+      const { data: profileRow } = await supabaseAuth
+        .from("profiles")
+        .select("customer_id")
+        .eq("id", user.id)
+        .single();
+      if (profileRow?.customer_id && profileRow.customer_id !== cid) {
+        return NextResponse.json(
+          {
+            url: null,
+            error: "FORBIDDEN",
+            message:
+              "The billing profile does not match your account. Refresh the page or contact support.",
+          },
+          { status: 403 },
+        );
+      }
+      if (!profileRow?.customer_id) {
+        try {
+          const cust = await stripe.customers.retrieve(cid);
+          const stripeEmail =
+            typeof cust === "object" &&
+            cust &&
+            !("deleted" in cust && cust.deleted) &&
+            "email" in cust &&
+            cust.email
+              ? cust.email.toLowerCase().trim()
+              : null;
+          const userEmail = user.email?.toLowerCase().trim() ?? null;
+          if (!stripeEmail || !userEmail || stripeEmail !== userEmail) {
+            return NextResponse.json(
+              {
+                url: null,
+                error: "FORBIDDEN",
+                message:
+                  "Stripe customer does not match your account email. Use checkout email that matches your login.",
+              },
+              { status: 403 },
+            );
+          }
+        } catch {
+          return NextResponse.json(
+            {
+              url: null,
+              error: "Invalid customer",
+              message: "Could not verify billing profile.",
+            },
+            { status: 400 },
+          );
+        }
+      }
+    }
+
     let resolved_customer_id: string | undefined;
     let needsDatabaseUpdate = false;
 
@@ -189,7 +258,7 @@ export async function POST(request: NextRequest) {
       try {
         await stripe.customers.retrieve(customerId);
         resolved_customer_id = customerId;
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Customer doesn't exist in Stripe, try to find/create using email
         console.warn(
           `Customer ${customerId} not found in Stripe, attempting to find/create using email`,
@@ -248,7 +317,15 @@ export async function POST(request: NextRequest) {
         }
       } catch (error) {
         console.error("Error checking trial history:", error);
-        // Continue with checkout even if trial check fails
+        return NextResponse.json(
+          {
+            url: null,
+            error: "BILLING_VERIFY_UNAVAILABLE",
+            message:
+              "We could not verify trial eligibility. Please try again in a moment.",
+          },
+          { status: 503 },
+        );
       }
     }
 
@@ -275,7 +352,15 @@ export async function POST(request: NextRequest) {
         }
       } catch (error) {
         console.error("Error checking lifetime purchase history:", error);
-        // Continue with checkout even if check fails to avoid blocking legitimate purchases
+        return NextResponse.json(
+          {
+            url: null,
+            error: "BILLING_VERIFY_UNAVAILABLE",
+            message:
+              "We could not verify purchase history. Please try again in a moment.",
+          },
+          { status: 503 },
+        );
       }
     }
 
@@ -331,7 +416,15 @@ export async function POST(request: NextRequest) {
         }
       } catch (error) {
         console.error("Error checking for active subscriptions:", error);
-        // Continue with checkout even if check fails to avoid blocking legitimate purchases
+        return NextResponse.json(
+          {
+            url: null,
+            error: "BILLING_VERIFY_UNAVAILABLE",
+            message:
+              "We could not verify subscription status. Please try again in a moment.",
+          },
+          { status: 503 },
+        );
       }
     }
 
@@ -424,7 +517,7 @@ async function findOrCreateCustomer(email: string): Promise<string> {
       );
 
       return newCustomer.id;
-    } catch (createError: any) {
+    } catch (createError: unknown) {
       // If customer creation fails, it could be due to:
       // 1. Idempotency key collision (another request is creating the same customer)
       // 2. Network/API error
@@ -446,10 +539,14 @@ async function findOrCreateCustomer(email: string): Promise<string> {
         return retryCustomers.data[0].id;
       }
 
+      const stripeErr = createError as {
+        code?: string;
+        type?: string;
+      };
       // If retry also fails, check for specific error codes
       if (
-        createError?.code === "idempotency_key_in_use" ||
-        createError?.type === "StripeIdempotencyError"
+        stripeErr.code === "idempotency_key_in_use" ||
+        stripeErr.type === "StripeIdempotencyError"
       ) {
         // Idempotency key collision - wait a bit longer and retry lookup
         await new Promise((resolve) => setTimeout(resolve, 500));
@@ -842,11 +939,15 @@ async function createCheckoutSession(
               discount_value: activePromotion.discount_value,
               priority: activePromotion.priority,
             });
-          } catch (couponError: any) {
+          } catch (couponError: unknown) {
             // Coupon doesn't exist in Stripe or is invalid
+            const couponMsg =
+              couponError instanceof Error
+                ? couponError.message
+                : String(couponError);
             console.warn(
               `⚠️ Coupon ${activePromotion.stripe_coupon_code} not found or invalid in Stripe:`,
-              couponError.message,
+              couponMsg,
             );
             console.warn(
               `   Promotion: ${activePromotion.name} (${activePromotion.title})`,

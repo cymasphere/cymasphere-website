@@ -590,8 +590,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   const handleLogout = async () => {
     try {
-      await signOut("local");
-      router.push("/");
+      const { error } = await signOut("local");
+      if (error) {
+        console.error("Logout failed:", error);
+        return;
+      }
+      router.replace("/login");
     } catch (error) {
       console.error("Logout failed:", error);
     }

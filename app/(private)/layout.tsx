@@ -40,7 +40,7 @@ export default function RootLayout({
       if (!hasRedirectedRef.current) {
         hasRedirectedRef.current = true;
         const redirectUrl = encodeURIComponent(pathname);
-        router.push(`/login?redirect=${redirectUrl}`);
+        router.replace(`/login?redirect=${redirectUrl}`);
       }
     } else if (auth.user) {
       // Reset so a future logout can redirect again

@@ -17,7 +17,12 @@ import {
 } from "@/utils/stripe/actions";
 import { createClient } from "@/utils/supabase/server";
 import { checkRateLimit, getClientIp } from "@/utils/rate-limit";
-import { inviteUserByEmailAndRefreshProStatus } from "@/app/actions/checkout";
+import {
+  ACCOUNT_EXISTS_REQUIRE_LOGIN,
+  ACCOUNT_EXISTS_REQUIRE_LOGIN_MESSAGE,
+  guestCheckoutEmailRequiresLogin,
+} from "@/utils/checkout/guest-checkout-account-guard";
+import { inviteUserByEmailAndRefreshProStatus } from "@/utils/checkout/post-purchase";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -101,6 +106,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: "Email is required." },
         { status: 400 },
+      );
+    }
+
+    if (
+      user?.email &&
+      user.email.toLowerCase().trim() !== checkoutEmail.toLowerCase().trim()
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "EMAIL_MISMATCH",
+          message:
+            "Checkout email must match your logged-in account. Use the same email you use to sign in.",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (await guestCheckoutEmailRequiresLogin(checkoutEmail, user?.id)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: ACCOUNT_EXISTS_REQUIRE_LOGIN,
+          message: ACCOUNT_EXISTS_REQUIRE_LOGIN_MESSAGE,
+        },
+        { status: 403 },
       );
     }
 

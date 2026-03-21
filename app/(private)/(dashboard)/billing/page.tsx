@@ -3,7 +3,14 @@
  * @module app/(private)/(dashboard)/billing/page
  */
 "use client";
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, {
+  Suspense,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -31,6 +38,11 @@ import LoadingComponent from "@/components/common/LoadingComponent";
 import { useTranslation } from "react-i18next";
 import dynamic from "next/dynamic";
 import { loadStripe } from "@stripe/stripe-js";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  billingUrlHasResumeCheckoutFlag,
+  parseBillingResumeCheckoutQuery,
+} from "@/utils/checkout/billing-resume-checkout";
 
 // Type definitions for CymasphereLogo component
 interface CymasphereLogoProps {
@@ -374,6 +386,33 @@ const AlertBanner = styled.div`
   }
 `;
 
+/** Shown after login when `resumeCheckout` query opens inline checkout from pricing/checkout. */
+const ResumeCheckoutInfoBanner = styled(AlertBanner)`
+  background-color: rgba(108, 99, 255, 0.12);
+  border-color: rgba(108, 99, 255, 0.35);
+  color: var(--text);
+  align-items: flex-start;
+
+  p {
+    color: var(--text);
+  }
+`;
+
+const ResumeCheckoutDismiss = styled.button`
+  margin-top: 0.65rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  &:hover {
+    filter: brightness(1.1);
+  }
+`;
+
 const TrialBadge = styled.div`
   background: linear-gradient(135deg, rgba(78, 205, 196, 0.15), rgba(108, 99, 255, 0.15));
   border: 2px solid rgba(78, 205, 196, 0.5);
@@ -529,6 +568,80 @@ function formatMajorCurrencyAmount(amount: number, currencyCode: string): string
   }
 }
 
+/**
+ * @brief Reads `resumeCheckout` query params after login and opens inline checkout on Billing.
+ * @param consumedRef - Parent-owned ref so React Strict Mode does not apply resume twice.
+ * @note Lives inside `Suspense` because `useSearchParams` is required by Next.js for static generation.
+ */
+function BillingResumeCheckoutLauncher({
+  setInlineCheckoutParams,
+  consumedRef,
+  onResumeApplied,
+  authLoading,
+  suppressResumeCheckoutModal,
+}: {
+  setInlineCheckoutParams: React.Dispatch<
+    React.SetStateAction<InlineCheckoutParams | null>
+  >;
+  consumedRef: React.MutableRefObject<boolean>;
+  onResumeApplied: (payload: { planLabel: string }) => void;
+  /** When true, wait before applying resume logic so profile subscription is current. */
+  authLoading: boolean;
+  /** When true, skip opening checkout unless URL is a plan-change resume (`isPlanChange`). */
+  suppressResumeCheckoutModal: boolean;
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (consumedRef.current) {
+      return;
+    }
+    if (!billingUrlHasResumeCheckoutFlag(searchParams)) {
+      return;
+    }
+    if (authLoading) {
+      return;
+    }
+    const parsed = parseBillingResumeCheckoutQuery(searchParams);
+    if (!parsed) {
+      consumedRef.current = true;
+      router.replace("/billing");
+      return;
+    }
+    if (suppressResumeCheckoutModal && !parsed.isPlanChange) {
+      consumedRef.current = true;
+      router.replace("/billing");
+      return;
+    }
+    consumedRef.current = true;
+    setInlineCheckoutParams({
+      planType: parsed.planType,
+      collectPaymentMethod: parsed.collectPaymentMethod,
+      isPlanChange: parsed.isPlanChange,
+      ...(parsed.trialOption ? { trialOption: parsed.trialOption } : {}),
+    });
+    const planLabel =
+      parsed.planType === "monthly"
+        ? "Monthly"
+        : parsed.planType === "annual"
+          ? "Annual"
+          : "Lifetime";
+    onResumeApplied({ planLabel });
+    router.replace("/billing");
+  }, [
+    searchParams,
+    router,
+    setInlineCheckoutParams,
+    onResumeApplied,
+    consumedRef,
+    authLoading,
+    suppressResumeCheckoutModal,
+  ]);
+
+  return null;
+}
+
 export default function BillingPage() {
   const { t } = useTranslation();
   const [showPlanModal, setShowPlanModal] = useState(false);
@@ -541,6 +654,17 @@ export default function BillingPage() {
   const [isPlanChangeLoading, setIsPlanChangeLoading] = useState(false);
   const [inlineCheckoutParams, setInlineCheckoutParams] =
     useState<InlineCheckoutParams | null>(null);
+  const [resumeCheckoutBanner, setResumeCheckoutBanner] = useState<{
+    planLabel: string;
+  } | null>(null);
+  const billingResumeConsumedRef = useRef(false);
+
+  const handleResumeCheckoutApplied = useCallback(
+    (payload: { planLabel: string }) => {
+      setResumeCheckoutBanner(payload);
+    },
+    [],
+  );
   const [showUpdatePaymentModal, setShowUpdatePaymentModal] = useState(false);
   const [defaultPaymentMethod, setDefaultPaymentMethod] =
     useState<BillingPaymentMethodSummary | null>(null);
@@ -561,7 +685,11 @@ export default function BillingPage() {
   >(null);
   const profileResyncForEndedSubRef = useRef(false);
 
-  const { user: userAuth, refreshUser: refreshUserFromAuth } = useAuth();
+  const {
+    user: userAuth,
+    refreshUser: refreshUserFromAuth,
+    loading: authLoading,
+  } = useAuth();
   const user = userAuth!;
   
   // Use dashboard context for shared data
@@ -697,6 +825,23 @@ export default function BillingPage() {
     if (!userSubscription.trial_expiration) return false;
     return new Date() < new Date(userSubscription.trial_expiration);
   }, [userSubscription.trial_expiration]);
+
+  /**
+   * @brief True when the user already has Pro access; resume-checkout should not open a new purchase modal.
+   * @note Plan-change resumes (`isPlanChange` in URL) still open checkout when this is true.
+   */
+  const suppressResumeCheckoutModal = useMemo(() => {
+    if (hasNfr === true) {
+      return true;
+    }
+    if (!isSubscriptionNone(userSubscription.subscription)) {
+      return true;
+    }
+    if (isInTrialPeriod) {
+      return true;
+    }
+    return false;
+  }, [hasNfr, userSubscription.subscription, isInTrialPeriod]);
 
   // Calculate days left in trial
   const daysLeftInTrial = useMemo(() => {
@@ -1399,6 +1544,27 @@ export default function BillingPage() {
       <SectionTitle>
         {t("dashboard.billing.title", "Billing & Subscription")}
       </SectionTitle>
+
+      {resumeCheckoutBanner && (
+        <ResumeCheckoutInfoBanner>
+          <FaInfoCircle />
+          <div style={{ flex: 1 }}>
+            <p>
+              {t(
+                "dashboard.billing.resumeCheckoutBanner",
+                "You are signed in. Checkout for the {{plan}} plan is open below—complete your purchase in the window, or dismiss this message.",
+                { plan: resumeCheckoutBanner.planLabel },
+              )}
+            </p>
+            <ResumeCheckoutDismiss
+              type="button"
+              onClick={() => setResumeCheckoutBanner(null)}
+            >
+              {t("dashboard.billing.resumeCheckoutDismiss", "Dismiss")}
+            </ResumeCheckoutDismiss>
+          </div>
+        </ResumeCheckoutInfoBanner>
+      )}
 
       {shouldShowTrialContent && (
         <AlertBanner
@@ -2359,6 +2525,16 @@ export default function BillingPage() {
           await fetchDefaultPaymentMethod();
         }}
       />
+
+      <Suspense fallback={null}>
+        <BillingResumeCheckoutLauncher
+          setInlineCheckoutParams={setInlineCheckoutParams}
+          consumedRef={billingResumeConsumedRef}
+          onResumeApplied={handleResumeCheckoutApplied}
+          authLoading={authLoading}
+          suppressResumeCheckoutModal={suppressResumeCheckoutModal}
+        />
+      </Suspense>
 
       <CheckoutModal
         params={inlineCheckoutParams}

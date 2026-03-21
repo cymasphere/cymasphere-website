@@ -23,6 +23,7 @@ import {
   AuthTokenResponsePassword,
   AuthResponse,
   Session,
+  User,
 } from "@supabase/supabase-js";
 import { Profile, UserProfile } from "@/utils/supabase/types";
 import { signUpWithStripe } from "@/utils/supabase/actions";
@@ -64,6 +65,34 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const supabase = createClient();
+
+/** Max time to wait on auth/profile network calls before failing the sync so UI can recover. */
+const AUTH_SYNC_TIMEOUT_MS = 25_000;
+
+/**
+ * @brief Rejects if `promise` does not settle within `ms` milliseconds.
+ * @param promise Async work to bound.
+ * @param ms Timeout in milliseconds.
+ * @param label Included in the timeout error message for debugging.
+ * @returns The resolved value of `promise`.
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const id = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${ms}ms`));
+    }, ms);
+    promise.then(
+      (value) => {
+        clearTimeout(id);
+        resolve(value);
+      },
+      (err: unknown) => {
+        clearTimeout(id);
+        reject(err instanceof Error ? err : new Error(String(err)));
+      },
+    );
+  });
+}
 
 /**
  * @brief Fetches profile from Supabase using the browser client (avoids server action / 431 when cookies are large).
@@ -119,7 +148,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const isUpdatingUserRef = useRef(false);
+  /** When the current `updateUserFromSession` run started (`performance.now()` or `Date.now()`). */
+  const updateUserLockStartedAtRef = useRef(0);
   const lastProStatusUpdateRef = useRef<number>(0);
+  /**
+   * Synchronous mirror of `session?.user?.id` updated in onAuthStateChange before setState.
+   * Used to drop stale async work (profile / pro-status) that finishes after sign-out.
+   */
+  const latestAuthUserIdRef = useRef<string | null>(null);
 
   // Log environment status on mount to help debug 500 errors
   useEffect(() => {
@@ -134,78 +170,129 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    * @note Uses centralized updateUserProStatus function to handle NFR, Stripe, and iOS subscriptions.
    */
   const refreshUser = useCallback(async () => {
-    if (session?.user) {
-      try {
-        const { profile, error } = await fetchProfileClient(session.user.id);
-        if (error) {
-          console.log("[refreshUser] Error fetching profile:", error.message);
-          return;
-        }
-
-        const { is_admin, error: adminError } = await fetchIsAdminClient(
-          session.user.id,
-        );
-        if (adminError) {
-          console.log(
-            "[refreshUser] Error fetching admin status:",
-            adminError.message,
-          );
-          return;
-        }
-
-        if (profile) {
-          // Update pro status using centralized function (handles NFR, Stripe, and iOS)
-          try {
-            const { updateUserProStatus } =
-              await import("@/utils/subscriptions/check-subscription");
-            const result = await updateUserProStatus(session.user.id);
-
-            // Update profile with the determined subscription status
-            const updatedProfile = {
-              ...profile,
-              subscription: result.subscription,
-              subscription_expiration:
-                result.subscriptionExpiration?.toISOString() || null,
-              subscription_source: result.source,
-            };
-
-            setUser({
-              ...session.user,
-              profile: updatedProfile,
-              is_admin,
-            });
-          } catch (error) {
-            console.error("[refreshUser] Error updating pro status:", error);
-            // Fall back to original profile if update fails
-            setUser({ ...session.user, profile, is_admin });
-          }
-        }
-      } catch (error) {
-        console.error("[refreshUser] Error refreshing user:", error);
+    const authUser = session?.user;
+    const expectedUserId = authUser?.id;
+    if (!expectedUserId || !authUser) {
+      return;
+    }
+    try {
+      const { profile, error } = await fetchProfileClient(expectedUserId);
+      if (latestAuthUserIdRef.current !== expectedUserId) {
+        return;
       }
+      if (error) {
+        console.log("[refreshUser] Error fetching profile:", error.message);
+        return;
+      }
+
+      const { is_admin, error: adminError } = await fetchIsAdminClient(
+        expectedUserId,
+      );
+      if (latestAuthUserIdRef.current !== expectedUserId) {
+        return;
+      }
+      if (adminError) {
+        console.log(
+          "[refreshUser] Error fetching admin status:",
+          adminError.message,
+        );
+        return;
+      }
+
+      if (profile) {
+        // Update pro status using centralized function (handles NFR, Stripe, and iOS)
+        try {
+          const { updateUserProStatus } =
+            await import("@/utils/subscriptions/check-subscription");
+          const result = await updateUserProStatus(expectedUserId);
+          if (latestAuthUserIdRef.current !== expectedUserId) {
+            return;
+          }
+
+          // Update profile with the determined subscription status
+          const updatedProfile = {
+            ...profile,
+            subscription: result.subscription,
+            subscription_expiration:
+              result.subscriptionExpiration?.toISOString() || null,
+            subscription_source: result.source,
+          };
+
+          setUser({
+            ...authUser,
+            profile: updatedProfile,
+            is_admin,
+          });
+        } catch (error) {
+          console.error("[refreshUser] Error updating pro status:", error);
+          if (latestAuthUserIdRef.current !== expectedUserId) {
+            return;
+          }
+          // Fall back to original profile if update fails
+          setUser({ ...authUser, profile, is_admin });
+        }
+      }
+    } catch (error) {
+      console.error("[refreshUser] Error refreshing user:", error);
     }
   }, [session]);
 
   // Simple session update effect - based on working project
   useEffect(() => {
-    const updateUserFromSession = async () => {
-      // Prevent concurrent updates
+    const updateUserFromSession = async (
+      expectedUserId: string,
+      sessionUserFallback: User | undefined,
+    ) => {
+      const nowPerf =
+        typeof performance !== "undefined" ? performance.now() : Date.now();
       if (isUpdatingUserRef.current) {
-        return;
+        const lockAge = nowPerf - updateUserLockStartedAtRef.current;
+        if (lockAge < AUTH_SYNC_TIMEOUT_MS) {
+          return;
+        }
+        console.warn(
+          "[AuthContext] Replacing stuck updateUserFromSession lock after",
+          Math.round(lockAge),
+          "ms",
+        );
+        isUpdatingUserRef.current = false;
       }
 
       isUpdatingUserRef.current = true;
+      updateUserLockStartedAtRef.current = nowPerf;
 
       try {
         setLoading(user === null);
         const {
-          data: { user: logged_in_user },
-        } = await supabase.auth.getUser();
+          data: { user: fetchedUser },
+        } = await withTimeout(
+          supabase.auth.getUser(),
+          AUTH_SYNC_TIMEOUT_MS,
+          "getUser",
+        );
+
+        const logged_in_user =
+          fetchedUser ??
+          (sessionUserFallback?.id === expectedUserId
+            ? sessionUserFallback
+            : null);
+
+        if (latestAuthUserIdRef.current !== expectedUserId) {
+          return;
+        }
 
         if (logged_in_user) {
-          const { profile, error } = await fetchProfileClient(
-            logged_in_user.id,
+          if (logged_in_user.id !== expectedUserId) {
+            return;
+          }
+          const { profile, error } = await withTimeout(
+            fetchProfileClient(logged_in_user.id),
+            AUTH_SYNC_TIMEOUT_MS,
+            "fetchProfile",
           );
+          if (latestAuthUserIdRef.current !== expectedUserId) {
+            return;
+          }
           if (error) {
             console.log("error fetching profile", error.message);
             // Don't set user to null - keep them logged in even if profile fetch fails
@@ -221,6 +308,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               subscription_expiration: null,
               trial_expiration: null,
             } as Profile;
+            if (latestAuthUserIdRef.current !== expectedUserId) {
+              return;
+            }
             setUser({
               ...logged_in_user,
               profile: defaultProfile,
@@ -229,9 +319,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
-          const { is_admin, error: adminError } = await fetchIsAdminClient(
-            logged_in_user.id,
+          const { is_admin, error: adminError } = await withTimeout(
+            fetchIsAdminClient(logged_in_user.id),
+            AUTH_SYNC_TIMEOUT_MS,
+            "fetchIsAdmin",
           );
+          if (latestAuthUserIdRef.current !== expectedUserId) {
+            return;
+          }
           if (adminError) {
             console.log("error fetching admin status", adminError.message);
           } else {
@@ -241,93 +336,129 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             );
           }
 
-          if (profile) {
-            // Set user immediately with basic profile data
-            // Use functional update to prevent unnecessary re-renders
-            setUser((prevUser) => {
-              const newUser = {
-                ...logged_in_user,
-                profile,
-                is_admin: is_admin || false,
-              };
-
-              // Only update if user ID changed or profile data actually changed
-              if (
-                prevUser &&
-                prevUser.id === newUser.id &&
-                prevUser.email === newUser.email &&
-                prevUser.is_admin === newUser.is_admin &&
-                JSON.stringify(prevUser.profile) === JSON.stringify(profile)
-              ) {
-                return prevUser; // Return same reference if no change
-              }
-
-              return newUser;
+          if (!profile) {
+            console.warn(
+              "[AuthContext] Profile missing without error; using default profile for",
+              logged_in_user.id,
+            );
+            const defaultProfile: Profile = {
+              id: logged_in_user.id,
+              email: logged_in_user.email || "",
+              first_name: null,
+              last_name: null,
+              subscription: "none",
+              customer_id: null,
+              subscription_expiration: null,
+              trial_expiration: null,
+            } as Profile;
+            if (latestAuthUserIdRef.current !== expectedUserId) {
+              return;
+            }
+            setUser({
+              ...logged_in_user,
+              profile: defaultProfile,
+              is_admin: false,
             });
+            return;
+          }
 
-            // Update pro status asynchronously (non-blocking) using centralized function
-            // Only update if subscription has actually changed to prevent loops
-            const currentSubscription = profile.subscription;
-            const currentSource = profile.subscription_source;
+          // Set user immediately with basic profile data
+          // Use functional update to prevent unnecessary re-renders
+          setUser((prevUser) => {
+            const newUser = {
+              ...logged_in_user,
+              profile,
+              is_admin: is_admin || false,
+            };
 
-            // Throttle pro status updates - only update if it's been at least 30 seconds since last update
-            const now = Date.now();
-            const timeSinceLastUpdate = now - lastProStatusUpdateRef.current;
-            const UPDATE_THROTTLE_MS = 30000; // 30 seconds
+            // Only update if user ID changed or profile data actually changed
+            if (
+              prevUser &&
+              prevUser.id === newUser.id &&
+              prevUser.email === newUser.email &&
+              prevUser.is_admin === newUser.is_admin &&
+              JSON.stringify(prevUser.profile) === JSON.stringify(profile)
+            ) {
+              return prevUser; // Return same reference if no change
+            }
 
-            // Skip update if we just updated recently (prevent loops)
-            // Only update if:
-            // 1. Subscription is "none" (new user, needs initial check)
-            // 2. No source set (needs initial check)
-            // 3. It's been at least 30 seconds since last update
-            const shouldUpdateProStatus =
-              currentSubscription === "none" ||
-              !currentSource ||
-              timeSinceLastUpdate > UPDATE_THROTTLE_MS;
+            return newUser;
+          });
 
-            if (shouldUpdateProStatus) {
-              lastProStatusUpdateRef.current = now;
+          // Update pro status asynchronously (non-blocking) using centralized function
+          // Only update if subscription has actually changed to prevent loops
+          const currentSubscription = profile.subscription;
+          const currentSource = profile.subscription_source;
+
+          // Throttle pro status updates - only update if it's been at least 30 seconds since last update
+          const now = Date.now();
+          const timeSinceLastUpdate = now - lastProStatusUpdateRef.current;
+          const UPDATE_THROTTLE_MS = 30000; // 30 seconds
+
+          // Skip update if we just updated recently (prevent loops)
+          // Only update if:
+          // 1. Subscription is "none" (new user, needs initial check)
+          // 2. No source set (needs initial check)
+          // 3. It's been at least 30 seconds since last update
+          const shouldUpdateProStatus =
+            currentSubscription === "none" ||
+            !currentSource ||
+            timeSinceLastUpdate > UPDATE_THROTTLE_MS;
+
+          if (shouldUpdateProStatus) {
+            lastProStatusUpdateRef.current = now;
+            const proExpected = expectedUserId;
+            const proUserSnapshot = logged_in_user;
+            const proProfileSnapshot = profile;
+            const proAdmin = is_admin || false;
+            const proCurrSub = currentSubscription;
+            const proCurrSource = currentSource;
+
+            void (async () => {
               try {
                 const { updateUserProStatus } =
                   await import("@/utils/subscriptions/check-subscription");
-                const result = await updateUserProStatus(logged_in_user.id);
+                const result = await updateUserProStatus(proUserSnapshot.id);
 
-                // Only update user state if subscription actually changed
+                if (latestAuthUserIdRef.current !== proExpected) {
+                  return;
+                }
+
                 if (
-                  result.subscription !== currentSubscription ||
-                  result.source !== currentSource
+                  result.subscription !== proCurrSub ||
+                  result.source !== proCurrSource
                 ) {
                   const updatedProfile = {
-                    ...profile,
+                    ...proProfileSnapshot,
                     subscription: result.subscription,
                     subscription_expiration:
                       result.subscriptionExpiration?.toISOString() || null,
                     subscription_source: result.source,
                   };
 
-                  // Use functional update to prevent unnecessary re-renders
                   setUser((prevUser) => {
-                    // Only update if the subscription actually changed
                     if (
                       prevUser &&
+                      prevUser.id === proUserSnapshot.id &&
                       prevUser.profile.subscription === result.subscription &&
                       prevUser.profile.subscription_source === result.source
                     ) {
-                      return prevUser; // Return same reference if no change
+                      return prevUser;
                     }
-
+                    if (!prevUser || prevUser.id !== proUserSnapshot.id) {
+                      return prevUser;
+                    }
                     return {
-                      ...logged_in_user,
+                      ...proUserSnapshot,
                       profile: updatedProfile,
-                      is_admin: is_admin || false,
+                      is_admin: proAdmin,
                     };
                   });
                 }
               } catch (proStatusError) {
-                // Keep the user logged in even if pro status update fails
                 console.log("Pro status update failed:", proStatusError);
               }
-            }
+            })();
           }
         } else {
           setUser(null);
@@ -371,7 +502,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Check if this is actually a different session than what we have
       const currentUserId = user?.id;
       if (sessionUserId !== currentUserId) {
-        updateUserFromSession();
+        void updateUserFromSession(sessionUserId, session?.user ?? undefined);
       } else {
         // Same user, just refresh if needed (throttled by updateUserFromSession)
         // Don't call updateUserFromSession if user already exists and matches
@@ -390,6 +521,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      latestAuthUserIdRef.current = session?.user?.id ?? null;
       setSession(session);
 
       // Handle timezone tracking directly in AuthContext to ensure it runs

@@ -1,5 +1,9 @@
+/**
+ * @fileoverview Login page: email/password sign-in and redirect after AuthContext is ready.
+ * @module app/(auth)/login/page
+ */
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
@@ -229,8 +233,9 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState(false);
-  const auth = useAuth() || {};
+  const auth = useAuth();
   const router = useRouter();
+  const loginSuccessAtRef = useRef<number | null>(null);
 
   // Get redirect parameter from URL
   const redirectTo = searchParams.get("redirect");
@@ -273,6 +278,34 @@ function Login() {
       }
     }
   }, [loginSuccess, auth.user, auth.loading, router, redirectTo]);
+
+  /**
+   * @brief If sign-in succeeded but context never supplies `user`, stop the endless "Logging in…" state.
+   * @note Often caused by a stuck auth sync; AuthContext now times out network steps — this is a backstop.
+   */
+  useEffect(() => {
+    if (!loginSuccess) {
+      loginSuccessAtRef.current = null;
+      return;
+    }
+    if (loginSuccessAtRef.current === null) {
+      loginSuccessAtRef.current = Date.now();
+    }
+    const started = loginSuccessAtRef.current;
+    const timer = window.setTimeout(() => {
+      if (!auth.user && loginSuccess && started === loginSuccessAtRef.current) {
+        setLoginSuccess(false);
+        setLoading(false);
+        setError(
+          t(
+            "login.errors.syncTimeout",
+            "Sign-in succeeded but the session did not finish loading. Refresh the page or try again.",
+          ),
+        );
+      }
+    }, 45_000);
+    return () => window.clearTimeout(timer);
+  }, [loginSuccess, auth.user, t]);
 
   // Render a loading indicator if translations aren't loaded yet
   if (!translationsLoaded) {
@@ -338,6 +371,7 @@ function Login() {
         // Only stop loading when there's an error
         setLoading(false);
       } else {
+        loginSuccessAtRef.current = null;
         // Set success flag and let useEffect handle redirect after auth context updates
         // Keep loading state active until redirect happens or error occurs
         setLoginSuccess(true);
@@ -436,7 +470,7 @@ function Login() {
             </Link>
           </ForgotPassword>
 
-          <Button type="submit" disabled={loading || !!auth.user}>
+          <Button type="submit" disabled={loading}>
             <ButtonContent>
               {loading ? (
                 <>

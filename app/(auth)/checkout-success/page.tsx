@@ -8,12 +8,6 @@ import CymasphereLogo from "@/components/common/CymasphereLogo";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
 import { trackUserData, hashEmail, shouldFireEvent } from "@/utils/analytics";
-import {
-  refreshSubscriptionByCustomerId,
-  inviteUserAndRefreshProStatus,
-  inviteUserByEmailAndRefreshProStatus,
-} from "@/app/actions/checkout";
-import { updateUserProStatus } from "@/utils/subscriptions/check-subscription";
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -231,52 +225,8 @@ function CheckoutSuccessContent() {
         ? `setup_intent_id=${setupIntentId}`
         : null;
 
-  // State to track verified trial status (double-check from session if URL param seems wrong)
+  // Trial/value/currency confirmed server-side via POST /api/checkout/after-success (Stripe verify).
   const [verifiedIsTrial, setVerifiedIsTrial] = useState<boolean | null>(null);
-
-  // BULLETPROOF: Double-check trial status from session (only for Checkout Session, not payment_intent_id)
-  useEffect(() => {
-    if (!sessionId || paymentIntentId) return;
-
-    // Only verify if initial trial flag is false but mode is subscription (might be a trial we missed)
-    // Or if isTrial param is missing/null
-    if (isTrialParam === null || (!isTrialFlag && !isLifetime)) {
-      const verifyTrialStatus = async () => {
-        try {
-          const response = await fetch(
-            `/api/checkout-session-details?session_id=${sessionId}`,
-          );
-          const data = await response.json();
-
-          if (data.success) {
-            // If session says it's a trial but URL param says false, trust the session
-            if (data.isTrial === true && isTrialParam === "false") {
-              console.warn(
-                `[Checkout Success] Trial mismatch detected! URL says false but session says true. Using session data.`,
-              );
-              setVerifiedIsTrial(true);
-            } else if (data.isTrial === false && isTrialParam === "true") {
-              console.warn(
-                `[Checkout Success] Trial mismatch detected! URL says true but session says false. Using session data.`,
-              );
-              setVerifiedIsTrial(false);
-            } else {
-              setVerifiedIsTrial(data.isTrial || false);
-            }
-          }
-        } catch (error) {
-          console.error(
-            "[Checkout Success] Error verifying trial status:",
-            error,
-          );
-          // If verification fails, trust the URL param
-          setVerifiedIsTrial(null);
-        }
-      };
-
-      verifyTrialStatus();
-    }
-  }, [sessionId, isTrialParam, isLifetime]);
 
   // Use verified trial status if available, otherwise use URL param
   if (verifiedIsTrial !== null) {
@@ -298,8 +248,13 @@ function CheckoutSuccessContent() {
 
   // Ref to track if we've already fired the analytics event
   const hasTrackedEvent = useRef(false);
-  // Ref to track if we've already processed the invite/refresh
-  const hasProcessedInvite = useRef(false);
+  /** Set synchronously so React Strict Mode does not fire two concurrent POSTs for the same checkout. */
+  const afterSuccessInitiatedKey = useRef<string | null>(null);
+  /** Set only after a successful after-success response (idempotent UI). */
+  const afterSuccessProcessedKey = useRef<string | null>(null);
+  const [afterSuccessFinished, setAfterSuccessFinished] = useState(
+    () => detailsParam == null,
+  );
   // When Stripe redirects after 3DS with setup_intent, create the subscription from stored context.
   // Invite/refresh effect waits for this when setupIntentId is present.
   const [setupIntentSubscriptionDone, setSetupIntentSubscriptionDone] =
@@ -315,7 +270,6 @@ function CheckoutSuccessContent() {
     type PendingSetup = {
       planType?: string;
       email?: string;
-      customerId?: string;
       promotionCode?: string;
       collectPaymentMethod?: boolean;
       isPlanChange?: boolean;
@@ -344,7 +298,6 @@ function CheckoutSuccessContent() {
               setupIntentId,
               planType: pendingData.planType,
               email: pendingData.email,
-              customerId: pendingData.customerId,
               promotionCode: pendingData.promotionCode,
               collectPaymentMethod: pendingData.collectPaymentMethod ?? false,
               isPlanChange: pendingData.isPlanChange ?? false,
@@ -379,162 +332,143 @@ function CheckoutSuccessContent() {
     }
   }, []);
 
-  // Refresh pro status on mount only (same as login and dashboard pages)
+  // Refresh session on mount (same as login and dashboard pages)
   useEffect(() => {
     refreshUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run only on mount
+  }, []);
 
-  // Invite user and refresh pro status (for logged-out users) or refresh pro status (for logged-in users)
-  // Supports both session_id (Stripe Checkout) and payment_intent_id (in-app lifetime).
-  // When we landed via setup_intent redirect (3DS), wait until subscription is created first.
+  // Verified invite/refresh via rate-limited API (no client-exposed server actions).
   useEffect(() => {
     if (authLoading) return;
-    if (hasProcessedInvite.current) return;
-    if (!detailsParam) return;
+    if (!detailsParam) {
+      setAfterSuccessFinished(true);
+      return;
+    }
     if (setupIntentId && !setupIntentSubscriptionDone) return;
 
-    const handleUserInviteAndRefresh = async () => {
-      hasProcessedInvite.current = true;
+    const dedupeKey = [sessionId, paymentIntentId, setupIntentId]
+      .filter(Boolean)
+      .join("|");
+    if (afterSuccessProcessedKey.current === dedupeKey) return;
+    if (afterSuccessInitiatedKey.current === dedupeKey) return;
+    afterSuccessInitiatedKey.current = dedupeKey;
 
+    let cancelled = false;
+
+    const run = async () => {
+      let firstName: string | undefined;
+      let lastName: string | undefined;
       try {
-        if (isLoggedIn && user?.id) {
+        const raw = sessionStorage.getItem("checkout_pending_setup");
+        if (raw) {
+          const p = JSON.parse(raw) as {
+            firstName?: string;
+            lastName?: string;
+          };
+          firstName = p.firstName;
+          lastName = p.lastName;
+        }
+      } catch {
+        // ignore
+      }
+
+      if (!isLoggedIn) setSendingInvite(true);
+
+      const body: Record<string, string> = {};
+      if (sessionId) body.session_id = sessionId;
+      if (paymentIntentId) body.payment_intent_id = paymentIntentId;
+      if (setupIntentId) body.setup_intent_id = setupIntentId;
+      if (firstName?.trim()) body.first_name = firstName.trim();
+      if (lastName?.trim()) body.last_name = lastName.trim();
+
+      const postOnce = async (attempt: number): Promise<void> => {
+        const res = await fetch("/api/checkout/after-success", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = (await res.json()) as {
+          success?: boolean;
+          kind?: string;
+          analytics?: {
+            isTrial: boolean;
+            value: number | null;
+            currency: string;
+            mode: string;
+          };
+          customerEmail?: string | null;
+          error?: string;
+          retryable?: boolean;
+        };
+
+        if (
+          res.status === 503 &&
+          data.retryable &&
+          attempt < 8 &&
+          !cancelled
+        ) {
+          await new Promise((r) => setTimeout(r, 600));
+          if (!cancelled) return postOnce(attempt + 1);
+          return;
+        }
+
+        if (cancelled) return;
+
+        if (data.success && data.analytics) {
+          setVerifiedIsTrial(data.analytics.isTrial);
+          if (data.analytics.value != null) {
+            setSubscriptionValue(data.analytics.value);
+          }
+          setSubscriptionCurrency(data.analytics.currency || "USD");
+        }
+        if (data.customerEmail) {
+          setCustomerEmail(data.customerEmail);
+        }
+        if (data.success) {
+          afterSuccessProcessedKey.current = dedupeKey;
+          if (!isLoggedIn) setInviteSent(true);
           console.log(
-            `[Checkout Success] User is logged in (${user.id}), refreshing pro status immediately`,
-          );
-          const result = await updateUserProStatus(user.id);
-          console.log(
-            `[Checkout Success] Pro status refreshed: ${result.subscription} (${result.source})`,
+            `[Checkout Success] after-success ok (${data.kind ?? "unknown"})`,
           );
           if (refreshUser) await refreshUser();
-        } else if (!isLoggedIn) {
-          setSendingInvite(true);
-          try {
-            console.log(
-              "[Checkout Success] User is not logged in, inviting and refreshing pro status",
-            );
-
-            if (paymentIntentId || setupIntentId) {
-              const response = await fetch(
-                `/api/checkout-session-details?${detailsParam}`,
-              );
-              const data = await response.json();
-              if (data.success && data.customerEmail) {
-                setCustomerEmail(data.customerEmail);
-                const result = await inviteUserByEmailAndRefreshProStatus(
-                  data.customerEmail,
-                );
-                if (result.success) {
-                  console.log(
-                    `[Checkout Success] User invited (${setupIntentId ? "setup" : "payment"} intent flow): ${result.subscription}`,
-                  );
-                  setInviteSent(true);
-                } else {
-                  console.error(
-                    "[Checkout Success] Failed to invite:",
-                    result.error,
-                  );
-                }
-              }
-            } else if (sessionId) {
-              try {
-                const response = await fetch(
-                  `/api/checkout-session-details?${detailsParam}`,
-                );
-                const data = await response.json();
-                if (data.success && data.customerEmail) {
-                  setCustomerEmail(data.customerEmail);
-                }
-              } catch (err) {
-                console.error(
-                  "[Checkout Success] Error fetching session email:",
-                  err,
-                );
-              }
-              const result = await inviteUserAndRefreshProStatus(sessionId!);
-              if (result.success) {
-                console.log(
-                  `[Checkout Success] User invited and pro status refreshed: ${result.subscription} (userId: ${result.userId})`,
-                );
-                setInviteSent(true);
-              } else {
-                console.error(
-                  "[Checkout Success] Failed to invite user and refresh pro status:",
-                  result.error,
-                );
-              }
-            }
-          } finally {
-            setSendingInvite(false);
+        } else {
+          console.error("[Checkout Success] after-success failed:", data.error);
+          if (!cancelled) {
+            afterSuccessInitiatedKey.current = null;
           }
         }
-      } catch (error) {
-        console.error(
-          "[Checkout Success] Error in user invite/refresh process:",
-          error,
-        );
+      };
+
+      try {
+        await postOnce(0);
+      } catch (err) {
+        console.error("[Checkout Success] after-success request error:", err);
+        if (!cancelled) {
+          afterSuccessInitiatedKey.current = null;
+        }
+      } finally {
+        if (!cancelled) {
+          setSendingInvite(false);
+          setAfterSuccessFinished(true);
+        }
       }
     };
 
-    handleUserInviteAndRefresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    void run();
+    return () => {
+      cancelled = true;
+    };
   }, [
+    authLoading,
     detailsParam,
-    sessionId,
+    isLoggedIn,
     paymentIntentId,
+    sessionId,
     setupIntentId,
     setupIntentSubscriptionDone,
-    isLoggedIn,
-    user?.id,
-    authLoading,
+    refreshUser,
   ]);
-
-  // Refresh subscription status by customer ID (logged-in users only).
-  // For non-logged-in users, the invite flow already calls updateUserProStatus after
-  // inviting, which links customer_id by email and refreshes; no profile has
-  // customer_id yet until that runs, so refreshByCustomerId would fail with "User not found".
-  // When we landed via setup_intent redirect, wait until subscription is created first.
-  useEffect(() => {
-    if (!isLoggedIn) return;
-    if (!detailsParam) return;
-    if (setupIntentId && !setupIntentSubscriptionDone) return;
-
-    const refreshByCustomerId = async () => {
-      try {
-        const response = await fetch(
-          `/api/checkout-session-details?${detailsParam}`,
-        );
-        const data = await response.json();
-
-        if (data.success && data.customerId) {
-          const result = await refreshSubscriptionByCustomerId(data.customerId);
-
-          if (result.success) {
-            console.log(
-              "[Checkout Success] Refreshed subscription status for customer:",
-              data.customerId,
-              "subscription:",
-              result.subscription,
-            );
-            if (refreshUser) await refreshUser();
-          } else {
-            console.error(
-              "[Checkout Success] Failed to refresh subscription:",
-              result.error,
-            );
-          }
-        }
-      } catch (error) {
-        console.error(
-          "[Checkout Success] Error refreshing subscription by customer ID:",
-          error,
-        );
-      }
-    };
-
-    refreshByCustomerId();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [detailsParam, isLoggedIn, setupIntentId, setupIntentSubscriptionDone]);
 
   // Track promotion conversion
   useEffect(() => {
@@ -570,8 +504,8 @@ function CheckoutSuccessContent() {
   // Track dataLayer events with user data (with deduplication)
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (detailsParam && !afterSuccessFinished) return;
 
-    // Only track once
     if (hasTrackedEvent.current) return;
     hasTrackedEvent.current = true;
 
@@ -686,7 +620,7 @@ function CheckoutSuccessContent() {
         },
       });
     } else if (detailsParam && !finalIsTrial) {
-      // If we have session_id or payment_intent_id but no value, fetch from API
+      // Fallback if value still missing: public details only (no email in response)
       fetch(`/api/checkout-session-details?${detailsParam}`)
         .then((res) => res.json())
         .then((data) => {
@@ -764,7 +698,21 @@ function CheckoutSuccessContent() {
           });
         });
     }
-  }, []); // Empty deps - run once on mount, ref prevents duplicate runs
+  }, [
+    afterSuccessFinished,
+    detailsParam,
+    isLifetime,
+    isTrial,
+    paymentIntentId,
+    sessionId,
+    subscriptionCurrency,
+    subscriptionValue,
+    user?.email,
+    user?.id,
+    user?.profile?.email,
+    user?.profile?.id,
+    verifiedIsTrial,
+  ]);
 
   return (
     <PageContainer>

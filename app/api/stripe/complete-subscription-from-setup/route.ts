@@ -10,6 +10,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { findOrCreateCustomer } from "@/utils/stripe/actions";
+import { checkRateLimit, getClientIp } from "@/utils/rate-limit";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -19,7 +21,7 @@ const STRIPE_UNAVAILABLE_MSG =
 /**
  * @brief POST endpoint to create a subscription using a completed SetupIntent.
  *
- * Request body: { setupIntentId, planType, email, promotionCode?, collectPaymentMethod?, isPlanChange? }
+ * Request body: { setupIntentId, planType, email, promotionCode?, collectPaymentMethod?, isPlanChange? } — customerId is not accepted; customer is derived from email and must match the SetupIntent.
  * Retrieves SetupIntent, verifies status is succeeded, gets payment_method, then forwards
  * to subscription-setup with paymentMethodId so the subscription is created server-side.
  *
@@ -35,12 +37,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const clientIp = getClientIp(request);
+    if (!checkRateLimit(clientIp, 10, 60)) {
+      return NextResponse.json(
+        { success: false, error: "Too many requests. Please try again later." },
+        { status: 429 },
+      );
+    }
+
     const body = await request.json();
     const {
       setupIntentId,
       planType,
       email,
-      customerId,
       promotionCode,
       collectPaymentMethod = false,
       isPlanChange = false,
@@ -48,7 +57,6 @@ export async function POST(request: NextRequest) {
       setupIntentId?: string;
       planType?: string;
       email?: string;
-      customerId?: string;
       promotionCode?: string;
       collectPaymentMethod?: boolean;
       isPlanChange?: boolean;
@@ -100,16 +108,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const siCustomerId =
+      typeof setupIntent.customer === "string"
+        ? setupIntent.customer
+        : setupIntent.customer?.id ?? null;
+    const expectedCustomerId = await findOrCreateCustomer(email.trim());
+    if (!siCustomerId || siCustomerId !== expectedCustomerId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "SETUP_INTENT_CUSTOMER_MISMATCH",
+          message:
+            "This payment setup does not match the checkout email. Use the same email you entered when starting checkout.",
+        },
+        { status: 400 },
+      );
+    }
+
     const baseUrl =
       process.env.NEXT_PUBLIC_SITE_URL ||
       (request.nextUrl?.origin ?? "http://localhost:3000");
+    const cookieHeader = request.headers.get("cookie");
     const res = await fetch(`${baseUrl}/api/stripe/subscription-setup`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
       body: JSON.stringify({
         planType,
         email: email.trim(),
-        customerId: customerId ?? undefined,
         promotionCode: promotionCode?.trim() || undefined,
         collectPaymentMethod,
         isPlanChange,

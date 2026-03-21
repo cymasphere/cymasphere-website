@@ -454,9 +454,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const handleLogout = async () => {
     try {
       setSidebarOpen(false);
-      await signOut("local");
-      // Redirect is handled by (private)/layout when auth.user becomes null;
-      // avoid duplicate redirect to prevent flashing / redirect loops
+      const { error } = await signOut("local");
+      if (error) {
+        console.error("Failed to log out:", error);
+        return;
+      }
+      // Explicit navigation: avoids a stuck billing/dashboard UI if async auth
+      // work briefly restores user state; (private)/layout also redirects when user is null.
+      router.replace("/login");
     } catch (error) {
       console.error("Failed to log out:", error);
     }

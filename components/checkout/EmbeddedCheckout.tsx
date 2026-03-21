@@ -42,6 +42,8 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 import { useAuth } from "@/contexts/AuthContext";
+import { buildLoginUrlWithBillingResumeCheckout } from "@/utils/checkout/billing-resume-checkout";
+import { ACCOUNT_EXISTS_REQUIRE_LOGIN } from "@/utils/checkout/guest-checkout-constants";
 import { PlanType, PriceData } from "@/types/stripe";
 import { useTranslation } from "react-i18next";
 import dynamic from "next/dynamic";
@@ -58,6 +60,9 @@ const stripePromise =
   (globalForStripe.__cymasphereStripePromise = loadStripe(
     process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "",
   ));
+
+/** Trial length when starting from pricing (matches `InlineCheckoutParams.trialOption`). */
+export type TrialOption = "7day" | "14day";
 
 /** Dark theme for Stripe Payment Element to match app (purple/dark background). */
 const STRIPE_APPEARANCE = {
@@ -279,6 +284,24 @@ const LoginRedirectLink = styled(Link)`
     filter: brightness(1.05);
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(108, 99, 255, 0.4);
+  }
+`;
+
+/** Callout when the email already has a profile and the user must log in. */
+const ExistingAccountNotice = styled.div`
+  border: 1px solid rgba(108, 99, 255, 0.45);
+  background: rgba(108, 99, 255, 0.12);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  p {
+    margin: 0 0 0.75rem 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--text);
+  }
+  ${LoginRedirectLink} {
+    margin-top: 0;
   }
 `;
 
@@ -639,6 +662,10 @@ interface SetupIntentCheckoutFormProps {
   promotionCode: string | null;
   collectPaymentMethod: boolean;
   isPlanChange: boolean;
+  /** Matches pricing trial mode for post-login resume URL on /billing. */
+  trialOption?: TrialOption;
+  /** Notifies parent to show the existing-account callout with this login URL. */
+  onExistingAccountRequireLogin?: (loginUrl: string) => void;
   /** When payment succeeds in-page (no redirect), call with optional data to show inline success. */
   onPaymentSuccess?: (data?: { inviteSent?: boolean }) => void;
 }
@@ -658,6 +685,8 @@ function SetupIntentCheckoutForm({
   promotionCode,
   collectPaymentMethod,
   isPlanChange,
+  trialOption,
+  onExistingAccountRequireLogin,
   onPaymentSuccess,
 }: SetupIntentCheckoutFormProps) {
   const [setupClientSecret, setSetupClientSecret] = useState<string | null>(
@@ -665,12 +694,15 @@ function SetupIntentCheckoutForm({
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [existingAccountMustLogin, setExistingAccountMustLogin] =
+    useState(false);
   const setupIntentFetchGenRef = useRef(0);
 
   useEffect(() => {
     if (!email?.trim()) return;
     const generation = ++setupIntentFetchGenRef.current;
     let cancelled = false;
+    setExistingAccountMustLogin(false);
     (async () => {
       try {
         const res = await fetch("/api/stripe/setup-intent", {
@@ -681,11 +713,29 @@ function SetupIntentCheckoutForm({
             customerId: customerId ?? undefined,
           }),
         });
-        const data = await res.json();
+        const data: {
+          success?: boolean;
+          clientSecret?: string;
+          error?: string;
+          message?: string;
+        } = await res.json();
         if (cancelled || generation !== setupIntentFetchGenRef.current) return;
         if (data.success && data.clientSecret) {
           setSetupClientSecret(data.clientSecret);
         } else {
+          if (data.error === ACCOUNT_EXISTS_REQUIRE_LOGIN) {
+            setExistingAccountMustLogin(true);
+            onExistingAccountRequireLogin?.(
+              buildLoginUrlWithBillingResumeCheckout(planType, {
+                collectPaymentMethod,
+                isPlanChange,
+                trialOption:
+                  trialOption === "7day" || trialOption === "14day"
+                    ? trialOption
+                    : undefined,
+              }),
+            );
+          }
           setError(data.message ?? data.error ?? "Failed to load payment form");
         }
       } catch (e) {
@@ -702,7 +752,15 @@ function SetupIntentCheckoutForm({
       cancelled = true;
     };
     // customerId in deps keeps HMR hook arity stable; generation ref ignores stale responses when it hydrates.
-  }, [email, customerId]);
+  }, [
+    email,
+    customerId,
+    planType,
+    collectPaymentMethod,
+    isPlanChange,
+    trialOption,
+    onExistingAccountRequireLogin,
+  ]);
 
   if (loading && !setupClientSecret) {
     return (
@@ -714,6 +772,9 @@ function SetupIntentCheckoutForm({
     );
   }
   if (error && !setupClientSecret) {
+    if (existingAccountMustLogin) {
+      return null;
+    }
     const isActiveSubscriptionError =
       error.includes("already have an active subscription") ||
       error.includes("ACTIVE_SUBSCRIPTION_EXISTS");
@@ -758,6 +819,8 @@ function SetupIntentCheckoutForm({
         promotionCode={promotionCode}
         collectPaymentMethod={collectPaymentMethod}
         isPlanChange={isPlanChange}
+        trialOption={trialOption}
+        onExistingAccountRequireLogin={onExistingAccountRequireLogin}
         onSuccess={onPaymentSuccess}
       />
     </Elements>
@@ -781,6 +844,8 @@ function SetupIntentSubmitForm({
   promotionCode,
   collectPaymentMethod,
   isPlanChange,
+  trialOption,
+  onExistingAccountRequireLogin,
   onSuccess,
 }: SetupIntentSubmitFormProps) {
   const stripe = useStripe();
@@ -898,7 +963,14 @@ function SetupIntentSubmitForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
+      const data: {
+        success?: boolean;
+        error?: string;
+        message?: string;
+        requiresAction?: boolean;
+        clientSecret?: string;
+        inviteSent?: boolean;
+      } = await res.json();
       if (data.success) {
         if (data.requiresAction && data.clientSecret) {
           const piReturnUrl =
@@ -923,6 +995,19 @@ function SetupIntentSubmitForm({
         }
         confirmedPaymentMethodIdRef.current = null;
         onSuccess?.({ inviteSent: data.inviteSent });
+        return;
+      }
+      if (data.error === ACCOUNT_EXISTS_REQUIRE_LOGIN) {
+        onExistingAccountRequireLogin?.(
+          buildLoginUrlWithBillingResumeCheckout(planType, {
+            collectPaymentMethod,
+            isPlanChange,
+            trialOption:
+              trialOption === "7day" || trialOption === "14day"
+                ? trialOption
+                : undefined,
+          }),
+        );
         return;
       }
       setError(data.message ?? data.error ?? "Payment failed");
@@ -1179,6 +1264,52 @@ function isValidEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
 }
 
+type GuestEmailGateResult =
+  | { ok: true }
+  | { ok: false; redirectToLogin: true }
+  | { ok: false; redirectToLogin: false; message: string };
+
+/**
+ * @brief Asks the server whether a guest may proceed (no profile yet for this email).
+ */
+async function verifyGuestEmailAllowedForCheckout(
+  email: string,
+): Promise<GuestEmailGateResult> {
+  try {
+    const res = await fetch("/api/checkout/guest-email-eligibility", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email.trim() }),
+    });
+    const data: {
+      allowed?: boolean;
+      error?: string;
+      message?: string;
+    } = await res.json();
+    if (res.ok && data.allowed) {
+      return { ok: true };
+    }
+    if (data.error === ACCOUNT_EXISTS_REQUIRE_LOGIN) {
+      return { ok: false, redirectToLogin: true };
+    }
+    return {
+      ok: false,
+      redirectToLogin: false,
+      message:
+        data.message ??
+        (res.status === 429
+          ? "Too many requests. Try again shortly."
+          : "Could not verify your email. Please try again."),
+    };
+  } catch {
+    return {
+      ok: false,
+      redirectToLogin: false,
+      message: "Could not verify your email. Please try again.",
+    };
+  }
+}
+
 interface ActivePromotion {
   id: string;
   applicable_plans?: PlanType[];
@@ -1303,7 +1434,6 @@ function CheckoutPlanCard({
   onPaymentSuccess,
 }: CheckoutPlanCardProps) {
   const { t } = useTranslation();
-  const router = useRouter();
   const { user, refreshUser } = useAuth();
   const is7DayNoCard = trialOption === "7day";
   const is14DayWithCard = trialOption === "14day";
@@ -1337,6 +1467,17 @@ function CheckoutPlanCard({
   }>({ status: "idle" });
   const hasAutofilledPromoRef = useRef(false);
   const trialSubmittingRef = useRef(false);
+  const [guestEmailGateLoading, setGuestEmailGateLoading] = useState(false);
+  const [guestEmailGateError, setGuestEmailGateError] = useState<string | null>(
+    null,
+  );
+  const [existingAccountLoginHref, setExistingAccountLoginHref] = useState<
+    string | null
+  >(null);
+
+  const handleExistingAccountRequireLogin = useCallback((loginUrl: string) => {
+    setExistingAccountLoginHref(loginUrl);
+  }, []);
 
   const committedPromoCode = useMemo(() => {
     if (
@@ -1372,10 +1513,29 @@ function CheckoutPlanCard({
     if (trialSubmittingRef.current) return;
     trialSubmittingRef.current = true;
     setPaymentSetupError(null);
+    setExistingAccountLoginHref(null);
     setPaymentSetupLoading(true);
     const firstNameToSend = committedFirstName || checkoutFirstName.trim();
     const lastNameToSend = committedLastName || checkoutLastName.trim();
     try {
+      if (!user?.id && resolvedEmail.trim()) {
+        const gate = await verifyGuestEmailAllowedForCheckout(resolvedEmail);
+        if (!gate.ok) {
+          if (gate.redirectToLogin) {
+            setExistingAccountLoginHref(
+              buildLoginUrlWithBillingResumeCheckout(planType, {
+                collectPaymentMethod: false,
+                isPlanChange,
+                trialOption: is7DayNoCard ? "7day" : undefined,
+              }),
+            );
+            return;
+          }
+          setPaymentSetupError(gate.message);
+          return;
+        }
+      }
+
       const promoCodeToValidate = committedPromoCode ?? "";
       if (promoCodeToValidate) {
         const promoCheck = await validatePromoCodeForCheckout(
@@ -1402,12 +1562,27 @@ function CheckoutPlanCard({
           isPlanChange,
         }),
       });
-      const data = await res.json();
+      const data: {
+        success?: boolean;
+        inviteSent?: boolean;
+        error?: string;
+        message?: string;
+      } = await res.json();
       if (data.success) {
         setCheckoutComplete(true);
         setSuccessMeta({ inviteSent: data.inviteSent ?? false });
         refreshUser?.();
       } else {
+        if (data.error === ACCOUNT_EXISTS_REQUIRE_LOGIN) {
+          setExistingAccountLoginHref(
+            buildLoginUrlWithBillingResumeCheckout(planType, {
+              collectPaymentMethod: false,
+              isPlanChange,
+              trialOption: is7DayNoCard ? "7day" : undefined,
+            }),
+          );
+          return;
+        }
         setPaymentSetupError(
           data.message ?? data.error ?? "Failed to start trial",
         );
@@ -1431,6 +1606,8 @@ function CheckoutPlanCard({
     committedPromoCode,
     isPlanChange,
     refreshUser,
+    user?.id,
+    is7DayNoCard,
   ]);
 
   const applyPromo = useCallback(async (): Promise<boolean> => {
@@ -1468,12 +1645,49 @@ function CheckoutPlanCard({
     return false;
   }, [planType, checkoutPromo, promoInputLocked]);
 
-  const handleContinueClick = useCallback(() => {
-    if (!canProceedWithEmail) return;
+  const handleContinueClick = useCallback(async () => {
+    if (!canProceedWithEmail || !resolvedEmail?.trim()) return;
+    setGuestEmailGateError(null);
+    setExistingAccountLoginHref(null);
+    if (!user?.id) {
+      setGuestEmailGateLoading(true);
+      try {
+        const gate = await verifyGuestEmailAllowedForCheckout(resolvedEmail);
+        if (!gate.ok) {
+          if (gate.redirectToLogin) {
+            setExistingAccountLoginHref(
+              buildLoginUrlWithBillingResumeCheckout(planType, {
+                collectPaymentMethod,
+                isPlanChange,
+                trialOption:
+                  trialOption === "7day" || trialOption === "14day"
+                    ? trialOption
+                    : undefined,
+              }),
+            );
+            return;
+          }
+          setGuestEmailGateError(gate.message);
+          return;
+        }
+      } finally {
+        setGuestEmailGateLoading(false);
+      }
+    }
     setCommittedFirstName(checkoutFirstName.trim());
     setCommittedLastName(checkoutLastName.trim());
     setContinuedToPayment(true);
-  }, [canProceedWithEmail, checkoutFirstName, checkoutLastName]);
+  }, [
+    canProceedWithEmail,
+    resolvedEmail,
+    user?.id,
+    planType,
+    collectPaymentMethod,
+    isPlanChange,
+    trialOption,
+    checkoutFirstName,
+    checkoutLastName,
+  ]);
 
   const promoDurationLabel =
     promoValidation.duration === "once"
@@ -1501,6 +1715,11 @@ function CheckoutPlanCard({
   useEffect(() => {
     setPaymentSetupError(null);
   }, [checkoutPromo]);
+
+  useEffect(() => {
+    setGuestEmailGateError(null);
+    setExistingAccountLoginHref(null);
+  }, [checkoutEmail]);
 
   useEffect(() => {
     const fetchPrices = async () => {
@@ -1809,6 +2028,19 @@ function CheckoutPlanCard({
       <CardBody>
         <Divider />
         <FormSection>
+          {existingAccountLoginHref && (
+            <ExistingAccountNotice role="alert">
+              <p>
+                {t(
+                  "checkout.existingAccountBody",
+                  "You already have an account with this email address. Log in to continue. We will open Billing so you can finish checkout.",
+                )}
+              </p>
+              <LoginRedirectLink href={existingAccountLoginHref}>
+                {t("checkout.logInToContinue", "Log in to continue")}
+              </LoginRedirectLink>
+            </ExistingAccountNotice>
+          )}
           {continuedToPayment ? (
             <>
               <PaymentSummaryRow>
@@ -1825,6 +2057,7 @@ function CheckoutPlanCard({
                       setContinuedToPayment(false);
                       setCommittedFirstName("");
                       setCommittedLastName("");
+                      setExistingAccountLoginHref(null);
                     }}
                     aria-label={t("checkout.editEmailPromo", "Edit email or promo")}
                   >
@@ -2000,6 +2233,8 @@ function CheckoutPlanCard({
                 promotionCode={committedPromoCode}
                 collectPaymentMethod={collectPaymentMethod}
                 isPlanChange={isPlanChange}
+                trialOption={trialOption}
+                onExistingAccountRequireLogin={handleExistingAccountRequireLogin}
                 onPaymentSuccess={handleInlinePaymentSuccess}
               />
             )
@@ -2016,16 +2251,34 @@ function CheckoutPlanCard({
                   ? "Click Continue to enter payment details."
                   : "Enter your email above to continue."}
               </p>
+              {guestEmailGateError && (
+                <ErrorMessage style={{ marginBottom: "0.75rem" }}>
+                  {guestEmailGateError}
+                </ErrorMessage>
+              )}
               <SubmitButton
                 type="button"
                 disabled={
-                  !canProceedWithEmail || promoValidation.status === "loading"
+                  !canProceedWithEmail ||
+                  promoValidation.status === "loading" ||
+                  guestEmailGateLoading
                 }
-                onClick={handleContinueClick}
+                onClick={() => {
+                  void handleContinueClick();
+                }}
               >
-                {promoValidation.status === "loading"
-                  ? "…"
-                  : t("checkout.continue", "Continue")}
+                {guestEmailGateLoading ? (
+                  <>
+                    <StatLoadingSpinner size={16} />
+                    <span style={{ marginLeft: "0.4rem" }}>
+                      {t("checkout.checkingEmail", "Checking…")}
+                    </span>
+                  </>
+                ) : promoValidation.status === "loading" ? (
+                  "…"
+                ) : (
+                  t("checkout.continue", "Continue")
+                )}
               </SubmitButton>
             </>
           )}
@@ -2034,8 +2287,6 @@ function CheckoutPlanCard({
     </CheckoutCard>
   );
 }
-
-export type TrialOption = "7day" | "14day";
 
 export interface EmbeddedCheckoutProps {
   /** Plan to checkout: monthly, annual, or lifetime. */

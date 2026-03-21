@@ -27,9 +27,15 @@ export type UpdateUserProStatusResult = {
  * @param skipEmail When true, suppress welcome/subscription-change emails.
  *   Use this when the caller is a background sync (e.g. Stripe webhook) and
  *   the primary route (subscription-setup, payment-intent) already handles emails.
+ * @param ensureTrialWelcomeEmail When true (and skipEmail is false), still send the
+ *   free-trial welcome email if the user has an active Stripe trial even when
+ *   `subscription` did not change on this run. Use from checkout invite flows: the
+ *   webhook often updates the profile first, so `none → monthly` is no longer visible
+ *   and the welcome would otherwise be skipped.
  */
 export interface UpdateUserProStatusOptions {
   skipEmail?: boolean;
+  ensureTrialWelcomeEmail?: boolean;
 }
 
 /**
@@ -134,8 +140,11 @@ export async function updateUserProStatus(
     console.log(
       `[updateUserProStatus] Waiting for existing update to complete for user ${userId}`
     );
-    // Wait for the existing update to complete and return its result
-    return await existingUpdate;
+    const result = await existingUpdate;
+    if (options?.ensureTrialWelcomeEmail && !options?.skipEmail) {
+      await sendTrialWelcomeEmailAfterCheckoutInvite(userId);
+    }
+    return result;
   }
 
   // Create a new update promise
@@ -216,6 +225,129 @@ async function findExistingCustomerByEmail(email: string): Promise<string | null
   } catch (error) {
     console.error("[updateUserProStatus] Error finding customer by email:", error);
     return null;
+  }
+}
+
+/**
+ * @brief Sends trial welcome email after checkout invite when the webhook already synced profile.
+ * Uses the same template and `free_trial_started` dedupe as updateUserProStatus.
+ * @param userId User / profile id
+ */
+async function sendTrialWelcomeEmailAfterCheckoutInvite(
+  userId: string,
+): Promise<void> {
+  const supabase = await createSupabaseServiceRole();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("email, subscription, trial_expiration, first_name, last_name")
+    .eq("id", userId)
+    .single();
+
+  if (!profile?.email) return;
+
+  const sub = profile.subscription;
+  if (sub !== "monthly" && sub !== "annual") return;
+
+  const trialExp = profile.trial_expiration
+    ? new Date(profile.trial_expiration)
+    : null;
+  if (!trialExp || trialExp <= new Date()) return;
+
+  const normalizedEmail = profile.email.trim().toLowerCase();
+  const emailKind = "free_trial_started";
+
+  const { error: insertError } = await supabase
+    .from("subscription_emails_sent")
+    .insert({
+      user_id: userId,
+      email: normalizedEmail,
+      email_kind: emailKind,
+    });
+
+  if (insertError?.code === "23505") {
+    return;
+  }
+  if (insertError) {
+    console.error(
+      `[sendTrialWelcomeEmailAfterCheckoutInvite] Dedupe insert failed (${emailKind}):`,
+      insertError,
+    );
+    return;
+  }
+
+  try {
+    const { generateWelcomeEmailHtml, generateWelcomeEmailText } =
+      await import("@/utils/email-campaigns/welcome-email");
+    const { sendEmail } = await import("@/utils/email");
+
+    const customerName =
+      profile.first_name && profile.last_name
+        ? `${profile.first_name} ${profile.last_name}`
+        : profile.first_name || profile.last_name || undefined;
+
+    const isTrial = true;
+    const trialEndDate = trialExp.toISOString();
+    const now = new Date();
+    const trialDays = Math.max(
+      0,
+      Math.ceil(
+        (trialExp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+      ),
+    );
+    const trialNoCharge = trialDays > 0 && trialDays <= 7;
+    const subscriptionType = sub === "monthly" ? "monthly" : "annual";
+    const planName = sub === "monthly" ? "monthly_6" : "annual_59";
+    const subject = "Welcome to Cymasphere - Free Trial Started";
+
+    const welcomeEmailHtml = generateWelcomeEmailHtml({
+      customerName,
+      customerEmail: profile.email,
+      purchaseType: "subscription",
+      subscriptionType,
+      planName,
+      isTrial,
+      trialEndDate,
+      trialDays,
+      trialNoCharge,
+    });
+
+    const welcomeEmailText = generateWelcomeEmailText({
+      customerName,
+      customerEmail: profile.email,
+      purchaseType: "subscription",
+      subscriptionType,
+      planName,
+      isTrial,
+      trialEndDate,
+      trialDays,
+      trialNoCharge,
+    });
+
+    const emailResult = await sendEmail({
+      to: profile.email,
+      subject,
+      html: welcomeEmailHtml,
+      text: welcomeEmailText,
+      from: "Cymasphere <support@cymasphere.com>",
+      source: "sendTrialWelcomeEmailAfterCheckoutInvite",
+      dedupeKey: emailKind,
+    });
+
+    if (emailResult.success) {
+      console.log(
+        `✅ Sent trial welcome after checkout invite to ${profile.email} (Message ID: ${emailResult.messageId})`,
+      );
+    } else {
+      console.error(
+        `❌ Failed to send trial welcome after checkout invite:`,
+        emailResult.error,
+      );
+    }
+  } catch (err) {
+    console.error(
+      "[sendTrialWelcomeEmailAfterCheckoutInvite] Error sending email:",
+      err,
+    );
   }
 }
 
@@ -529,12 +661,27 @@ async function updateUserProStatusInternal(
   // Check if subscription type changed
   const subscriptionTypeChanged = previousSubscription !== finalSubscription;
 
+  const trialActive =
+    (finalSubscription === "monthly" || finalSubscription === "annual") &&
+    finalTrialExpiration !== null &&
+    finalTrialExpiration > new Date();
+
+  /** Webhook synced subscription before invite; use same template/dedupe as new trial activation. */
+  const trialWelcomeAfterWebhookSync =
+    options?.ensureTrialWelcomeEmail === true &&
+    trialActive &&
+    !subscriptionTypeChanged;
+
   // Determine if we should send an email
   // Send email if subscription type changed (e.g., monthly → annual, annual → lifetime, etc.)
   // Note: NFR already returned early above, so source can't be "nfr" here
   // Webhook callers pass skipEmail to avoid duplicate sends (the primary route already emailed)
+  // ensureTrialWelcomeEmail: checkout invite path may run after webhook already set subscription
   const shouldSendEmail =
-    subscriptionTypeChanged && profile.email && !options?.skipEmail;
+    profile.email &&
+    !options?.skipEmail &&
+    (subscriptionTypeChanged ||
+      (options?.ensureTrialWelcomeEmail === true && trialActive));
 
   // Update profile with final subscription status (NFR already updated above and returned early)
   await supabase
@@ -608,7 +755,7 @@ async function updateUserProStatusInternal(
         purchaseType = "subscription";
         subscriptionType = "monthly";
         planName = "monthly_6";
-        if (isNewActivation) {
+        if (isNewActivation || trialWelcomeAfterWebhookSync) {
           subject = isTrial
             ? "Welcome to Cymasphere - Free Trial Started"
             : "Welcome to Cymasphere - Monthly Subscription";
@@ -627,7 +774,7 @@ async function updateUserProStatusInternal(
         purchaseType = "subscription";
         subscriptionType = "annual";
         planName = "annual_59";
-        if (isNewActivation) {
+        if (isNewActivation || trialWelcomeAfterWebhookSync) {
           subject = isTrial
             ? "Welcome to Cymasphere - Free Trial Started"
             : "Welcome to Cymasphere - Annual Subscription";

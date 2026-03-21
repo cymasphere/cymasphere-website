@@ -22,6 +22,56 @@ import { updateUserProStatus } from "@/utils/subscriptions/check-subscription";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 /**
+ * @brief Validates lifetime PaymentIntent before granting profile.subscription = lifetime.
+ * @param pi - payment_intent.succeeded object
+ * @returns True when metadata and amounts match configured lifetime price (allows promos: charged less than list).
+ */
+async function isValidLifetimePaymentIntent(
+  pi: Stripe.PaymentIntent,
+): Promise<boolean> {
+  const expectedPriceId = process.env.STRIPE_PRICE_ID_LIFETIME?.trim();
+  if (!expectedPriceId) {
+    console.warn("[Webhook] STRIPE_PRICE_ID_LIFETIME not set; skip lifetime grant");
+    return false;
+  }
+  if (pi.metadata?.purchase_type !== "lifetime") {
+    return false;
+  }
+  if (pi.metadata?.price_id !== expectedPriceId) {
+    console.warn(
+      "[Webhook] Lifetime PI metadata.price_id mismatch:",
+      pi.metadata?.price_id,
+    );
+    return false;
+  }
+  try {
+    const price = await stripe.prices.retrieve(expectedPriceId);
+    if (!price.active) {
+      console.warn("[Webhook] Lifetime price inactive");
+      return false;
+    }
+    if ((pi.currency ?? "").toLowerCase() !== (price.currency ?? "").toLowerCase()) {
+      console.warn("[Webhook] Lifetime PI currency mismatch");
+      return false;
+    }
+    const unit = price.unit_amount ?? 0;
+    const received = pi.amount_received ?? 0;
+    if (received < 50) {
+      console.warn("[Webhook] Lifetime PI amount_received below minimum");
+      return false;
+    }
+    if (unit > 0 && received > unit) {
+      console.warn("[Webhook] Lifetime PI amount_received exceeds list price");
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("[Webhook] Lifetime PI price validation error:", e);
+    return false;
+  }
+}
+
+/**
  * @brief Extracts customer ID from any Stripe event object
  *
  * Attempts to extract the customer ID from a Stripe event's data object.
@@ -206,7 +256,7 @@ export async function POST(request: NextRequest) {
     // so success page and app see correct state without depending on stripe_payment_intents sync
     if (event.type === "payment_intent.succeeded") {
       const pi = event.data.object as Stripe.PaymentIntent;
-      if (pi.metadata?.purchase_type === "lifetime") {
+      if (await isValidLifetimePaymentIntent(pi)) {
         const userId = await findUserIdByCustomerId(customerId);
         if (userId) {
           const supabase = await createSupabaseServiceRole();
@@ -290,8 +340,13 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ status: "success", event: event.type });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Webhook error:", error);
-    return NextResponse.json({ status: "error", error });
+    const message =
+      error instanceof Error ? error.message : "Webhook processing failed";
+    return NextResponse.json(
+      { status: "error", error: message },
+      { status: 500 },
+    );
   }
 }
