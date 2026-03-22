@@ -14,6 +14,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getRegistrationDisplayName } from "@/utils/registration-display-name";
 import { checkRateLimit, getClientIp } from "@/utils/rate-limit";
 
 /**
@@ -82,7 +83,7 @@ import { checkRateLimit, getClientIp } from "@/utils/rate-limit";
  * @returns NextResponse with success status, user data, or error message
  * @note User must verify email before they can log in
  * @note Subscriber creation failure does not block registration
- * @note Name parsing: If first_name/last_name provided, use those. Otherwise split combined name or use email prefix.
+ * @note Name parsing: If first_name/last_name provided, use those. Otherwise split combined name or use email prefix. Display name for auth and subscriber metadata uses getRegistrationDisplayName (same rules).
  * 
  * @example
  * ```typescript
@@ -168,6 +169,12 @@ export async function POST(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
+    const registrationDisplayName = getRegistrationDisplayName({
+      email,
+      firstName: firstName,
+      lastName: lastName,
+    });
+
     // Register the user with first_name and last_name in user_metadata
     // This matches how signUpWithStripe works, ensuring the database trigger
     // can automatically copy these values to the profiles table
@@ -178,7 +185,7 @@ export async function POST(request: NextRequest) {
         data: {
           first_name: firstName,
           last_name: lastName,
-          name: `${firstName} ${lastName}`.trim() || email.split("@")[0],
+          name: registrationDisplayName,
         },
       },
     });
@@ -213,6 +220,7 @@ export async function POST(request: NextRequest) {
             metadata: {
               first_name: firstName,
               last_name: lastName,
+              name: registrationDisplayName,
               subscription: 'none',
               auth_created_at: authData.user.created_at,
               profile_updated_at: new Date().toISOString()

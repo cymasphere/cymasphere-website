@@ -13,6 +13,7 @@
 import { PostgrestError } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/server";
 import { Profile } from "@/utils/supabase/types";
+import { getRegistrationDisplayName } from "@/utils/registration-display-name";
 import { findOrCreateCustomer } from "@/utils/stripe/actions";
 
 /**
@@ -50,6 +51,12 @@ export async function signUpWithStripe(
     // Find or create a Stripe customer
     const customer_id = await findOrCreateCustomer(email);
 
+    const registrationDisplayName = getRegistrationDisplayName({
+      email,
+      firstName: first_name,
+      lastName: last_name,
+    });
+
     // Sign up the user with Supabase
     const authResponse = await supabase.auth.signUp({
       email,
@@ -59,6 +66,7 @@ export async function signUpWithStripe(
           first_name,
           last_name,
           customer_id,
+          name: registrationDisplayName,
         },
       },
     });
@@ -78,6 +86,7 @@ export async function signUpWithStripe(
             metadata: {
               first_name: first_name || "",
               last_name: last_name || "",
+              name: registrationDisplayName,
               subscription: "none",
               auth_created_at: authResponse.data.user.created_at,
               profile_updated_at: new Date().toISOString(),
