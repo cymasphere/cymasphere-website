@@ -3,7 +3,8 @@
  * @module components/checkout/EmbeddedCheckout
  *
  * Renders the same checkout UI as the standalone /checkout page: plan card,
- * email, promo (apply to commit a single active code, then Pay now uses that
+ * email (guests only; signed-in users skip email/name using session + profile),
+ * promo (apply to commit a single active code, then Pay now uses that
  * code only), Continue, then Stripe PaymentElement + Pay now. Can be used
  * inline (e.g. in a modal) with onClose or on a full page with a back link.
  *
@@ -1404,8 +1405,8 @@ interface CheckoutPlanCardProps {
   customerId: string | null;
   collectPaymentMethod: boolean;
   isPlanChange: boolean;
-  /** When payment succeeds in-page, call with optional data to show inline success (inviteSent, etc.). */
-  onPaymentSuccess?: (data?: { inviteSent?: boolean }) => void;
+  /** After profile refresh; e.g. billing page refetches dashboard + Stripe portal data. */
+  onAfterCheckoutSuccess?: () => void | Promise<void>;
 }
 
 /** Metadata for inline success view. */
@@ -1431,10 +1432,19 @@ function CheckoutPlanCard({
   customerId,
   collectPaymentMethod,
   isPlanChange,
-  onPaymentSuccess,
+  onAfterCheckoutSuccess,
 }: CheckoutPlanCardProps) {
   const { t } = useTranslation();
-  const { user, refreshUser } = useAuth();
+  const { user, session, refreshUser } = useAuth();
+  /**
+   * @brief Email from hydrated profile or Supabase session (session is set before profile fetch completes).
+   * @note Prevents showing the guest email/name step while `user` is still null after refresh.
+   */
+  const authenticatedSessionEmail =
+    user?.email?.trim() || session?.user?.email?.trim() || null;
+  const isKnownAuthenticated = Boolean(authenticatedSessionEmail);
+  /** @brief Auth user id from profile state or session (guest checkout has neither). */
+  const authenticatedAuthUserId = user?.id ?? session?.user?.id ?? null;
   const is7DayNoCard = trialOption === "7day";
   const is14DayWithCard = trialOption === "14day";
   const [checkoutComplete, setCheckoutComplete] = useState(false);
@@ -1445,9 +1455,9 @@ function CheckoutPlanCard({
   const [pricesLoading, setPricesLoading] = useState(true);
   const [activePromotion, setActivePromotion] =
     useState<ActivePromotion | null>(null);
-  const [continuedToPayment, setContinuedToPayment] = useState<boolean>(() =>
-    Boolean(user),
-  );
+  /** @brief Guests only; signed-in users use {@link isKnownAuthenticated} and skip this step. */
+  const [guestContinuedToPayment, setGuestContinuedToPayment] = useState(false);
+  const atPaymentStep = isKnownAuthenticated || guestContinuedToPayment;
   const [committedFirstName, setCommittedFirstName] = useState<string>("");
   const [committedLastName, setCommittedLastName] = useState<string>("");
   const [paymentSetupLoading, setPaymentSetupLoading] = useState(false);
@@ -1492,12 +1502,13 @@ function CheckoutPlanCard({
   const promoInputLocked = committedPromoCode !== null;
 
   const handleInlinePaymentSuccess = useCallback(
-    (data?: { inviteSent?: boolean }) => {
+    async (data?: { inviteSent?: boolean }) => {
       setCheckoutComplete(true);
       setSuccessMeta({ inviteSent: data?.inviteSent ?? false });
-      refreshUser?.();
+      await refreshUser?.();
+      await onAfterCheckoutSuccess?.();
     },
-    [refreshUser],
+    [refreshUser, onAfterCheckoutSuccess],
   );
 
   /**
@@ -1515,10 +1526,20 @@ function CheckoutPlanCard({
     setPaymentSetupError(null);
     setExistingAccountLoginHref(null);
     setPaymentSetupLoading(true);
-    const firstNameToSend = committedFirstName || checkoutFirstName.trim();
-    const lastNameToSend = committedLastName || checkoutLastName.trim();
+    const profileFirst = user?.profile?.first_name?.trim() ?? "";
+    const profileLast = user?.profile?.last_name?.trim() ?? "";
+    const firstNameToSend =
+      committedFirstName ||
+      checkoutFirstName.trim() ||
+      profileFirst ||
+      undefined;
+    const lastNameToSend =
+      committedLastName ||
+      checkoutLastName.trim() ||
+      profileLast ||
+      undefined;
     try {
-      if (!user?.id && resolvedEmail.trim()) {
+      if (!authenticatedAuthUserId && resolvedEmail.trim()) {
         const gate = await verifyGuestEmailAllowedForCheckout(resolvedEmail);
         if (!gate.ok) {
           if (gate.redirectToLogin) {
@@ -1571,7 +1592,8 @@ function CheckoutPlanCard({
       if (data.success) {
         setCheckoutComplete(true);
         setSuccessMeta({ inviteSent: data.inviteSent ?? false });
-        refreshUser?.();
+        await refreshUser?.();
+        await onAfterCheckoutSuccess?.();
       } else {
         if (data.error === ACCOUNT_EXISTS_REQUIRE_LOGIN) {
           setExistingAccountLoginHref(
@@ -1606,8 +1628,11 @@ function CheckoutPlanCard({
     committedPromoCode,
     isPlanChange,
     refreshUser,
-    user?.id,
+    onAfterCheckoutSuccess,
+    authenticatedAuthUserId,
     is7DayNoCard,
+    user?.profile?.first_name,
+    user?.profile?.last_name,
   ]);
 
   const applyPromo = useCallback(async (): Promise<boolean> => {
@@ -1649,7 +1674,7 @@ function CheckoutPlanCard({
     if (!canProceedWithEmail || !resolvedEmail?.trim()) return;
     setGuestEmailGateError(null);
     setExistingAccountLoginHref(null);
-    if (!user?.id) {
+    if (!authenticatedAuthUserId) {
       setGuestEmailGateLoading(true);
       try {
         const gate = await verifyGuestEmailAllowedForCheckout(resolvedEmail);
@@ -1676,11 +1701,11 @@ function CheckoutPlanCard({
     }
     setCommittedFirstName(checkoutFirstName.trim());
     setCommittedLastName(checkoutLastName.trim());
-    setContinuedToPayment(true);
+    setGuestContinuedToPayment(true);
   }, [
     canProceedWithEmail,
     resolvedEmail,
-    user?.id,
+    authenticatedAuthUserId,
     planType,
     collectPaymentMethod,
     isPlanChange,
@@ -1700,12 +1725,6 @@ function CheckoutPlanCard({
               count: promoValidation.durationInMonths,
             })
           : null;
-
-  useEffect(() => {
-    if (user) {
-      setContinuedToPayment(true);
-    }
-  }, [user]);
 
   /**
    * @brief Clears trial/payment setup errors when the promo field changes.
@@ -1868,7 +1887,7 @@ function CheckoutPlanCard({
         : null);
 
   const isTrialSuccess = is7DayNoCard || is14DayWithCard;
-  const isLoggedIn = !!user;
+  const isLoggedIn = isKnownAuthenticated;
 
   if (checkoutComplete) {
     return (
@@ -2041,20 +2060,20 @@ function CheckoutPlanCard({
               </LoginRedirectLink>
             </ExistingAccountNotice>
           )}
-          {continuedToPayment ? (
+          {atPaymentStep ? (
             <>
-              <PaymentSummaryRow>
-                <span>
-                  {t("checkout.payingAs", "Paying as")}{" "}
-                  <strong style={{ color: "var(--text)" }}>
-                    {resolvedEmail}
-                  </strong>
-                </span>
-                {!isLoggedIn && (
+              {!isKnownAuthenticated && (
+                <PaymentSummaryRow>
+                  <span>
+                    {t("checkout.payingAs", "Paying as")}{" "}
+                    <strong style={{ color: "var(--text)" }}>
+                      {resolvedEmail}
+                    </strong>
+                  </span>
                   <EditLink
                     type="button"
                     onClick={() => {
-                      setContinuedToPayment(false);
+                      setGuestContinuedToPayment(false);
                       setCommittedFirstName("");
                       setCommittedLastName("");
                       setExistingAccountLoginHref(null);
@@ -2063,8 +2082,8 @@ function CheckoutPlanCard({
                   >
                     {t("checkout.edit", "Edit")}
                   </EditLink>
-                )}
-              </PaymentSummaryRow>
+                </PaymentSummaryRow>
+              )}
               <FieldGroup>
                 <FieldLabel htmlFor="checkout-promo-inline">
                   {t("checkout.promoOptional", "Promo code (optional)")}
@@ -2174,7 +2193,7 @@ function CheckoutPlanCard({
             </>
           )}
 
-          {continuedToPayment && canProceedWithEmail && resolvedEmail ? (
+          {atPaymentStep && canProceedWithEmail && resolvedEmail ? (
             is7DayNoCard ? (
               <>
                 {paymentSetupError && (
@@ -2299,6 +2318,8 @@ export interface EmbeddedCheckoutProps {
   trialOption?: TrialOption;
   /** When provided, show a close/back control that calls this instead of linking to /#pricing. */
   onClose?: () => void;
+  /** After successful checkout and `refreshUser` (e.g. billing refetches invoices and portal state). */
+  onAfterCheckoutSuccess?: () => void | Promise<void>;
 }
 
 const planLabels: Record<PlanType, string> = {
@@ -2320,16 +2341,41 @@ export function EmbeddedCheckout({
   isPlanChange = false,
   trialOption,
   onClose,
+  onAfterCheckoutSuccess,
 }: EmbeddedCheckoutProps) {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [checkoutEmail, setCheckoutEmail] = useState("");
   const [checkoutFirstName, setCheckoutFirstName] = useState("");
   const [checkoutLastName, setCheckoutLastName] = useState("");
   const [checkoutPromo, setCheckoutPromo] = useState("");
 
-  const resolvedEmail = user?.email ?? (checkoutEmail.trim() || undefined);
+  const authSessionEmail =
+    user?.email?.trim() || session?.user?.email?.trim() || null;
+  const resolvedEmail =
+    authSessionEmail ?? (checkoutEmail.trim() || undefined);
   const canProceedWithEmail =
-    !!resolvedEmail && (!!user || isValidEmail(checkoutEmail));
+    !!resolvedEmail &&
+    (!!authSessionEmail || isValidEmail(checkoutEmail));
+
+  /**
+   * @brief Prefill name fields for signed-in users so APIs receive profile names without a form step.
+   */
+  useEffect(() => {
+    const fn = user?.profile?.first_name?.trim();
+    const ln = user?.profile?.last_name?.trim();
+    if (fn && checkoutFirstName === "") {
+      setCheckoutFirstName(fn);
+    }
+    if (ln && checkoutLastName === "") {
+      setCheckoutLastName(ln);
+    }
+  }, [
+    user?.profile?.first_name,
+    user?.profile?.last_name,
+    checkoutFirstName,
+    checkoutLastName,
+  ]);
+
   const title = planLabels[planType];
 
   return (
@@ -2353,13 +2399,13 @@ export function EmbeddedCheckout({
         setCheckoutLastName={setCheckoutLastName}
         checkoutPromo={checkoutPromo}
         setCheckoutPromo={setCheckoutPromo}
-        userEmail={user?.email ?? null}
+        userEmail={authSessionEmail}
         canProceedWithEmail={canProceedWithEmail}
         resolvedEmail={resolvedEmail ?? null}
         customerId={user?.profile?.customer_id ?? null}
         collectPaymentMethod={collectPaymentMethod}
         isPlanChange={isPlanChange}
-        onPaymentSuccess={onClose}
+        onAfterCheckoutSuccess={onAfterCheckoutSuccess}
       />
     </ContentWrapper>
   );

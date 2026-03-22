@@ -8,7 +8,7 @@
 
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { PlanType } from "@/types/stripe";
@@ -69,6 +69,7 @@ interface UseCheckoutReturn {
  * @note Used by both PricingSection and BillingPage to ensure consistency.
  * @note For lifetime plans, always requires payment method.
  * @note Priority for payment method collection: hasHadTrial > willProvideCard > collectPaymentMethod.
+ * @note `onInlineCheckout` / `onError` are read from refs so callers may pass a new options object each render without stale fallbacks to /checkout.
  * @example
  * const { initiateCheckout, isLoading, error } = useCheckout({
  *   onError: (err) => console.error(err)
@@ -82,6 +83,18 @@ export function useCheckout(
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  /**
+   * @brief Holds latest optional callbacks so `initiateCheckout` does not depend on a new
+   * `options` object every render (avoids stale closures when parents pass inline `{ onInlineCheckout }`).
+   */
+  const onInlineCheckoutRef = useRef(options.onInlineCheckout);
+  const onErrorRef = useRef(options.onError);
+
+  useEffect(() => {
+    onInlineCheckoutRef.current = options.onInlineCheckout;
+    onErrorRef.current = options.onError;
+  }, [options.onInlineCheckout, options.onError]);
 
   const initiateCheckout = useCallback(
     async (
@@ -132,8 +145,9 @@ export function useCheckout(
 
         const isPlanChange = checkoutOptions?.isPlanChange ?? false;
         const trialOption = checkoutOptions?.trialOption;
-        if (options.onInlineCheckout) {
-          options.onInlineCheckout({
+        const openInline = onInlineCheckoutRef.current;
+        if (openInline) {
+          openInline({
             planType,
             collectPaymentMethod,
             isPlanChange,
@@ -153,15 +167,16 @@ export function useCheckout(
           err instanceof Error ? err.message : "An unexpected error occurred";
         console.error("Checkout error:", err);
         setError(errorMsg);
-        if (options.onError) {
-          options.onError(errorMsg);
+        const errCb = onErrorRef.current;
+        if (errCb) {
+          errCb(errorMsg);
         }
         return { success: false, error: errorMsg };
       } finally {
         setIsLoading(false);
       }
     },
-    [user, router, options],
+    [user, router],
   );
 
   return {

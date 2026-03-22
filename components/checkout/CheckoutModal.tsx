@@ -32,16 +32,28 @@ const CheckoutModalOverlay = styled(motion.div)`
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  /* Above NextHeader (3000–3500) and sticky PromotionBanner (3001). */
+  z-index: 4000;
   backdrop-filter: blur(5px);
+  /* When inner panel is max-height capped, allow overlay to scroll so short viewports can reach top/bottom. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: max(0.75rem, env(safe-area-inset-top)) max(0.75rem, env(safe-area-inset-right))
+    max(0.75rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
 `;
 
 const CheckoutModalContainer = styled(motion.div)`
   position: relative;
   width: 95%;
   max-width: 460px;
+  /* min-height: 0 lets this flex child shrink below content size so max-height + overflow-y can scroll (see CSS flex min-size). */
+  min-height: 0;
   max-height: 95vh;
+  max-height: min(95vh, 100dvh - 1.5rem);
+  flex-shrink: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   background: var(--background);
   border-radius: 16px;
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
@@ -75,14 +87,22 @@ export interface CheckoutModalProps {
   params: InlineCheckoutParams | null;
   /** Called when the user closes the modal (button or overlay click). */
   onClose: () => void;
+  /**
+   * Called after successful checkout once auth profile has been refreshed (e.g. billing page refetch).
+   */
+  onAfterPaymentSuccess?: () => void | Promise<void>;
 }
 
 /**
  * @brief Renders the inline checkout modal when params is non-null.
- * @param {CheckoutModalProps} props - params and onClose
+ * @param {CheckoutModalProps} props - params, onClose, optional onAfterPaymentSuccess
  * @returns {JSX.Element} Nothing when params is null; otherwise overlay + EmbeddedCheckout
  */
-export function CheckoutModal({ params, onClose }: CheckoutModalProps) {
+export function CheckoutModal({
+  params,
+  onClose,
+  onAfterPaymentSuccess,
+}: CheckoutModalProps) {
   return (
     <AnimatePresence>
       {params && (
@@ -111,6 +131,7 @@ export function CheckoutModal({ params, onClose }: CheckoutModalProps) {
               isPlanChange={params.isPlanChange}
               trialOption={params.trialOption}
               onClose={onClose}
+              onAfterCheckoutSuccess={onAfterPaymentSuccess}
             />
           </CheckoutModalContainer>
         </CheckoutModalOverlay>

@@ -25,13 +25,13 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaCheck, FaGift, FaUnlock } from "react-icons/fa";
 import { PlanType, PriceData } from "@/types/stripe";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCheckout } from "@/hooks/useCheckout";
+import type { TrialOption } from "@/hooks/useCheckout";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
@@ -439,7 +439,10 @@ interface PricingCardProps {
   hideButton?: boolean;
   /** @param {"default"|"change_plan"} [variant="default"] - Component variant for different contexts */
   variant?: "default" | "change_plan";
-  /** @param initiateCheckout - When provided (e.g. from PricingSection with inline checkout), use this instead of useCheckout().initiateCheckout */
+  /**
+   * @param initiateCheckout - Required whenever the checkout / Start Trial button is shown (`hideButton` false).
+   * Must be the hook from the parent (e.g. `useCheckout({ onInlineCheckout })`) — do not call `useCheckout()` inside this card or hosted /checkout redirects replace the modal.
+   */
   initiateCheckout?: (
     planType: PlanType,
     options?: {
@@ -448,6 +451,7 @@ interface PricingCardProps {
       hasHadTrial?: boolean;
       email?: string;
       isPlanChange?: boolean;
+      trialOption?: TrialOption;
     },
   ) => Promise<{ success: boolean; error?: string }>;
 }
@@ -470,7 +474,7 @@ interface PricingCardProps {
  * @note Fetches prices from /api/stripe/prices on mount
  * @note Fetches active promotions from /api/promotions/active
  * @note Checks Stripe trial status for logged-in users
- * @note Shows email collection modal for guest checkout
+ * @note Checkout is driven only by the parent `initiateCheckout` prop (inline modal on the homepage)
  * @note Supports lifetime, annual, and monthly billing periods
  * @note Displays discount tags and strikethrough prices for sales
  * @note Button text and action adapts based on user subscription state
@@ -487,9 +491,8 @@ export default function PricingCard({
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const router = useRouter();
-  const checkoutFromHook = useCheckout();
-  const initiateCheckout =
-    initiateCheckoutProp ?? checkoutFromHook.initiateCheckout;
+  /** @note Only parent-provided checkout (modal path). No internal `useCheckout()` — avoids fallback that navigates to /checkout. */
+  const initiateCheckout = initiateCheckoutProp;
   const [prices, setPrices] = useState<Record<PlanType, PriceData> | null>(
     null,
   );
@@ -735,35 +738,56 @@ export default function PricingCard({
     variant,
   ]);
 
-  // Handle checkout — navigate to checkout page (email and promo collected there)
-  const handleCheckout = async (collectPaymentMethod: boolean) => {
-    if (!prices) return;
-
-    setCheckoutLoading(collectPaymentMethod ? "long" : "short");
-
-    const result = await initiateCheckout(billingPeriod, {
-      collectPaymentMethod,
-      hasHadTrial: hasHadStripeTrial,
-      trialOption:
-        showTrialOptions &&
-        billingPeriod !== "lifetime" &&
-        (billingPeriod === "monthly" || billingPeriod === "annual")
-          ? trialType
-          : undefined,
-    });
-
-    setCheckoutLoading(null);
-
-    // Show alert for critical errors (like duplicate lifetime purchase)
-    if (!result.success && result.error) {
-      if (
-        result.error.includes("lifetime license") ||
-        result.error.includes("LIFETIME_ALREADY_PURCHASED")
-      ) {
-        alert(result.error);
+  /**
+   * @brief Starts checkout for the selected billing period (inline modal when `initiateCheckout` is from pricing, else /checkout).
+   * @note Wrapped in useCallback so memoized button config always invokes the current `initiateCheckout` from props.
+   */
+  const handleCheckout = useCallback(
+    async (collectPaymentMethod: boolean) => {
+      if (!prices) return;
+      if (!initiateCheckout) {
+        if (!hideButton) {
+          console.error(
+            "[PricingCard] initiateCheckout is required when the checkout button is visible.",
+          );
+        }
+        return;
       }
-    }
-  };
+
+      setCheckoutLoading(collectPaymentMethod ? "long" : "short");
+
+      const result = await initiateCheckout(billingPeriod, {
+        collectPaymentMethod,
+        hasHadTrial: hasHadStripeTrial,
+        trialOption:
+          showTrialOptions &&
+          billingPeriod !== "lifetime" &&
+          (billingPeriod === "monthly" || billingPeriod === "annual")
+            ? trialType
+            : undefined,
+      });
+
+      setCheckoutLoading(null);
+
+      if (!result.success && result.error) {
+        if (
+          result.error.includes("lifetime license") ||
+          result.error.includes("LIFETIME_ALREADY_PURCHASED")
+        ) {
+          alert(result.error);
+        }
+      }
+    },
+    [
+      prices,
+      initiateCheckout,
+      hideButton,
+      billingPeriod,
+      hasHadStripeTrial,
+      showTrialOptions,
+      trialType,
+    ],
+  );
 
   // Get button config
   const getButtonConfig = useMemo(() => {
@@ -819,6 +843,7 @@ export default function PricingCard({
     billingPeriod,
     hasHadStripeTrial,
     router,
+    handleCheckout,
   ]);
 
   return (

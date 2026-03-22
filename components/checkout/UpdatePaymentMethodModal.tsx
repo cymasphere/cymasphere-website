@@ -43,7 +43,8 @@ const Overlay = styled(motion.div)`
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  /* Match CheckoutModal: above NextHeader (3000–3500) and sticky promo (3001). */
+  z-index: 4000;
   backdrop-filter: blur(5px);
 `;
 

@@ -19,6 +19,11 @@ import Footer from "@/components/layout/Footer";
 import { usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import PromotionBanner from "@/components/banners/PromotionBanner";
+import { CheckoutModal } from "@/components/checkout/CheckoutModal";
+import {
+  useCheckout,
+  type InlineCheckoutParams,
+} from "@/hooks/useCheckout";
 
 // Lazy load ChatWidget - not needed on first paint
 const ChatWidget = dynamic(() => import("@/components/chat/ChatWidget"), {
@@ -208,7 +213,6 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
               shouldHideHeaderFooter={shouldHideHeaderFooter}
               shouldHideChat={shouldHideChat}
               hasActivePromotion={hasActivePromotion}
-              pathname={pathname}
             >
               {children}
             </LayoutContent>
@@ -229,27 +233,33 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
  * @param {boolean} props.shouldHideHeaderFooter - Whether to hide header and footer.
  * @param {boolean} props.shouldHideChat - Whether to hide chat widget.
  * @param {boolean} props.hasActivePromotion - Whether there's an active promotion.
- * @param {string | null} props.pathname - Current route pathname.
  * @returns {JSX.Element} Layout content with conditional UI elements.
  * @note Hides promotion banner for lifetime subscription users.
+ * @note Header PromotionBanner uses the same inline checkout modal as pricing (no /checkout redirect).
  */
 function LayoutContent({
   children,
   shouldHideHeaderFooter,
   shouldHideChat,
   hasActivePromotion,
-  pathname,
 }: {
   children: React.ReactNode;
   shouldHideHeaderFooter: boolean;
   shouldHideChat: boolean;
   hasActivePromotion: boolean;
-  pathname: string | null;
 }) {
   const { user } = useAuth();
-  const isPricingRoute = pathname?.includes("/pricing") || pathname === "/";
-  const isGettingStartedRoute = pathname?.includes("/getting-started");
   const shouldHideChatFinal = shouldHideChat;
+
+  const [headerInlineCheckoutParams, setHeaderInlineCheckoutParams] =
+    useState<InlineCheckoutParams | null>(null);
+
+  /**
+   * @brief Opens checkout in the layout modal so the sticky promo banner matches pricing-section behavior.
+   */
+  const { initiateCheckout: headerInitiateCheckout } = useCheckout({
+    onInlineCheckout: setHeaderInlineCheckoutParams,
+  });
 
   // Hide promotion banner for lifetime users
   const shouldShowPromotion = hasActivePromotion && user?.profile?.subscription !== "lifetime";
@@ -257,12 +267,21 @@ function LayoutContent({
   return (
     <LayoutWrapper>
       {!shouldHideHeaderFooter && <NextHeader hasActiveBanner={hasActivePromotion} />}
-      {!shouldHideHeaderFooter && shouldShowPromotion && <PromotionBanner showCountdown={true} />}
+      {!shouldHideHeaderFooter && shouldShowPromotion && (
+        <PromotionBanner
+          showCountdown={true}
+          initiateCheckout={headerInitiateCheckout}
+        />
+      )}
       <Main>
         {children}
       </Main>
       {!shouldHideHeaderFooter && <Footer />}
       {!shouldHideChatFinal && <ChatWidget />}
+      <CheckoutModal
+        params={headerInlineCheckoutParams}
+        onClose={() => setHeaderInlineCheckoutParams(null)}
+      />
     </LayoutWrapper>
   );
 }

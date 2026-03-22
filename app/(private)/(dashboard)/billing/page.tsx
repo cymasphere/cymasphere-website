@@ -954,6 +954,34 @@ export default function BillingPage() {
   }, [fetchStripeRecurringStatus]);
 
   /**
+   * @brief Refetch invoices and portal snapshot when subscription becomes active (main effect omits subscription in deps).
+   */
+  const prevBillingSubscriptionRef = useRef<SubscriptionType | null>(null);
+  useEffect(() => {
+    const current = userSubscription.subscription;
+    const prev = prevBillingSubscriptionRef.current;
+    if (
+      prev !== null &&
+      prev === "none" &&
+      current !== "none" &&
+      user?.profile?.customer_id
+    ) {
+      void refreshUpcomingInvoice();
+      void refreshInvoices();
+      void fetchStripeRecurringStatus();
+      void checkTrialStatus();
+    }
+    prevBillingSubscriptionRef.current = current;
+  }, [
+    userSubscription.subscription,
+    user?.profile?.customer_id,
+    fetchStripeRecurringStatus,
+    refreshUpcomingInvoice,
+    refreshInvoices,
+    checkTrialStatus,
+  ]);
+
+  /**
    * @brief One-shot profile refresh when Stripe has no recurring sub but the profile still shows monthly/annual.
    */
   useEffect(() => {
@@ -2539,6 +2567,7 @@ export default function BillingPage() {
       <CheckoutModal
         params={inlineCheckoutParams}
         onClose={() => setInlineCheckoutParams(null)}
+        onAfterPaymentSuccess={() => refreshAllDataRef.current()}
       />
     </BillingContainer>
   );

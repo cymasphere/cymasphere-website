@@ -38,7 +38,10 @@ import i18next from "i18next";
 import BillingToggle from "../pricing/BillingToggle";
 import PricingCard from "../pricing/PricingCard";
 import PromotionBanner from "../banners/PromotionBanner";
-import { useCheckout, type InlineCheckoutParams } from "@/hooks/useCheckout";
+import {
+  type InlineCheckoutParams,
+  type TrialOption,
+} from "@/hooks/useCheckout";
 import { CheckoutModal } from "../checkout/CheckoutModal";
 
 // Type definitions for chord positions
@@ -1352,9 +1355,48 @@ const PricingSection = () => {
   const [inlineCheckoutParams, setInlineCheckoutParams] =
     useState<InlineCheckoutParams | null>(null);
 
-  const { initiateCheckout } = useCheckout({
-    onInlineCheckout: setInlineCheckoutParams,
-  });
+  /**
+   * @brief Opens inline checkout modal directly from homepage pricing actions.
+   * @note This intentionally bypasses `useCheckout()` routing behavior so clicking
+   * Start Trial in this section can never navigate to `/checkout`.
+   */
+  const initiateCheckout = useCallback(
+    async (
+      planType: PlanType,
+      options?: {
+        collectPaymentMethod?: boolean;
+        willProvideCard?: boolean;
+        hasHadTrial?: boolean;
+        email?: string;
+        isPlanChange?: boolean;
+        trialOption?: TrialOption;
+      },
+    ): Promise<{ success: boolean; error?: string }> => {
+      let collectPaymentMethod = false;
+      if (options?.hasHadTrial === true) {
+        collectPaymentMethod = true;
+      } else if (options?.willProvideCard !== undefined) {
+        collectPaymentMethod = options.willProvideCard;
+      } else if (options?.collectPaymentMethod !== undefined) {
+        collectPaymentMethod = options.collectPaymentMethod;
+      }
+      if (planType === "lifetime") {
+        collectPaymentMethod = true;
+      }
+
+      setInlineCheckoutParams({
+        planType,
+        collectPaymentMethod,
+        isPlanChange: options?.isPlanChange ?? false,
+        trialOption:
+          options?.trialOption === "7day" || options?.trialOption === "14day"
+            ? options.trialOption
+            : undefined,
+      });
+      return { success: true };
+    },
+    [],
+  );
 
   // Fetch trial status when user is logged in
   useEffect(() => {
