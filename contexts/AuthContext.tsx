@@ -156,6 +156,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    * Used to drop stale async work (profile / pro-status) that finishes after sign-out.
    */
   const latestAuthUserIdRef = useRef<string | null>(null);
+  /**
+   * Set true after the first `onAuthStateChange` callback (e.g. INITIAL_SESSION).
+   * The session-sync effect runs before that subscription effect on mount; without this,
+   * `session` is still null and we must not clear loading — otherwise `(private)/layout`
+   * briefly sees `!user && !loading` and redirects to `/login` while cookies are valid.
+   */
+  const hasReceivedInitialAuthEventRef = useRef(false);
 
   // Log environment status on mount to help debug 500 errors
   useEffect(() => {
@@ -239,9 +246,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Simple session update effect - based on working project
   useEffect(() => {
+    /**
+     * @brief Loads profile/admin state for the signed-in user.
+     * @param expectedUserId Auth user id from the active session.
+     * @param sessionUserFallback User from the auth callback when storage lags cross-tab.
+     * @param accessTokenHint Optional access JWT from React session; passed to getUser() so
+     * resolution does not depend on cookie storage matching yet (BroadcastChannel / race).
+     */
     const updateUserFromSession = async (
       expectedUserId: string,
       sessionUserFallback: User | undefined,
+      accessTokenHint?: string,
     ) => {
       const nowPerf =
         typeof performance !== "undefined" ? performance.now() : Date.now();
@@ -263,13 +278,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       try {
         setLoading(user === null);
-        const {
-          data: { user: fetchedUser },
-        } = await withTimeout(
-          supabase.auth.getUser(),
+        const userResult = await withTimeout(
+          accessTokenHint
+            ? supabase.auth.getUser(accessTokenHint)
+            : supabase.auth.getUser(),
           AUTH_SYNC_TIMEOUT_MS,
           "getUser",
         );
+        if (userResult.error) {
+          console.log(
+            "[AuthContext] getUser:",
+            accessTokenHint ? "jwt" : "storage",
+            userResult.error.message,
+          );
+        }
+        const fetchedUser = userResult.data?.user ?? null;
 
         const logged_in_user =
           fetchedUser ??
@@ -502,14 +525,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Check if this is actually a different session than what we have
       const currentUserId = user?.id;
       if (sessionUserId !== currentUserId) {
-        void updateUserFromSession(sessionUserId, session?.user ?? undefined);
+        void updateUserFromSession(
+          sessionUserId,
+          session?.user ?? undefined,
+          session?.access_token,
+        );
       } else {
         // Same user, just refresh if needed (throttled by updateUserFromSession)
         // Don't call updateUserFromSession if user already exists and matches
         setLoading(false);
       }
     } else if (!session) {
-      // Handle logout case
+      if (!hasReceivedInitialAuthEventRef.current) {
+        return;
+      }
+      // Handle logout case (only after Supabase has reported initial session state)
       setUser(null);
       setLoading(false);
     }
@@ -521,6 +551,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      hasReceivedInitialAuthEventRef.current = true;
+      /**
+       * Cross-tab: GoTrue broadcasts SIGNED_IN / TOKEN_REFRESHED before this tab's cookie
+       * adapter may see the same tokens. Persist via setSession so getSession/getUser(storage)
+       * and middleware stay aligned; skip when storage already matches to avoid loops.
+       */
+      if (session?.access_token && session.refresh_token) {
+        try {
+          const {
+            data: { session: persisted },
+          } = await supabase.auth.getSession();
+          const needsPersist =
+            !persisted?.access_token ||
+            persisted.access_token !== session.access_token;
+          if (needsPersist) {
+            const { error: syncError } = await supabase.auth.setSession({
+              access_token: session.access_token,
+              refresh_token: session.refresh_token,
+            });
+            if (syncError) {
+              console.warn(
+                "[AuthContext] Session cookie sync failed:",
+                syncError.message,
+              );
+            }
+          }
+        } catch (syncErr) {
+          console.warn("[AuthContext] Session storage sync error:", syncErr);
+        }
+      }
+
       latestAuthUserIdRef.current = session?.user?.id ?? null;
       setSession(session);
 

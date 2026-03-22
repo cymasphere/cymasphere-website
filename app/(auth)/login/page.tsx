@@ -1,10 +1,13 @@
 /**
- * @fileoverview Login page: email/password sign-in and redirect after AuthContext is ready.
+ * @fileoverview Login page: email/password sign-in and redirect into the app.
  * @module app/(auth)/login/page
+ * @note After successful sign-in, navigation uses a full document load (`location.assign`).
+ * Client `router.push` was observed stalling on `fetchServerResponse` (Next dev "Rendering…")
+ * while Supabase auth had already succeeded.
  */
 "use client";
-import React, { useState, useEffect, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
@@ -232,10 +235,7 @@ function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
-  const [loginSuccess, setLoginSuccess] = useState(false);
   const auth = useAuth();
-  const router = useRouter();
-  const loginSuccessAtRef = useRef<number | null>(null);
 
   // Get redirect parameter from URL
   const redirectTo = searchParams.get("redirect");
@@ -251,61 +251,18 @@ function Login() {
     }
   }, [languageLoading]);
 
-  // Check if user is already authenticated and redirect them
-  useEffect(() => {
-    if (auth.user && !auth.loading) {
-      // Use secure redirect validation
-      const safeRedirectUrl = getSafeRedirectUrl(redirectTo);
-
-      if (safeRedirectUrl) {
-        router.push(safeRedirectUrl);
-      } else {
-        router.push("/dashboard");
-      }
-    }
-  }, [auth.user, auth.loading, router, redirectTo]);
-
-  // Handle redirect after successful login and auth context update
-  useEffect(() => {
-    if (loginSuccess && auth.user && !auth.loading) {
-      // Use secure redirect validation
-      const safeRedirectUrl = getSafeRedirectUrl(redirectTo);
-
-      if (safeRedirectUrl) {
-        router.push(safeRedirectUrl);
-      } else {
-        router.push("/dashboard");
-      }
-    }
-  }, [loginSuccess, auth.user, auth.loading, router, redirectTo]);
-
   /**
-   * @brief If sign-in succeeded but context never supplies `user`, stop the endless "Logging in…" state.
-   * @note Often caused by a stuck auth sync; AuthContext now times out network steps — this is a backstop.
+   * @brief Send already-authenticated visitors off `/login` without client router transition.
+   * @note Same full-navigation approach as post-submit sign-in avoids a stuck RSC fetch in dev.
    */
   useEffect(() => {
-    if (!loginSuccess) {
-      loginSuccessAtRef.current = null;
+    if (!auth.user || auth.loading) {
       return;
     }
-    if (loginSuccessAtRef.current === null) {
-      loginSuccessAtRef.current = Date.now();
-    }
-    const started = loginSuccessAtRef.current;
-    const timer = window.setTimeout(() => {
-      if (!auth.user && loginSuccess && started === loginSuccessAtRef.current) {
-        setLoginSuccess(false);
-        setLoading(false);
-        setError(
-          t(
-            "login.errors.syncTimeout",
-            "Sign-in succeeded but the session did not finish loading. Refresh the page or try again.",
-          ),
-        );
-      }
-    }, 45_000);
-    return () => window.clearTimeout(timer);
-  }, [loginSuccess, auth.user, t]);
+    const safeRedirectUrl = getSafeRedirectUrl(redirectTo);
+    const target = safeRedirectUrl ?? "/dashboard";
+    window.location.assign(target);
+  }, [auth.user, auth.loading, redirectTo]);
 
   // Render a loading indicator if translations aren't loaded yet
   if (!translationsLoaded) {
@@ -371,10 +328,9 @@ function Login() {
         // Only stop loading when there's an error
         setLoading(false);
       } else {
-        loginSuccessAtRef.current = null;
-        // Set success flag and let useEffect handle redirect after auth context updates
-        // Keep loading state active until redirect happens or error occurs
-        setLoginSuccess(true);
+        const safeRedirectUrl = getSafeRedirectUrl(redirectTo);
+        const target = safeRedirectUrl ?? "/dashboard";
+        window.location.assign(target);
       }
     } catch (error: unknown) {
       setError(
