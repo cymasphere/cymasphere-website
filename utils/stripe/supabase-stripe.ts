@@ -312,6 +312,88 @@ export async function customerPurchasedProFromSupabase(
       if (hasActiveSubscription) break;
     }
 
+    /**
+     * @brief Resolves monthly/annual access from the live Stripe API when the Supabase mirror is empty.
+     * @description Right after `subscriptions.create`, webhook-synced `stripe_tables.stripe_subscriptions`
+     *   rows may not exist yet; `updateUserProStatus` would otherwise write `none` to the profile until refresh.
+     * @param stripeCustomerId Stripe customer id (cus_…).
+     * @returns Active recurring plan from API, or null if none match env price IDs.
+     */
+    const resolveActiveSubscriptionFromStripeApi = async (
+      stripeCustomerId: string,
+    ): Promise<{
+      type: "monthly" | "annual";
+      periodEnd: Date;
+      trialEnd: Date | undefined;
+      subscriptionId: string;
+    } | null> => {
+      const secret = process.env.STRIPE_SECRET_KEY?.trim();
+      if (!secret || !monthlyPriceId || !annualPriceId) {
+        return null;
+      }
+      const stripe = new Stripe(secret);
+      const liveList = await stripe.subscriptions.list({
+        customer: stripeCustomerId,
+        status: "all",
+        limit: 30,
+      });
+      const activeLive = liveList.data.filter(
+        (sub) =>
+          sub.status === "active" ||
+          sub.status === "trialing" ||
+          sub.status === "past_due",
+      );
+      for (const sub of activeLive) {
+        for (const item of sub.items.data) {
+          const priceId = item.price?.id;
+          if (priceId === monthlyPriceId || priceId === annualPriceId) {
+            const attrs = sub as Stripe.Subscription & {
+              current_period_end: number;
+              trial_end: number | null;
+            };
+            const periodEndSec = attrs.current_period_end;
+            return {
+              type: priceId === monthlyPriceId ? "monthly" : "annual",
+              periodEnd: new Date(
+                (typeof periodEndSec === "number" ? periodEndSec : 0) * 1000,
+              ),
+              trialEnd:
+                typeof attrs.trial_end === "number"
+                  ? new Date(attrs.trial_end * 1000)
+                  : undefined,
+              subscriptionId: sub.id,
+            };
+          }
+        }
+      }
+      return null;
+    };
+
+    if (!hasActiveSubscription) {
+      try {
+        const fromApi = await resolveActiveSubscriptionFromStripeApi(
+          customer_id,
+        );
+        if (fromApi) {
+          hasActiveSubscription = true;
+          activeSubscriptionType = fromApi.type;
+          activeSubscriptionId = fromApi.subscriptionId;
+          current_period_end = fromApi.periodEnd;
+          if (fromApi.trialEnd) {
+            trial_end_date = fromApi.trialEnd;
+          }
+          console.log(
+            `[customerPurchasedProFromSupabase] Active subscription from Stripe API (mirror lag): ${fromApi.type} for ${customer_id}`,
+          );
+        }
+      } catch (apiErr) {
+        console.warn(
+          `[customerPurchasedProFromSupabase] Live Stripe API fallback failed for ${customer_id}:`,
+          apiErr,
+        );
+      }
+    }
+
     // If the user has both lifetime and an active subscription, we should cancel the subscription
     if (hasLifetime && hasActiveSubscription && activeSubscriptionId) {
       // Initiate subscription cancellation process
