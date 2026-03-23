@@ -133,9 +133,9 @@ const ChordWeb = React.memo(() => {
       },
       envelope: {
         attack: 0.5, // Slower attack for underwater muffled effect
-        decay: 3, // Longer decay
-        sustain: 0.6, // Higher sustain
-        release: 8, // Much longer release for underwater trail
+        decay: 2,
+        sustain: 0.45,
+        release: 2.2, // Shorter release so chords do not stack into endless wash
       },
       modulation: {
         type: "sine",
@@ -144,7 +144,7 @@ const ChordWeb = React.memo(() => {
         attack: 0.8, // Slower modulation attack
         decay: 1.5, // Longer decay
         sustain: 0.4,
-        release: 10, // Much longer release
+        release: 2.5,
       },
     });
 
@@ -158,9 +158,9 @@ const ChordWeb = React.memo(() => {
 
     // Create reverb effect with longer decay for underwater spaciousness
     const reverb = new Tone.Reverb({
-      decay: 16, // Increased from 12 for more underwater echo
-      wet: 0.98, // Higher wet mix
-      preDelay: 0.2, // Slightly higher preDelay
+      decay: 5.5,
+      wet: 0.55,
+      preDelay: 0.12,
     }).toDestination();
 
     // Create a volume node to reduce gain
@@ -248,9 +248,9 @@ const ChordWeb = React.memo(() => {
       }
 
       function playNotes(notes: string[], chordIndex: number) {
-        // Play chord for longer duration (2n = half note) to let reverb shine
+        // Shorter hold so releases line up with tighter envelope/reverb (was 2n + very long tail)
         if (synth.current) {
-          synth.current.triggerAttackRelease(notes, "2n");
+          synth.current.triggerAttackRelease(notes, "8n");
         }
 
         // Clear any existing timeout for this chord
@@ -268,7 +268,7 @@ const ChordWeb = React.memo(() => {
         timeoutIds.current[chordIndex] = setTimeout(() => {
           activeChords.current.delete(chordIndex);
           delete timeoutIds.current[chordIndex];
-        }, 5000); // Increased from 3000 to match longer reverb tail
+        }, 3500); // Cooldown for re-click; shorter than before now that tails are tighter
       }
     },
     [],
