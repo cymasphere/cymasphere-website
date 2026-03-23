@@ -3,9 +3,8 @@
  * @module components/sections/PricingSection
  *
  * Main pricing section for the landing page. Features an interactive 3D canvas
- * with clickable chord molecules, billing period toggle, pricing card, trial
- * information banner, and promotional sale banner. Includes sophisticated
- * background animation with musical chord visualizations.
+ * with clickable chord molecules (minimal Tone.PolySynth → destination + idle
+ * releaseAll guard), billing toggle, pricing card, trial banner, and promos.
  *
  * @example
  * // Basic usage
@@ -117,76 +116,38 @@ const ChordWeb = React.memo(() => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameId = useRef<number | null>(null);
   const positionsInitialized = useRef<boolean>(false);
-  const synth = useRef<Tone.PolySynth<Tone.AMSynth> | null>(null);
+  const synth = useRef<Tone.PolySynth<Tone.Synth> | null>(null);
+  /** Forces releaseAll after idle so no voice can drone (no delay/reverb chain on canvas) */
+  const chordCanvasSilenceGenRef = useRef(0);
   const activeChords = useRef<Set<number>>(new Set()); // Track currently playing chords
   const timeoutIds = useRef<Record<number, NodeJS.Timeout>>({});
   const currentTime = useRef<number>(0);
   const mousePosition = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const isMouseOverCanvas = useRef<boolean>(false);
 
-  // Initialize Tone.js synth
+  // Minimal polysynth → destination (avoids AMSynth + long reverb tails stacking forever)
   useEffect(() => {
-    // Create a more ambient synth sound with underwater qualities
-    const ambientSynth = new Tone.PolySynth(Tone.AMSynth, {
-      oscillator: {
-        type: "sine",
-      },
+    const s = new Tone.PolySynth(Tone.Synth).toDestination();
+    s.maxPolyphony = 20;
+    s.volume.value = -11;
+    s.set({
+      oscillator: { type: "sine" },
       envelope: {
-        attack: 0.5, // Slower attack for underwater muffled effect
-        decay: 2,
-        sustain: 0.45,
-        release: 2.2, // Shorter release so chords do not stack into endless wash
-      },
-      modulation: {
-        type: "sine",
-      },
-      modulationEnvelope: {
-        attack: 0.8, // Slower modulation attack
-        decay: 1.5, // Longer decay
-        sustain: 0.4,
-        release: 2.5,
+        attack: 0.02,
+        decay: 0.14,
+        sustain: 0,
+        release: 0.2,
       },
     });
-
-    // Create lowpass filter for underwater muffled effect
-    const filter = new Tone.Filter({
-      type: "lowpass",
-      frequency: 800, // Low frequency cutoff for underwater effect
-      Q: 1.5,
-      rolloff: -24,
-    });
-
-    // Create reverb effect with longer decay for underwater spaciousness
-    const reverb = new Tone.Reverb({
-      decay: 5.5,
-      wet: 0.55,
-      preDelay: 0.12,
-    }).toDestination();
-
-    // Create a volume node to reduce gain
-    const volume = new Tone.Volume(-14); // Slightly higher volume
-
-    // Add vibrato for underwater wavering
-    const vibrato = new Tone.Vibrato({
-      frequency: 1.5, // Slow vibrato
-      depth: 0.3, // Moderate depth
-    });
-
-    // Chain effects: synth -> vibrato -> filter -> volume -> reverb -> destination
-    ambientSynth.chain(vibrato, filter, volume, reverb);
-
-    // Store synth in ref
-    synth.current = ambientSynth;
-
+    synth.current = s;
     return () => {
-      // Clean up synth and effects when component unmounts
-      if (synth.current) {
-        synth.current.dispose();
+      synth.current = null;
+      try {
+        s.releaseAll();
+        s.dispose();
+      } catch {
+        /* ignore */
       }
-      reverb.dispose();
-      filter.dispose();
-      vibrato.dispose();
-      volume.dispose();
     };
   }, []);
 
@@ -248,9 +209,20 @@ const ChordWeb = React.memo(() => {
       }
 
       function playNotes(notes: string[], chordIndex: number) {
-        // Shorter hold so releases line up with tighter envelope/reverb (was 2n + very long tail)
-        if (synth.current) {
-          synth.current.triggerAttackRelease(notes, "8n");
+        if (synth.current && !synth.current.disposed) {
+          const g = ++chordCanvasSilenceGenRef.current;
+          synth.current.triggerAttackRelease(notes, 0.38);
+          window.setTimeout(() => {
+            if (chordCanvasSilenceGenRef.current !== g) return;
+            const inst = synth.current;
+            if (inst && !inst.disposed) {
+              try {
+                inst.releaseAll();
+              } catch {
+                /* ignore */
+              }
+            }
+          }, 2000);
         }
 
         // Clear any existing timeout for this chord
@@ -268,7 +240,7 @@ const ChordWeb = React.memo(() => {
         timeoutIds.current[chordIndex] = setTimeout(() => {
           activeChords.current.delete(chordIndex);
           delete timeoutIds.current[chordIndex];
-        }, 3500); // Cooldown for re-click; shorter than before now that tails are tighter
+        }, 2200);
       }
     },
     [],
