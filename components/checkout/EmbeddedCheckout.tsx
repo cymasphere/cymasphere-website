@@ -1888,6 +1888,13 @@ function CheckoutPlanCard({
 
   const isTrialSuccess = is7DayNoCard || is14DayWithCard;
   const isLoggedIn = isKnownAuthenticated;
+  /** Guests must not hit private /downloads or /getting-started (spinner); send them through login with return path. */
+  const downloadsSuccessHref = isKnownAuthenticated
+    ? "/downloads"
+    : `/login?redirect=${encodeURIComponent("/downloads")}`;
+  const gettingStartedSuccessHref = isKnownAuthenticated
+    ? "/getting-started"
+    : `/login?redirect=${encodeURIComponent("/getting-started")}`;
 
   if (checkoutComplete) {
     return (
@@ -1941,10 +1948,10 @@ function CheckoutPlanCard({
               </SuccessInviteBox>
             )}
             <SuccessButtonContainer>
-              <SuccessPrimaryButton href="/downloads">
+              <SuccessPrimaryButton href={downloadsSuccessHref}>
                 Downloads
               </SuccessPrimaryButton>
-              <SuccessSecondaryButton href="/getting-started">
+              <SuccessSecondaryButton href={gettingStartedSuccessHref}>
                 Getting Started
               </SuccessSecondaryButton>
             </SuccessButtonContainer>

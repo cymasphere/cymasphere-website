@@ -1,5 +1,11 @@
 "use client";
 
+/**
+ * @fileoverview Password reset request page and password-update flow for recovery, invite, and PKCE links.
+ * @module app/(auth)/reset-password/page
+ * @note Syncs with {@link AuthContext} session so implicit hash callbacks are not missed when hydration races getSession().
+ */
+
 import React, { Suspense, useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -308,6 +314,17 @@ const CustomLogo = () => {
   );
 };
 
+/**
+ * @brief True when the signed-in user arrived via checkout invite (set password, not forgot-password).
+ * @param userMetadata Supabase `user.user_metadata` from the active session.
+ * @returns Whether to show invite-oriented copy (e.g. “Change password”).
+ */
+function isCheckoutInviteMetadata(
+  userMetadata: Record<string, unknown> | undefined,
+): boolean {
+  return userMetadata?.invited_by === "checkout";
+}
+
 function ResetPasswordClient() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -321,12 +338,26 @@ function ResetPasswordClient() {
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
 
   const router = useRouter();
-  const { resetPassword, supabase } = useAuth();
+  const { resetPassword, supabase, session } = useAuth();
   const searchParams = useSearchParams();
+
+  const sessionUserMetadata = session?.user?.user_metadata as
+    | Record<string, unknown>
+    | undefined;
+  const isCheckoutInviteFlow = isCheckoutInviteMetadata(sessionUserMetadata);
 
   // Initialize translations
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
+
+  /**
+   * @brief When Supabase finishes implicit URL handling, `session` updates after this effect’s first run — keep the password form in sync.
+   */
+  useEffect(() => {
+    if (session) {
+      setIsReset(true);
+    }
+  }, [session]);
 
   // Check if this is a password reset (has valid session) or password request
   useEffect(() => {
@@ -371,7 +402,7 @@ function ResetPasswordClient() {
         return;
       }
 
-      // Check for hash fragment tokens (invite or recovery)
+      // Check for hash fragment tokens (invite or recovery implicit flow)
       if (typeof window === "undefined") return;
 
       const hash = window.location.hash.substring(1); // Remove the #
@@ -383,34 +414,45 @@ function ResetPasswordClient() {
       const refreshToken = params.get("refresh_token");
       const type = params.get("type");
 
-      // Handle invite tokens
-      if (type === "invite" && accessToken && refreshToken) {
+      const isImplicitAuth =
+        (type === "invite" || type === "recovery") &&
+        accessToken &&
+        refreshToken;
+
+      if (isImplicitAuth) {
         try {
-          // Set the session using the tokens from the hash
           const { error: sessionError } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           });
 
           if (sessionError) {
-            console.error("Error setting session from invite:", sessionError);
-            setError("Invalid or expired invite link");
+            console.error(
+              "[Reset Password] Error setting session from hash:",
+              sessionError,
+            );
+            setError(
+              type === "invite"
+                ? "Invalid or expired invite link"
+                : "Invalid or expired reset link. Please request a new password reset.",
+            );
             return;
           }
 
-          // Clear the hash from URL
           window.history.replaceState(null, "", window.location.pathname);
-
-          // Set to reset mode to show password form
           setIsReset(true);
         } catch (err) {
-          console.error("Error handling invite tokens:", err);
-          setError("Failed to process invite link");
+          console.error("[Reset Password] Error handling hash tokens:", err);
+          setError(
+            type === "invite"
+              ? "Failed to process invite link"
+              : "An error occurred while processing the reset link.",
+          );
         }
       }
     };
 
-    checkSessionAndTokens();
+    void checkSessionAndTokens();
   }, [searchParams, supabase]);
 
   // Wait for translations to load
@@ -529,7 +571,11 @@ function ResetPasswordClient() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          {isReset ? "Set New Password" : "Reset Password"}
+          {isCheckoutInviteFlow
+            ? "Change Password"
+            : isReset
+              ? "Set New Password"
+              : "Reset Password"}
         </Title>
 
         <Description
@@ -537,9 +583,11 @@ function ResetPasswordClient() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.6 }}
         >
-          {isReset
-            ? "Create a new password for your account. For security, please choose a strong password that you don't use elsewhere."
-            : "Enter your email address and we'll send you instructions to reset your password."}
+          {isCheckoutInviteFlow
+            ? "Choose a password for your account to finish setting up access."
+            : isReset
+              ? "Create a new password for your account. For security, please choose a strong password that you don't use elsewhere."
+              : "Enter your email address and we'll send you instructions to reset your password."}
         </Description>
 
         {error && (
@@ -617,7 +665,11 @@ function ResetPasswordClient() {
                   whileHover="hover"
                   whileTap="tap"
                 >
-                  {loading ? "Updating..." : "Update Password"}
+                  {loading
+                    ? "Updating..."
+                    : isCheckoutInviteFlow
+                      ? "Change Password"
+                      : "Update Password"}
                 </Button>
               </Form>
             ) : (

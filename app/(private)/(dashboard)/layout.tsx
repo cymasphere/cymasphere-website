@@ -1,5 +1,15 @@
+/**
+ * @fileoverview Authenticated dashboard shell: sidebar, mobile header, and layout for member routes.
+ * @module app/(private)/(dashboard)/layout
+ */
 "use client";
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useState,
+  useRef,
+  useMemo,
+} from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import {
@@ -425,7 +435,7 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const sidebarRef = useRef<HTMLElement>(null);
@@ -484,8 +494,66 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     };
   }, [sidebarOpen]);
 
-  // Return loading state if not mounted yet or translations not loaded
-  if (!user || !translationsLoaded) {
+  /**
+   * @brief If this layout renders without a user, send the browser to login (defensive; mirrors private layout).
+   * @note Without this, `!user` combined with loaded translations caused an infinite “Loading dashboard…” state.
+   */
+  useLayoutEffect(() => {
+    if (authLoading || user) {
+      return;
+    }
+    const target = `/login?redirect=${encodeURIComponent(pathname)}`;
+    if (typeof window !== "undefined") {
+      window.location.replace(`${window.location.origin}${target}`);
+    } else {
+      router.replace(target);
+    }
+  }, [authLoading, user, pathname, router]);
+
+  if (authLoading) {
+    return (
+      <DashboardProvider>
+        <LayoutContainer>
+          <Content
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <LoadingComponent
+              text={t("dashboard.layout.loading", "Loading...")}
+            />
+          </Content>
+        </LayoutContainer>
+      </DashboardProvider>
+    );
+  }
+
+  if (!user) {
+    return (
+      <DashboardProvider>
+        <LayoutContainer>
+          <Content
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <LoadingComponent
+              text={t(
+                "dashboard.layout.redirectingToSignIn",
+                "Redirecting to sign in...",
+              )}
+            />
+          </Content>
+        </LayoutContainer>
+      </DashboardProvider>
+    );
+  }
+
+  if (!translationsLoaded) {
     return (
       <DashboardProvider>
         <LayoutContainer>

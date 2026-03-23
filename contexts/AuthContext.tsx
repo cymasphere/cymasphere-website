@@ -244,6 +244,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [session]);
 
+  /**
+   * @brief Hydrate session from storage immediately so signed-out users are not stuck on loading=true.
+   * @description onAuthStateChange INITIAL_SESSION can be delayed; until then the session-sync effect
+   * returns early and never calls setLoading(false). This mirrors common Supabase + Next.js patterns.
+   */
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data: { session: initial } }) => {
+      hasReceivedInitialAuthEventRef.current = true;
+      latestAuthUserIdRef.current = initial?.user?.id ?? null;
+      setSession(initial ?? null);
+      if (!initial?.user) {
+        setUser(null);
+        setLoading(false);
+      }
+    });
+  }, []);
+
   // Simple session update effect - based on working project
   useEffect(() => {
     /**
@@ -542,6 +559,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Handle logout case (only after Supabase has reported initial session state)
       setUser(null);
       setLoading(false);
+    } else if (!hasReceivedInitialAuthEventRef.current) {
+      return;
+    } else {
+      // Truthy session missing access_token or user id — cannot load a user; unblock the UI
+      setUser(null);
+      setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.access_token, session?.user?.id]); // Use stable values instead of whole session object
@@ -550,40 +573,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       hasReceivedInitialAuthEventRef.current = true;
-      /**
-       * Cross-tab: GoTrue broadcasts SIGNED_IN / TOKEN_REFRESHED before this tab's cookie
-       * adapter may see the same tokens. Persist via setSession so getSession/getUser(storage)
-       * and middleware stay aligned; skip when storage already matches to avoid loops.
-       */
-      if (session?.access_token && session.refresh_token) {
-        try {
-          const {
-            data: { session: persisted },
-          } = await supabase.auth.getSession();
-          const needsPersist =
-            !persisted?.access_token ||
-            persisted.access_token !== session.access_token;
-          if (needsPersist) {
-            const { error: syncError } = await supabase.auth.setSession({
-              access_token: session.access_token,
-              refresh_token: session.refresh_token,
-            });
-            if (syncError) {
-              console.warn(
-                "[AuthContext] Session cookie sync failed:",
-                syncError.message,
-              );
-            }
-          }
-        } catch (syncErr) {
-          console.warn("[AuthContext] Session storage sync error:", syncErr);
-        }
-      }
-
       latestAuthUserIdRef.current = session?.user?.id ?? null;
       setSession(session);
+
+      /**
+       * @note Cross-tab: GoTrue may broadcast SIGNED_IN / TOKEN_REFRESHED before this tab’s cookie
+       * adapter sees tokens; we re-persist via setSession when needed.
+       * @note Must not `await getSession` / `setSession` inside this callback synchronously: GoTrue invokes
+       * subscribers while holding the auth lock (e.g. after `updateUser` → USER_UPDATED). Nested lock
+       * waits deadlock `updateUser` and leave callers stuck on “loading” forever.
+       */
+      if (session?.access_token && session.refresh_token) {
+        void (async () => {
+          try {
+            const {
+              data: { session: persisted },
+            } = await supabase.auth.getSession();
+            const needsPersist =
+              !persisted?.access_token ||
+              persisted.access_token !== session.access_token;
+            if (needsPersist) {
+              const { error: syncError } = await supabase.auth.setSession({
+                access_token: session.access_token,
+                refresh_token: session.refresh_token,
+              });
+              if (syncError) {
+                console.warn(
+                  "[AuthContext] Session cookie sync failed:",
+                  syncError.message,
+                );
+              }
+            }
+          } catch (syncErr) {
+            console.warn("[AuthContext] Session storage sync error:", syncErr);
+          }
+        })();
+      }
 
       // Handle timezone tracking directly in AuthContext to ensure it runs
       // if (
@@ -597,6 +624,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
+  }, []);
+
+  /**
+   * @brief If GoTrue never emits INITIAL_SESSION, hydrate from storage and unblock the UI.
+   * @description Prevents private routes from spinning forever when the auth subscription is delayed or missing.
+   * @note Does not run once {@link hasReceivedInitialAuthEventRef} is already true.
+   */
+  useEffect(() => {
+    const fallbackMs = 8000;
+    const id = window.setTimeout(async () => {
+      if (hasReceivedInitialAuthEventRef.current) {
+        return;
+      }
+      console.warn(
+        "[AuthContext] No INITIAL_SESSION within timeout; hydrating from getSession()",
+      );
+      hasReceivedInitialAuthEventRef.current = true;
+      try {
+        const {
+          data: { session: resolved },
+        } = await supabase.auth.getSession();
+        latestAuthUserIdRef.current = resolved?.user?.id ?? null;
+        setSession(resolved ?? null);
+      } catch (err) {
+        console.warn("[AuthContext] getSession() fallback failed:", err);
+        latestAuthUserIdRef.current = null;
+        setSession(null);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    }, fallbackMs);
+    return () => window.clearTimeout(id);
   }, []);
 
   /**

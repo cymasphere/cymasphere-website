@@ -8,7 +8,7 @@
 
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useLayoutEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import LoadingComponent from "@/components/common/LoadingComponent";
@@ -21,7 +21,7 @@ import LoadingComponent from "@/components/common/LoadingComponent";
  * @param {React.ReactNode} props.children - Child components to render.
  * @returns {JSX.Element} Children if authenticated, loading component while checking, or redirects to login.
  * @note Encodes current pathname as redirect parameter for post-login navigation.
- * @note Redirect is triggered only once per unauthenticated transition to avoid infinite redirect loops.
+ * @note Unauthenticated redirects run in useLayoutEffect so navigation starts before paint.
  */
 export default function RootLayout({
   children,
@@ -31,25 +31,35 @@ export default function RootLayout({
   const auth = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const hasRedirectedRef = useRef(false);
 
-  useEffect(() => {
-    if (!auth.user && !auth.loading) {
-      // Redirect only once when we transition to unauthenticated to prevent
-      // multiple router.push calls and UI flashing / infinite loop on logout
-      if (!hasRedirectedRef.current) {
-        hasRedirectedRef.current = true;
-        const redirectUrl = encodeURIComponent(pathname);
-        router.replace(`/login?redirect=${redirectUrl}`);
-      }
-    } else if (auth.user) {
-      // Reset so a future logout can redirect again
-      hasRedirectedRef.current = false;
+  /**
+   * @brief Send unauthenticated visitors to login with a safe return path.
+   * @note Full navigation avoids stuck App Router client transitions (same rationale as login page assign).
+   */
+  useLayoutEffect(() => {
+    if (auth.user || auth.loading) {
+      return;
     }
-  }, [auth.user, router, auth.loading, pathname]);
+    const redirectUrl = encodeURIComponent(pathname);
+    const target = `/login?redirect=${redirectUrl}`;
+    if (typeof window !== "undefined") {
+      window.location.replace(`${window.location.origin}${target}`);
+    } else {
+      router.replace(target);
+    }
+  }, [auth.user, auth.loading, pathname, router]);
 
-  if (!auth.user || auth.loading) {
+  if (auth.loading) {
     return <LoadingComponent fullScreen text="Loading..." />;
+  }
+
+  if (!auth.user) {
+    return (
+      <LoadingComponent
+        fullScreen
+        text="Redirecting to sign in..."
+      />
+    );
   }
 
   return <>{children}</>;
