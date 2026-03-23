@@ -80,11 +80,11 @@ export function generateTrialEndingReminderHtml(data: TrialEndingReminderData): 
           <tr>
             <td style="padding: 30px 24px;">
               <h1 style="font-size: 1.5rem; color: #333; margin: 0 0 20px 0; font-weight: 600;">
-                Don't lose access to your creative tools
+                Don&apos;t lose access to your creative tools
               </h1>
               
               <p style="color: #666; line-height: 1.6; margin: 0 0 20px 0;">
-                Hi ${firstName}! We hope you've been enjoying Cymasphere Pro. Your free trial ends on <strong>${trialEndDateFormatted}</strong>, and we'd love to keep you creating with all the premium features you've been using.
+                Hi ${firstName}! We hope you&apos;ve been enjoying Cymasphere Pro. Your free trial ends on <strong>${trialEndDateFormatted}</strong>, and we&apos;d love to keep you creating with all the premium features you&apos;ve been using.
               </p>
               
               <div style="margin: 30px 0; padding: 20px; background-color: #f9f9f9; border-radius: 8px; border-left: 4px solid #6c63ff;">
@@ -95,7 +95,7 @@ export function generateTrialEndingReminderHtml(data: TrialEndingReminderData): 
                   ${planName}
                 </p>
                 <p style="margin: 8px 0 0 0; font-size: 14px; color: #666; line-height: 1.6;">
-                  Just $${formattedPrice} per ${planName.toLowerCase().includes('annual') ? 'year' : 'month'} to keep all your premium features active. No commitment—cancel anytime.
+                  Just $${formattedPrice} per ${planName.toLowerCase().includes('annual') ? 'year' : 'month'} to keep all your premium features active. No commitment - cancel anytime.
                 </p>
               </div>
               
@@ -108,12 +108,12 @@ export function generateTrialEndingReminderHtml(data: TrialEndingReminderData): 
               <!-- CTA Button -->
               <div style="text-align: center; margin: 30px 0;">
                 <a href="${updatePaymentUrl}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 1rem;">
-                  Continue Your Journey →
+                  Continue your journey &rarr;
                 </a>
               </div>
               
               <p style="color: #666; line-height: 1.6; margin: 20px 0 0 0; font-size: 0.9em; text-align: center;">
-                Takes less than 2 minutes • Secure payment • Cancel anytime
+                Takes less than 2 minutes &middot; Secure payment &middot; Cancel anytime
               </p>
               
               <div style="margin: 30px 0; padding: 20px; background-color: #f9fafb; border-radius: 8px;">
@@ -121,15 +121,15 @@ export function generateTrialEndingReminderHtml(data: TrialEndingReminderData): 
                   💡 Why continue?
                 </p>
                 <ul style="margin: 0; padding-left: 20px; color: #666; line-height: 1.8; font-size: 14px;">
-                  <li>Keep all the premium features you've been using</li>
+                  <li>Keep all the premium features you&apos;ve been using</li>
                   <li>No interruption to your creative workflow</li>
-                  <li>Cancel anytime—no long-term commitment</li>
+                  <li>Cancel anytime - no long-term commitment</li>
                   <li>Join thousands of musicians creating with Cymasphere</li>
                 </ul>
               </div>
               
               <p style="color: #666; line-height: 1.6; margin: 30px 0 0 0; font-size: 0.9em;">
-                Questions? We're here to help! Visit our <a href="${siteUrl}/support" style="color: #6c63ff; text-decoration: none;">support site</a> or reply to this email.
+                Questions? We&apos;re here to help! Visit our <a href="${siteUrl}/support" style="color: #6c63ff; text-decoration: none;">support site</a> or reply to this email.
               </p>
               
               <p style="color: #666; line-height: 1.6; margin: 20px 0 0 0; font-size: 0.9em;">
@@ -142,7 +142,7 @@ export function generateTrialEndingReminderHtml(data: TrialEndingReminderData): 
           <tr>
             <td style="padding: 20px 24px; background-color: #f8f9fa; border-top: 1px solid #e9ecef; text-align: center; font-size: 0.85em; color: #666;">
               <p style="margin: 0 0 10px 0;">
-                © ${new Date().getFullYear()} Cymasphere. All rights reserved.
+                &copy; ${new Date().getFullYear()} Cymasphere. All rights reserved.
               </p>
               <p style="margin: 0;">
                 <a href="${siteUrl}/support" style="color: #6c63ff; text-decoration: none;">Support</a> | 
@@ -203,18 +203,18 @@ Hi ${firstName}! We hope you've been enjoying Cymasphere Pro. Your free trial en
 
 Your Subscription
 ${planName}
-Just $${formattedPrice} per ${planName.toLowerCase().includes('annual') ? 'year' : 'month'} to keep all your premium features active. No commitment—cancel anytime.
+Just $${formattedPrice} per ${planName.toLowerCase().includes('annual') ? 'year' : 'month'} to keep all your premium features active. No commitment - cancel anytime.
 
 ⏰ Quick action needed: Add your payment method before ${trialEndDateFormatted} to continue seamlessly without any interruption to your workflow.
 
-Continue Your Journey: ${updatePaymentUrl}
-Takes less than 2 minutes • Secure payment • Cancel anytime
+Continue your journey: ${updatePaymentUrl}
+Takes less than 2 minutes | Secure payment | Cancel anytime
 
 💡 Why continue?
-• Keep all the premium features you've been using
-• No interruption to your creative workflow
-• Cancel anytime—no long-term commitment
-• Join thousands of musicians creating with Cymasphere
+- Keep all the premium features you've been using
+- No interruption to your creative workflow
+- Cancel anytime - no long-term commitment
+- Join thousands of musicians creating with Cymasphere
 
 Questions? We're here to help! Visit our support site: ${siteUrl}/support
 Or reply to this email.
@@ -222,7 +222,7 @@ Or reply to this email.
 Best regards,
 The Cymasphere Team
 
-© ${new Date().getFullYear()} Cymasphere. All rights reserved.
+(c) ${new Date().getFullYear()} Cymasphere. All rights reserved.
 ${siteUrl}/support | ${siteUrl}/terms-of-service | ${siteUrl}/privacy-policy
   `.trim();
 }

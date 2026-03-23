@@ -1,5 +1,6 @@
 /**
- * Welcome email template for new subscriptions and lifetime purchases
+ * @fileoverview Welcome email HTML and plain text for new subscriptions, trials, and lifetime purchases.
+ * @module utils/email-campaigns/welcome-email
  */
 
 export interface WelcomeEmailData {
@@ -16,7 +17,9 @@ export interface WelcomeEmailData {
 }
 
 /**
- * Generate welcome email HTML
+ * @brief Builds the welcome email HTML body
+ * @param data Customer and plan fields for personalization
+ * @returns Complete HTML document string for SES
  */
 export function generateWelcomeEmailHtml(data: WelcomeEmailData): string {
   const { customerName, customerEmail, purchaseType, subscriptionType, planName } = data;
@@ -79,7 +82,7 @@ export function generateWelcomeEmailHtml(data: WelcomeEmailData): string {
               </h1>
               
               <p style="color: #666; line-height: 1.6; margin: 0 0 20px 0;">
-                Thank you for joining Cymasphere! We're thrilled to have you as part of our community of musicians, composers, and creators.
+                Thank you for joining Cymasphere! We&apos;re thrilled to have you as part of our community of musicians, composers, and creators.
               </p>
               
               ${data.trialNoCharge ? '' : `
@@ -92,11 +95,11 @@ export function generateWelcomeEmailHtml(data: WelcomeEmailData): string {
                 </p>
                 ${purchaseType === 'elite' ? `
                   <p style="margin: 8px 0 0 0; font-size: 14px; color: #9b59b6; font-weight: 500;">
-                    ✨ You've been granted Elite Access! Enjoy lifetime premium features.
+                    ✨ You&apos;ve been granted Elite Access! Enjoy lifetime premium features.
                   </p>
                 ` : data.isTrial ? `
                   <p style="margin: 8px 0 0 0; font-size: 14px; color: #4eccd4; font-weight: 500;">
-                    🎉 You're starting a free trial! No charges will be made until ${trialEndDateFormatted}.
+                    🎉 You&apos;re starting a free trial! No charges will be made until ${trialEndDateFormatted}.
                   </p>
                 ` : ''}
               </div>
@@ -109,14 +112,14 @@ export function generateWelcomeEmailHtml(data: WelcomeEmailData): string {
                   </p>
                   <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #666;">
                     ${data.trialNoCharge
-                      ? `Your ${data.trialDays || 'free'} day trial gives you full access to all premium features. No payment information is required — just explore and enjoy!`
-                      : `Your ${data.trialDays || 'free'} day trial gives you full access to all premium features. You won't be charged until ${trialEndDateFormatted}. You can cancel anytime during your trial with no charges.`}
+                      ? `Your ${data.trialDays || 'free'} day trial gives you full access to all premium features. No payment information is required - just explore and enjoy!`
+                      : `Your ${data.trialDays || 'free'} day trial gives you full access to all premium features. You won&apos;t be charged until ${trialEndDateFormatted}. You can cancel anytime during your trial with no charges.`}
                   </p>
                 </div>
               ` : ''}
               
               <p style="color: #666; line-height: 1.6; margin: 20px 0;">
-                You now have full access to all premium features of Cymasphere. Whether you're composing, learning music theory, or exploring new harmonic possibilities, we're here to support your creative journey.
+                You now have full access to all premium features of Cymasphere. Whether you&apos;re composing, learning music theory, or exploring new harmonic possibilities, we&apos;re here to support your creative journey.
               </p>
               
               <!-- CTA Button -->
@@ -140,7 +143,7 @@ export function generateWelcomeEmailHtml(data: WelcomeEmailData): string {
           <tr>
             <td style="padding: 20px 24px; background-color: #f8f9fa; border-top: 1px solid #e9ecef; text-align: center; font-size: 0.85em; color: #666;">
               <p style="margin: 0 0 10px 0;">
-                © ${new Date().getFullYear()} Cymasphere. All rights reserved.
+                &copy; ${new Date().getFullYear()} Cymasphere. All rights reserved.
               </p>
               <p style="margin: 0;">
                 <a href="${siteUrl}/support" style="color: #6c63ff; text-decoration: none;">Support</a> | 
@@ -159,7 +162,9 @@ export function generateWelcomeEmailHtml(data: WelcomeEmailData): string {
 }
 
 /**
- * Generate welcome email plain text version
+ * @brief Builds the welcome email plain-text alternative body
+ * @param data Customer and plan fields for personalization
+ * @returns Plain text string for multipart/alternative
  */
 export function generateWelcomeEmailText(data: WelcomeEmailData): string {
   const { customerName, purchaseType, subscriptionType, planName, isTrial, trialEndDate, trialDays } = data;
@@ -196,7 +201,7 @@ Thank you for joining Cymasphere! We're thrilled to have you as part of our comm
 
 ${data.trialNoCharge ? `
 ⏰ Trial Information:
-Your ${trialDays || 'free'} day trial gives you full access to all premium features. No payment information is required — just explore and enjoy!
+Your ${trialDays || 'free'} day trial gives you full access to all premium features. No payment information is required - just explore and enjoy!
 ` : `${isTrial ? 'Your Free Trial' : purchaseType === 'elite' ? 'Your Elite Access' : 'Your Purchase'}: ${planDisplayName}
 ${purchaseType === 'elite' ? `
 ✨ You've been granted Elite Access! Enjoy lifetime premium features.
@@ -217,7 +222,7 @@ If you have any questions or need assistance, our support team is here to help. 
 Happy creating!
 The Cymasphere Team
 
-© ${new Date().getFullYear()} Cymasphere. All rights reserved.
+(c) ${new Date().getFullYear()} Cymasphere. All rights reserved.
 ${siteUrl}/support | ${siteUrl}/terms-of-service | ${siteUrl}/privacy-policy
   `.trim();
 }

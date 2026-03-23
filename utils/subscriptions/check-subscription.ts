@@ -805,6 +805,12 @@ async function updateUserProStatusInternal(
       // address only ever receives one copy of each logical subscription email
       // kind (e.g., free_trial_started), even if multiple user accounts are
       // created for the same address.
+      //
+      // Lifetime uses one dedupe key for all lifetime transactional variants so
+      // inconsistent reads of previousSubscription cannot emit multiple welcomes.
+      const subscriptionEmailDedupeKind =
+        finalSubscription === "lifetime" ? "lifetime_welcome" : emailKind;
+
       const normalizedEmail =
         typeof profile.email === "string"
           ? profile.email.trim().toLowerCase()
@@ -814,7 +820,7 @@ async function updateUserProStatusInternal(
         .insert({
           user_id: userId,
           email: normalizedEmail,
-          email_kind: emailKind,
+          email_kind: subscriptionEmailDedupeKind,
         });
 
       if (insertError?.code === "23505") {
@@ -827,7 +833,7 @@ async function updateUserProStatusInternal(
       }
       if (insertError) {
         console.error(
-          `[updateUserProStatus] Failed to claim subscription email send (${emailKind}):`,
+          `[updateUserProStatus] Failed to claim subscription email send (${subscriptionEmailDedupeKind}):`,
           insertError
         );
         return {
@@ -870,7 +876,7 @@ async function updateUserProStatusInternal(
         text: welcomeEmailText,
         from: "Cymasphere <support@cymasphere.com>",
         source: "updateUserProStatus",
-        dedupeKey: emailKind,
+        dedupeKey: subscriptionEmailDedupeKind,
       });
 
       if (emailResult.success) {

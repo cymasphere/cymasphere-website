@@ -19,29 +19,19 @@ export const SUPPORT_EMAIL_FROM = `Cymasphere Support <${SUPPORT_EMAIL}>`;
 let sesClientInstance: SESClient | null = null;
 
 /**
- * @brief Encodes a UTF-8 string as quoted-printable (RFC 2045) for email parts
- * @param input UTF-8 string
- * @returns Quoted-printable encoded string with soft line breaks at 76 chars
+ * @brief Encodes UTF-8 body text as MIME base64 with 76-character lines (RFC 2045)
+ * @param input UTF-8 string (HTML or plain text)
+ * @returns Base64 body lines joined with CRLF, safe for Content-Transfer-Encoding: base64
+ * @note Used instead of quoted-printable so UTF-8 (including emoji) decodes reliably in
+ *       clients that mishandled quoted-printable, which caused replacement characters and
+ *       broken words.
  */
-function encodeQuotedPrintable(input: string): string {
-  const buf = Buffer.from(input, "utf8");
+function encodeBase64MimeBody(input: string): string {
+  const b64 = Buffer.from(input, "utf8").toString("base64");
   const lines: string[] = [];
-  let line = "";
-  for (let i = 0; i < buf.length; i++) {
-    const b = buf[i];
-    const char = b >= 32 && b <= 126 && b !== 61 ? String.fromCharCode(b) : `=${b.toString(16).toUpperCase().padStart(2, "0")}`;
-    if (line.length + char.length > 76) {
-      if (line.length > 0) {
-        lines.push(line.endsWith(" ") || line.endsWith("\t") ? line + "=" : line);
-        line = "";
-      }
-      line = char;
-    } else {
-      line += char;
-    }
-  }
-  if (line.length > 0) {
-    lines.push(line.endsWith(" ") || line.endsWith("\t") ? line + "=" : line);
+  const lineLen = 76;
+  for (let i = 0; i < b64.length; i += lineLen) {
+    lines.push(b64.slice(i, i + lineLen));
   }
   return lines.join("\r\n");
 }
@@ -122,7 +112,7 @@ interface SendBatchEmailParams {
  * @note Header values (from, to, subject, replyTo) are sanitized to prevent CRLF injection
  * @note Includes List-Unsubscribe headers for Gmail deliverability
  * @note Generates unique Message-ID for each email
- * @note Supports both HTML and text content (multipart/alternative)
+ * @note Supports both HTML and text content (multipart/alternative); parts use base64 for UTF-8
  * 
  * @example
  * ```typescript
@@ -190,20 +180,20 @@ export async function sendEmail({
     // Build email body
     let body = '';
 
-    // Add text part (quoted-printable for UTF-8 support)
+    // Add text part (base64 for reliable UTF-8 across mail clients)
     if (text) {
       body += `--${boundary}\r\n`;
       body += `Content-Type: text/plain; charset=UTF-8\r\n`;
-      body += `Content-Transfer-Encoding: quoted-printable\r\n\r\n`;
-      body += `${encodeQuotedPrintable(text)}\r\n`;
+      body += `Content-Transfer-Encoding: base64\r\n\r\n`;
+      body += `${encodeBase64MimeBody(text)}\r\n`;
     }
 
-    // Add HTML part (quoted-printable for UTF-8 support)
+    // Add HTML part (base64 for reliable UTF-8 across mail clients)
     if (html) {
       body += `--${boundary}\r\n`;
       body += `Content-Type: text/html; charset=UTF-8\r\n`;
-      body += `Content-Transfer-Encoding: quoted-printable\r\n\r\n`;
-      body += `${encodeQuotedPrintable(html)}\r\n`;
+      body += `Content-Transfer-Encoding: base64\r\n\r\n`;
+      body += `${encodeBase64MimeBody(html)}\r\n`;
     }
 
     body += `--${boundary}--\r\n`;
@@ -372,15 +362,15 @@ export async function sendBatchEmail({
     if (text) {
       body += `--${boundary}\r\n`;
       body += `Content-Type: text/plain; charset=UTF-8\r\n`;
-      body += `Content-Transfer-Encoding: quoted-printable\r\n\r\n`;
-      body += `${encodeQuotedPrintable(text)}\r\n`;
+      body += `Content-Transfer-Encoding: base64\r\n\r\n`;
+      body += `${encodeBase64MimeBody(text)}\r\n`;
     }
 
     if (html) {
       body += `--${boundary}\r\n`;
       body += `Content-Type: text/html; charset=UTF-8\r\n`;
-      body += `Content-Transfer-Encoding: quoted-printable\r\n\r\n`;
-      body += `${encodeQuotedPrintable(html)}\r\n`;
+      body += `Content-Transfer-Encoding: base64\r\n\r\n`;
+      body += `${encodeBase64MimeBody(html)}\r\n`;
     }
 
     body += `--${boundary}--\r\n`;
