@@ -1,14 +1,12 @@
 /**
  * @fileoverview Server-only post-checkout helpers: invite by email and refresh pro status.
  * Used by Stripe API routes and POST /api/checkout/after-success — not exposed as client-callable actions.
+ * Guest magic-link fallback emails are intentionally not sent for existing accounts (invite or self-registration).
  *
  * @module utils/checkout/post-purchase
  */
 
-import type { Database } from "@/database.types";
-import { sendEmail } from "@/utils/email";
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { updateUserProStatus } from "@/utils/subscriptions/check-subscription";
 
 /**
@@ -73,111 +71,13 @@ export async function refreshSubscriptionByCustomerId(
 }
 
 /**
- * @brief Sends a one-time magic sign-in link for returning customers who did not receive Supabase’s invite email.
- * @param supabase - Service-role Supabase client
- * @param normalizedEmail - Lowercased, trimmed checkout email (must match auth user)
- * @param userId - Profile / auth user id for `subscription_emails_sent.user_id`
- * @returns Resolves when skipped, sent, or failed without throwing
- * @note Dedupes with `subscription_emails_sent` PK `(email, email_kind)` using a UTC date suffix so at most one
- *       sign-in email per address per calendar day.
- * @note If link generation fails after claiming the dedupe row, the row is removed so a later retry can succeed.
- */
-async function sendCheckoutReturnSignInLinkEmail(
-  supabase: SupabaseClient<Database>,
-  normalizedEmail: string,
-  userId: string,
-): Promise<void> {
-  const dayKey = new Date().toISOString().slice(0, 10);
-  const emailKind = `checkout_return_sign_in_${dayKey}`;
-
-  const { error: insertError } = await supabase
-    .from("subscription_emails_sent")
-    .insert({
-      user_id: userId,
-      email: normalizedEmail,
-      email_kind: emailKind,
-    });
-
-  if (insertError?.code === "23505") {
-    return;
-  }
-  if (insertError) {
-    console.error(
-      "[Checkout Sign-in Link] Dedupe insert failed:",
-      insertError,
-    );
-    return;
-  }
-
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://cymasphere.com";
-  const redirectTo = `${baseUrl}/reset-password`;
-
-  const { data: linkPayload, error: linkError } =
-    await supabase.auth.admin.generateLink({
-      type: "magiclink",
-      email: normalizedEmail,
-      options: { redirectTo },
-    });
-
-  const actionLink = linkPayload?.properties?.action_link ?? null;
-  if (linkError || !actionLink) {
-    const { error: deleteError } = await supabase
-      .from("subscription_emails_sent")
-      .delete()
-      .eq("email", normalizedEmail)
-      .eq("email_kind", emailKind);
-    if (deleteError) {
-      console.error(
-        "[Checkout Sign-in Link] Failed to roll back dedupe after generateLink error:",
-        deleteError,
-      );
-    }
-    console.error("[Checkout Sign-in Link] generateLink failed:", linkError);
-    return;
-  }
-
-  const subject = "Sign in to Cymasphere";
-  const text = [
-    "Thanks for subscribing — use the link below to sign in to your account:",
-    "",
-    actionLink,
-    "",
-    "This link expires soon. If you did not start checkout, you can ignore this email.",
-  ].join("\n");
-
-  const safeHref = actionLink
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;");
-  const html = `<!DOCTYPE html>
-<html><body style="font-family:system-ui,sans-serif;line-height:1.5;color:#111">
-<p>Thanks for subscribing — use the button below to sign in to your account.</p>
-<p><a href="${safeHref}" style="display:inline-block;padding:12px 20px;background:#4e7cff;color:#fff;text-decoration:none;border-radius:8px">Sign in to Cymasphere</a></p>
-<p style="font-size:14px;color:#555">Or copy this link:<br/><span style="word-break:break-all">${safeHref}</span></p>
-<p style="font-size:13px;color:#777">This link expires soon. If you did not start checkout, you can ignore this email.</p>
-</body></html>`;
-
-  try {
-    await sendEmail({
-      to: normalizedEmail,
-      subject,
-      text,
-      html,
-      source: "inviteUserByEmailAndRefreshProStatus",
-      dedupeKey: emailKind,
-    });
-  } catch (sendErr) {
-    console.error("[Checkout Sign-in Link] sendEmail failed:", sendErr);
-  }
-}
-
-/**
  * @brief Invites or finds user by email, updates name fields, then syncs pro status from Stripe/iOS/NFR.
  * @param customerEmail - Normalized checkout email
  * @param firstName - Optional first name for profile / invite metadata
  * @param lastName - Optional last name
  * @returns Result with userId and subscription snapshot
+ * @note Does not send a separate magic-link email: new addresses get Supabase's invite only; existing accounts
+ *       already have registration or a prior invite and should use normal sign-in / password reset.
  */
 export async function inviteUserByEmailAndRefreshProStatus(
   customerEmail: string,
@@ -200,8 +100,6 @@ export async function inviteUserByEmailAndRefreshProStatus(
     const supabase = await createSupabaseServiceRole();
 
     let userId: string | null = null;
-    /** True when `inviteUserByEmail` ran for a new address and Supabase sent its invite email. */
-    let checkoutSupabaseInviteEmailSent = false;
     const { data: existingProfile } = await supabase
       .from("profiles")
       .select("id")
@@ -280,7 +178,6 @@ export async function inviteUserByEmailAndRefreshProStatus(
           }
         } else if (inviteData?.user?.id) {
           userId = inviteData.user.id;
-          checkoutSupabaseInviteEmailSent = true;
           console.log(
             `[Checkout Invite] Successfully invited user ${normalized}, userId: ${userId}`,
           );
@@ -339,14 +236,6 @@ export async function inviteUserByEmailAndRefreshProStatus(
       console.log(
         `[Checkout Invite] Pro status refreshed: ${result.subscription} (${result.source})`,
       );
-
-      if (!checkoutSupabaseInviteEmailSent) {
-        await sendCheckoutReturnSignInLinkEmail(
-          supabase,
-          normalized,
-          userId,
-        );
-      }
 
       return {
         success: true,
