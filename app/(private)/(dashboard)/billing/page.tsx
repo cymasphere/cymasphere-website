@@ -1209,7 +1209,14 @@ export default function BillingPage() {
   // Format the date for display
   const formatDate = (date: string | number | Date | null | undefined) => {
     if (date == null || date === "") return "";
-    const d = date instanceof Date ? date : new Date(date);
+    const d =
+      date instanceof Date
+        ? date
+        : typeof date === "number" &&
+            date > 0 &&
+            date < 1_000_000_000_000
+          ? new Date(date * 1000)
+          : new Date(date);
     if (Number.isNaN(d.getTime())) return "";
     return d.toLocaleDateString(t("common.locale", "en-US"), {
       year: "numeric",
@@ -2307,7 +2314,14 @@ export default function BillingPage() {
                 {invoices.map((invoice) => (
                   <InvoiceItem key={invoice.id}>
                     <div style={{ display: "flex", flexDirection: "column" }}>
-                      <div>{invoice.number || invoice.id}</div>
+                      <div>
+                        {typeof invoice.displayLabelKey === "string"
+                          ? t(
+                              invoice.displayLabelKey,
+                              "Lifetime purchase",
+                            )
+                          : invoice.number || invoice.id}
+                      </div>
                       <InvoiceDate>{formatDate(invoice.created)}</InvoiceDate>
                     </div>
                     <div

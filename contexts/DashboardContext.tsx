@@ -28,12 +28,18 @@ interface UpcomingInvoice {
   error: string | null;
 }
 
+/** Mirrors `InvoiceData` from getCustomerInvoices (client-safe duplicate; avoid importing "use server" module). */
 interface Invoice {
   id: string;
+  number?: string;
   amount: number;
   status: string;
-  created: number;
-  [key: string]: any;
+  /** ISO 8601 — never store unix seconds here; `new Date(n)` treats numbers as milliseconds. */
+  created: string;
+  currency: string;
+  pdf_url?: string;
+  receipt_url?: string;
+  displayLabelKey?: string;
 }
 
 interface Device {
@@ -368,10 +374,20 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
       if (invoices) {
         setInvoices(
-          invoices.map((inv) => ({
-            ...inv,
-            created: typeof inv.created === "number" ? inv.created : (inv as { created?: string }).created ? Math.floor(new Date((inv as { created: string }).created).getTime() / 1000) : 0,
-          }))
+          invoices.map((inv) => {
+            const raw = inv.created;
+            let createdIso: string;
+            if (typeof raw === "string" && raw.length > 0) {
+              createdIso = raw;
+            } else if (typeof raw === "number" && raw > 0) {
+              const ms =
+                raw < 1_000_000_000_000 ? raw * 1000 : raw;
+              createdIso = new Date(ms).toISOString();
+            } else {
+              createdIso = new Date().toISOString();
+            }
+            return { ...inv, created: createdIso };
+          }),
         );
       } else {
         setInvoices([]);

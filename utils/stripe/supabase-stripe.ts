@@ -443,21 +443,173 @@ export interface InvoiceData {
   currency: string;
   pdf_url?: string;
   receipt_url?: string;
+  /**
+   * When set, billing UI should show `t(displayLabelKey)` instead of invoice number / Stripe id
+   * (e.g. lifetime rows from PaymentIntents).
+   */
+  displayLabelKey?: string;
+}
+
+/** Parsed `attrs` JSON on mirrored `stripe_tables.stripe_invoices` rows. */
+type StripeMirrorInvoiceAttrs = {
+  hosted_invoice_url?: string;
+  invoice_pdf?: string;
+  created?: number;
+  number?: string;
+  payment_intent?: string | { id?: string };
+};
+
+/** Charge-shaped fragment sometimes embedded under PaymentIntent `charges` / `latest_charge`. */
+type StripeMirrorChargeAttrs = {
+  created?: number;
+  status_transitions?: { paid_at?: number | null };
+  receipt_url?: string | null;
+};
+
+/** Parsed `attrs` JSON on mirrored `stripe_tables.stripe_payment_intents` rows. */
+type StripeMirrorPaymentIntentAttrs = {
+  /** PaymentIntent `created` (unix seconds in Stripe API). */
+  created?: number;
+  metadata?: { purchase_type?: string };
+  status?: string;
+  dispute?: unknown | null;
+  refunded?: boolean;
+  latest_charge?: string | StripeMirrorChargeAttrs;
+  charges?: { data?: Array<StripeMirrorChargeAttrs> };
+};
+
+/**
+ * @brief Normalizes a Stripe-style timestamp to unix **seconds** (handles accidental ms).
+ * @param t Value from Stripe JSON
+ * @returns Seconds since epoch, or undefined if invalid
+ */
+function stripeTimestampToUnixSeconds(t: number | undefined): number | undefined {
+  if (t == null || !Number.isFinite(t) || t <= 0) return undefined;
+  return t > 1_000_000_000_000 ? Math.floor(t / 1000) : Math.floor(t);
 }
 
 /**
- * @brief Fetches invoice history for a customer from Supabase Stripe tables
- * 
- * Retrieves paid invoices for a customer, ordered by period end date (newest first).
- * Formats invoice data including amounts, status, PDF URLs, and receipt URLs.
- * 
+ * @brief Picks best unix seconds for “when paid” from mirrored PI attrs (charge paid_at preferred).
+ * @param attrs Synced PaymentIntent JSON
+ * @returns Unix seconds in a sensible year range, or undefined
+ */
+function unixSecondsFromMirrorPaymentIntentAttrs(
+  attrs: StripeMirrorPaymentIntentAttrs | null | undefined,
+): number | undefined {
+  if (!attrs) return undefined;
+
+  const candidates: number[] = [];
+
+  const pushSeconds = (v: number | null | undefined) => {
+    const s = stripeTimestampToUnixSeconds(v ?? undefined);
+    if (s != null) candidates.push(s);
+  };
+
+  const fromCharge = (c: StripeMirrorChargeAttrs | undefined) => {
+    if (!c) return;
+    pushSeconds(c.status_transitions?.paid_at ?? undefined);
+    pushSeconds(c.created);
+  };
+
+  fromCharge(attrs.charges?.data?.[0]);
+  if (attrs.latest_charge && typeof attrs.latest_charge === "object") {
+    fromCharge(attrs.latest_charge);
+  }
+
+  pushSeconds(attrs.created);
+
+  for (const sec of candidates) {
+    const y = new Date(sec * 1000).getUTCFullYear();
+    if (y >= 2000 && y <= 2100) {
+      return sec;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * @brief Builds an ISO timestamp for a mirrored PaymentIntent (charge paid time, PI attrs, DB column).
+ * @param rowCreated Value from `stripe_payment_intents.created` column
+ * @param attrs Synced Stripe PaymentIntent JSON
+ * @returns ISO string in UTC
+ */
+function paymentIntentCreatedIso(
+  rowCreated: string | null | undefined,
+  attrs: StripeMirrorPaymentIntentAttrs | null | undefined,
+): string {
+  const fromAttrs = unixSecondsFromMirrorPaymentIntentAttrs(attrs);
+  if (fromAttrs != null) {
+    return new Date(fromAttrs * 1000).toISOString();
+  }
+  if (rowCreated) {
+    const d = new Date(rowCreated);
+    if (!Number.isNaN(d.getTime()) && d.getUTCFullYear() >= 2000) {
+      return d.toISOString();
+    }
+  }
+  return new Date().toISOString();
+}
+
+/**
+ * @brief Collects PaymentIntent ids already represented by synced invoices (avoid duplicate rows).
+ * @param rows Raw invoice rows from `stripe_invoices`
+ * @returns Set of `pi_…` ids
+ */
+function paymentIntentIdsFromMirrorInvoices(
+  rows: ReadonlyArray<{ attrs?: unknown }>,
+): Set<string> {
+  const ids = new Set<string>();
+  for (const row of rows) {
+    const attrs = row.attrs as StripeMirrorInvoiceAttrs | null | undefined;
+    const raw = attrs?.payment_intent;
+    if (typeof raw === "string" && raw.startsWith("pi_")) {
+      ids.add(raw);
+    } else if (
+      raw &&
+      typeof raw === "object" &&
+      "id" in raw &&
+      typeof (raw as { id?: string }).id === "string"
+    ) {
+      const id = (raw as { id: string }).id;
+      if (id.startsWith("pi_")) ids.add(id);
+    }
+  }
+  return ids;
+}
+
+/**
+ * @brief Best-effort receipt URL from a mirrored PaymentIntent `attrs` payload.
+ * @param attrs Stripe PaymentIntent-shaped JSON from sync
+ */
+function receiptUrlFromPaymentIntentAttrs(
+  attrs: StripeMirrorPaymentIntentAttrs | null | undefined,
+): string | undefined {
+  if (!attrs) return undefined;
+  const fromCharges = attrs.charges?.data?.[0]?.receipt_url;
+  if (typeof fromCharges === "string" && fromCharges.length > 0) {
+    return fromCharges;
+  }
+  const lc = attrs.latest_charge;
+  if (lc && typeof lc === "object" && "receipt_url" in lc) {
+    const url = lc.receipt_url;
+    if (typeof url === "string" && url.length > 0) return url;
+  }
+  return undefined;
+}
+
+/**
+ * @brief Fetches billing history for a customer from Supabase Stripe mirror tables
+ *
+ * Merges recurring subscription invoices with succeeded **lifetime** PaymentIntents.
+ * Lifetime checkout often has no `stripe_invoices` row (payment mode), so PIs fill the gap.
+ *
  * @param customerId Stripe customer ID to fetch invoices for
- * @param limit Number of invoices to return (default: 10)
+ * @param limit Max combined rows after merge (default: 10)
  * @returns Promise with invoices array and error status
  * @note Uses service role client to access stripe_tables schema
  * @note Handles invalid customer IDs gracefully (returns empty array)
  * @note Converts amounts from cents to dollars
- * 
+ *
  * @example
  * ```typescript
  * const result = await getCustomerInvoices("cus_abc123", 20);
@@ -466,7 +618,7 @@ export interface InvoiceData {
  */
 export async function getCustomerInvoices(
   customerId: string | null,
-  limit: number = 10
+  limit: number = 10,
 ): Promise<{ invoices: InvoiceData[]; error: string | null }> {
   try {
     if (!customerId) {
@@ -476,6 +628,8 @@ export async function getCustomerInvoices(
     // Create Supabase service role client to access the stripe_tables schema
     const supabase = await createSupabaseServiceRole();
 
+    const fetchLimit = Math.max(limit, 10);
+
     // Query the stripe_invoices table for invoices belonging to this customer
     const { data, error } = await supabase
       .schema("stripe_tables" as any)
@@ -483,7 +637,7 @@ export async function getCustomerInvoices(
       .select("*")
       .eq("customer", customerId)
       .order("period_end", { ascending: false })
-      .limit(limit);
+      .limit(fetchLimit);
 
     if (error) {
       // Check if it's a Stripe API error (400 Bad Request usually means invalid customer ID)
@@ -503,30 +657,98 @@ export async function getCustomerInvoices(
       return { invoices: [], error: null }; // Return empty array instead of error
     }
 
+    const invoiceRows = data || [];
+
     // Format the invoice data for the UI
-    const invoices: InvoiceData[] = (data || []).map((invoice) => {
-      const attrs = (invoice as any).attrs as {
-        hosted_invoice_url?: string;
-        invoice_pdf?: string;
-        created?: number;
-        number?: string;
-      } | null;
+    const invoicesFromTable: InvoiceData[] = invoiceRows.map((invoice) => {
+      const row = invoice as {
+        id?: string | null;
+        attrs?: unknown;
+        total?: number | null;
+        status?: string | null;
+        currency?: string | null;
+      };
+      const attrs = row.attrs as StripeMirrorInvoiceAttrs | null | undefined;
 
       return {
-        id: String((invoice as any).id || ""),
+        id: String(row.id || ""),
         number: attrs?.number,
-        amount: ((invoice as any).total || 0) / 100, // Convert cents to dollars
-        status: (invoice as any).status || "unknown",
+        amount: (row.total || 0) / 100, // Convert cents to dollars
+        status: row.status || "unknown",
         created: new Date(
           attrs?.created ? attrs.created * 1000 : Date.now()
         ).toISOString(),
-        currency: (invoice as any).currency || "usd",
+        currency: row.currency || "usd",
         pdf_url: attrs?.invoice_pdf,
         receipt_url: attrs?.hosted_invoice_url,
       };
     });
 
-    return { invoices, error: null };
+    const linkedPiIds = paymentIntentIdsFromMirrorInvoices(invoiceRows);
+
+    const { data: piRows, error: piError } = await supabase
+      .schema("stripe_tables" as any)
+      .from("stripe_payment_intents")
+      .select("*")
+      .eq("customer", customerId)
+      .order("created", { ascending: false })
+      .limit(fetchLimit);
+
+    if (piError) {
+      const errorMessage = piError.message || String(piError);
+      if (
+        errorMessage.includes("400 Bad Request") ||
+        errorMessage.includes("request middleware failed")
+      ) {
+        console.warn(
+          `Could not fetch payment intents for customer ${customerId}: Customer may not exist in Stripe`
+        );
+      } else {
+        console.error("Error querying stripe_payment_intents:", piError);
+      }
+    }
+
+    const fromPaymentIntents: InvoiceData[] = [];
+    for (const row of piRows || []) {
+      const r = row as {
+        id?: string | null;
+        amount?: number | null;
+        currency?: string | null;
+        created?: string | null;
+        attrs?: unknown;
+      };
+      const attrs = r.attrs as StripeMirrorPaymentIntentAttrs | null | undefined;
+      const isLifetime = attrs?.metadata?.purchase_type === "lifetime";
+      const ok =
+        isLifetime &&
+        attrs?.status === "succeeded" &&
+        !attrs?.dispute &&
+        !attrs?.refunded;
+      if (!ok || !r.id || linkedPiIds.has(r.id)) {
+        continue;
+      }
+      const createdIso = paymentIntentCreatedIso(r.created, attrs);
+      const receiptUrl = receiptUrlFromPaymentIntentAttrs(attrs);
+      const entry: InvoiceData = {
+        id: r.id,
+        amount: (r.amount || 0) / 100,
+        status: "paid",
+        created: createdIso,
+        currency: r.currency || "usd",
+        displayLabelKey: "dashboard.billing.paymentHistoryLifetime",
+      };
+      if (receiptUrl) {
+        entry.receipt_url = receiptUrl;
+      }
+      fromPaymentIntents.push(entry);
+    }
+
+    const merged = [...invoicesFromTable, ...fromPaymentIntents].sort(
+      (a, b) =>
+        new Date(b.created).getTime() - new Date(a.created).getTime(),
+    );
+
+    return { invoices: merged.slice(0, limit), error: null };
   } catch (error: unknown) {
     console.error("Error fetching customer invoices:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);

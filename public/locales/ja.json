@@ -736,6 +736,7 @@
       "unpaid": "未払い",
       "viewReceipt": "表示",
       "noTransactions": "取引履歴はありません",
+      "paymentHistoryLifetime": "ライフタイム購入",
       "redirectingPortal": "請求ポータルにリダイレクト中...",
       "error": "エラー",
       "portalAccessError": "請求ポータルへのアクセスに失敗しました：{{error}}",

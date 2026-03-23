@@ -782,6 +782,7 @@
       "unpaid": "Impayé",
       "viewReceipt": "Voir",
       "noTransactions": "Aucun historique de transactions disponible",
+      "paymentHistoryLifetime": "Achat à vie",
       "redirectingPortal": "Redirection vers le portail de facturation...",
       "error": "Erreur",
       "portalAccessError": "Échec de l'accès au portail de facturation : {{error}}",

@@ -651,6 +651,7 @@
       "unpaid": "未付",
       "viewReceipt": "查看",
       "noTransactions": "无交易历史记录",
+      "paymentHistoryLifetime": "终身购买",
       "redirectingPortal": "正在重定向到账单门户...",
       "error": "错误",
       "portalAccessError": "访问账单门户失败：{{error}}",

@@ -736,6 +736,7 @@
       "unpaid": "Non pagato",
       "viewReceipt": "Visualizza",
       "noTransactions": "Nessuna cronologia transazioni disponibile",
+      "paymentHistoryLifetime": "Acquisto a vita",
       "redirectingPortal": "Reindirizzamento al portale fatturazione...",
       "error": "Errore",
       "portalAccessError": "Accesso al portale fatturazione fallito: {{error}}",

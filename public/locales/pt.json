@@ -621,6 +621,7 @@
       "unpaid": "Não pago",
       "viewReceipt": "Ver",
       "noTransactions": "Nenhum histórico de transação disponível",
+      "paymentHistoryLifetime": "Compra vitalícia",
       "redirectingPortal": "Redirecionando para portal de cobrança...",
       "error": "Erro",
       "portalAccessError": "Falha ao acessar portal de cobrança: {{error}}",

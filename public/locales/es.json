@@ -787,6 +787,7 @@
       "unpaid": "No pagado",
       "viewReceipt": "Ver",
       "noTransactions": "No hay historial de transacciones disponible",
+      "paymentHistoryLifetime": "Compra de por vida",
       "redirectingPortal": "Redirigiendo al portal de facturación...",
       "error": "Error",
       "portalAccessError": "Error al acceder al portal de facturación: {{error}}",

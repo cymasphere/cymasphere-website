@@ -731,6 +731,7 @@
       "unpaid": "Unbezahlt",
       "viewReceipt": "Ansehen",
       "noTransactions": "Keine Transaktionshistorie verfügbar",
+      "paymentHistoryLifetime": "Lebenslang-Kauf",
       "redirectingPortal": "Weiterleitung zum Abrechnungsportal...",
       "error": "Fehler",
       "portalAccessError": "Zugriff auf Abrechnungsportal fehlgeschlagen: {{error}}",

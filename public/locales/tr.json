@@ -711,6 +711,7 @@
       "unpaid": "Ödenmedi",
       "viewReceipt": "Görüntüle",
       "noTransactions": "İşlem geçmişi mevcut değil",
+      "paymentHistoryLifetime": "Ömür boyu satın alma",
       "redirectingPortal": "Faturalama portalına yönlendiriliyor...",
       "error": "Hata",
       "portalAccessError": "Faturalama portalına erişim başarısız: {{error}}",

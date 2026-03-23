@@ -709,6 +709,7 @@
       "unpaid": "Unpaid",
       "viewReceipt": "View",
       "noTransactions": "No transaction history available",
+      "paymentHistoryLifetime": "Lifetime purchase",
       "redirectingPortal": "Redirecting to billing portal...",
       "error": "Error",
       "portalAccessError": "Failed to access billing portal: {{error}}",
