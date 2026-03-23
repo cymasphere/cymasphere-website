@@ -5,9 +5,10 @@
  * the first invoice's PaymentIntent client_secret so the client can collect payment
  * on-site. Handles trial eligibility, promo codes, and duplicate subscription prevention.
  *
- * For 7-day trials without a payment method, sets trial_settings.end_behavior
- * .missing_payment_method to "cancel" so Stripe cancels the subscription at trial end
- * instead of creating an invoice. This prevents billing/charge failure emails.
+ * For 7-day trials without a payment method: sets
+ * trial_settings.end_behavior.missing_payment_method to "cancel", and
+ * cancel_at_period_end so the subscription ends after the trial period without
+ * creating renewal invoices or past-due states when no card is on file.
  *
  * @module api/stripe/subscription-setup
  */
@@ -327,17 +328,12 @@ export async function POST(request: NextRequest) {
     if (couponId) subscriptionParams.discounts = [{ coupon: couponId }];
     if (trialDays != null) subscriptionParams.trial_period_days = trialDays;
 
-    // 7-day trial without payment method: cancel at trial end so Stripe does not
-    // create an invoice or send billing/charge failure emails.
+    // 7-day trial without payment method: cancel at period end and cancel if no PM
+    // at trial end so Stripe does not create renewal invoices or past-due emails.
     const is7DayNoCard = trialDays === 7 && !collectPaymentMethod;
     if (is7DayNoCard) {
-      (
-        subscriptionParams as Stripe.SubscriptionCreateParams & {
-          trial_settings?: {
-            end_behavior?: { missing_payment_method?: string };
-          };
-        }
-      ).trial_settings = {
+      subscriptionParams.cancel_at_period_end = true;
+      subscriptionParams.trial_settings = {
         end_behavior: {
           missing_payment_method: "cancel",
         },

@@ -278,6 +278,11 @@ export async function createCheckoutSession(
       success_url: return_url,
       cancel_url: return_url,
       customer: customerId,
+      ...(!hasHadTrial &&
+        !collectPaymentMethod &&
+        mode === "subscription" && {
+          metadata: { auto_cancel_after_trial: "true" },
+        }),
     };
 
     // Add payment_intent_data and invoice_creation for lifetime purchases to ensure metadata is set.
@@ -309,9 +314,21 @@ export async function createCheckoutSession(
     if (mode === "subscription") {
       // Only add trial if customer hasn't had one before
       if (!hasHadTrial) {
-        sessionConfig.subscription_data = {
-          trial_period_days: collectPaymentMethod ? 14 : 7, // Extended trial if collecting payment method
-        };
+        const trialDays = collectPaymentMethod ? 14 : 7;
+        const is7DayNoCard = trialDays === 7 && !collectPaymentMethod;
+        sessionConfig.subscription_data = is7DayNoCard
+          ? ({
+              trial_period_days: 7,
+              trial_settings: {
+                end_behavior: {
+                  missing_payment_method: "cancel",
+                },
+              },
+              cancel_at_period_end: true,
+            } as Stripe.Checkout.SessionCreateParams.SubscriptionData)
+          : {
+              trial_period_days: trialDays,
+            };
       }
       // If customer has had a trial before, no trial_period_days - they'll be charged immediately
 

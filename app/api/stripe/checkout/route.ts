@@ -704,9 +704,21 @@ async function createCheckoutSession(
 
       if (shouldGiveTrial) {
         const trialDays = collectPaymentMethod ? 14 : 7;
-        subscriptionData = {
-          trial_period_days: trialDays,
-        };
+        const is7DayNoCard = trialDays === 7 && !collectPaymentMethod;
+        subscriptionData = is7DayNoCard
+          ? ({
+              trial_period_days: 7,
+              trial_settings: {
+                end_behavior: {
+                  missing_payment_method: "cancel",
+                },
+              },
+              // Checkout SubscriptionData types omit this; Stripe passes it through to Subscription.create.
+              cancel_at_period_end: true,
+            } as Stripe.Checkout.SessionCreateParams.SubscriptionData)
+          : {
+              trial_period_days: trialDays,
+            };
         console.log(
           `[createCheckoutSession] Adding ${trialDays}-day trial for new subscription`,
         );
@@ -806,6 +818,12 @@ async function createCheckoutSession(
         ...(userId && { user_id: userId }),
         ...(userEmail && { email: userEmail }), // Always include email if available for webhook fallback
         event_id: eventId,
+        ...(!isPlanChange &&
+          !hasHadTrial &&
+          !collectPaymentMethod &&
+          planType !== "lifetime" && {
+            auto_cancel_after_trial: "true",
+          }),
       },
     };
 

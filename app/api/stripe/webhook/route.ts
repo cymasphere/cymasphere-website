@@ -244,6 +244,39 @@ export async function POST(request: NextRequest) {
   try {
     console.log("Processing Stripe event:", event.type, "at", dateTime);
 
+    // Hosted Checkout: ensure 7-day no-card trials cancel at period end even if
+    // subscription_data.cancel_at_period_end is ignored by an older API path.
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object as Stripe.Checkout.Session;
+      if (session.metadata?.auto_cancel_after_trial === "true") {
+        const rawSub = session.subscription;
+        const subId =
+          typeof rawSub === "string"
+            ? rawSub
+            : rawSub != null &&
+                typeof rawSub === "object" &&
+                "id" in rawSub &&
+                typeof (rawSub as { id?: string }).id === "string"
+              ? (rawSub as { id: string }).id
+              : null;
+        if (subId) {
+          try {
+            await stripe.subscriptions.update(subId, {
+              cancel_at_period_end: true,
+            });
+            console.log(
+              `[Webhook] checkout.session.completed: set cancel_at_period_end on ${subId} (auto_cancel_after_trial)`,
+            );
+          } catch (e) {
+            console.error(
+              "[Webhook] cancel_at_period_end after checkout failed:",
+              e,
+            );
+          }
+        }
+      }
+    }
+
     // Extract customer ID from event
     const customerId = extractCustomerId(event);
 
