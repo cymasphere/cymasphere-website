@@ -51,20 +51,20 @@ const SYNTH_PRESETS = {
         attack: 0.5,
         decay: 1.0,
         sustain: 0.7,
-        release: 4.0,
+        release: 1.8,
       },
       volume: -18,
     },
     effects: {
       reverb: {
-        wet: 0.6,
-        decay: 8.0,
+        wet: 0.45,
+        decay: 4.5,
         preDelay: 0.02,
       },
       delay: {
-        wet: 0.4,
+        wet: 0.28,
         delayTime: 0.5,
-        feedback: 0.4,
+        feedback: 0.22,
       },
       chorus: {
         wet: 0.5,
