@@ -162,18 +162,20 @@ const ChordWeb = React.memo(() => {
     // Create reverb effect with longer decay for underwater spaciousness
     const reverb = new Tone.Reverb({
       decay: 5.5,
-      wet: 0.55,
+      wet: 0.42,
       preDelay: 0.12,
     }).toDestination();
 
-    // Create a volume node to reduce gain
-    const volume = new Tone.Volume(-14); // Slightly higher volume
+    // Gain before reverb — pricing canvas was much quieter than hero; keep level obvious on laptop speakers
+    const volume = new Tone.Volume(6);
 
     // Add vibrato for underwater wavering
     const vibrato = new Tone.Vibrato({
       frequency: 1.5, // Slow vibrato
       depth: 0.3, // Moderate depth
     });
+
+    ambientSynth.volume.value = 4;
 
     // Chain effects: synth -> vibrato -> filter -> volume -> reverb -> destination
     ambientSynth.chain(vibrato, filter, volume, reverb);

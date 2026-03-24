@@ -485,8 +485,8 @@ export const playLydianMaj7Chord = async (): Promise<void> => {
     },
   });
 
-  // Keep volume low
-  synth.volume.value = -17; // Increased from -20 to -17 (approx. 3dB louder)
+  // Level for logo chord (wet reverb — avoid clipping; was too quiet after single-path routing)
+  synth.volume.value = -7;
 
   // Enhanced reverb with more presence (single path to destination — avoid parallel dry tap)
   const reverb = new toneLib.Reverb({
