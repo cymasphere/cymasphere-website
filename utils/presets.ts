@@ -53,7 +53,7 @@ const SYNTH_PRESETS = {
         sustain: 0.7,
         release: 4.0,
       },
-      volume: -7,
+      volume: -18,
     },
     effects: {
       reverb: {

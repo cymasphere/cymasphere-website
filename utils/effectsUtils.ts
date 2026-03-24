@@ -72,8 +72,8 @@ export const initializeEffectsChain = async (
 
   ensureToneClockUsesTimeout(toneLib);
 
-  // Create a master volume control at the end of the chain (limiter/compressor tame peaks)
-  const masterVolume = new toneLib.Volume(2).toDestination();
+  // Create a master volume control at the end of the chain
+  const masterVolume = new toneLib.Volume(-6).toDestination();
 
   // Master effects chain with stronger limiting to prevent distortion
   const masterLimiter = new toneLib.Limiter(-4).connect(masterVolume);
