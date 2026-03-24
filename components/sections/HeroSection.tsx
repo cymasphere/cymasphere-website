@@ -726,7 +726,7 @@ const HeroSection = () => {
         };
         if (!synth._disposed) {
           // Use the proper note with octave for correct pitch
-          synth.triggerAttackRelease(noteWithOctave, "0.35s");
+          synth.triggerAttackRelease(noteWithOctave, "0.5s");
         }
       }
     } catch (error) {
@@ -800,7 +800,7 @@ const HeroSection = () => {
           const allNotes = [...notesWithOctaves, bassNote];
 
           // Play all notes simultaneously
-          synth.triggerAttackRelease(allNotes, "0.55s");
+          synth.triggerAttackRelease(allNotes, "0.8s");
         }
       }
     } catch (error) {
