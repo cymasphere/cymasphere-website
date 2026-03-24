@@ -8,6 +8,7 @@
 
 import * as Tone from "tone";
 import { DisposableSynth } from "./synthUtils";
+import { ensureToneClockUsesTimeout } from "./toneClientConfig";
 
 /**
  * @brief Interface for the complete audio effects chain.
@@ -68,6 +69,8 @@ export const initializeEffectsChain = async (
       // Continue anyway - the context might start later with user interaction
     }
   }
+
+  ensureToneClockUsesTimeout(toneLib);
 
   // Create a master volume control at the end of the chain
   const masterVolume = new toneLib.Volume(-6).toDestination();

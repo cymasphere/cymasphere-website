@@ -10,7 +10,10 @@
  */
 
 // Lazy import Tone.js to avoid automatic AudioContext initialization
-let Tone: any = null;
+import { ensureToneClockUsesTimeout } from "./toneClientConfig";
+import type * as ToneModule from "tone";
+
+let Tone: typeof ToneModule | null = null;
 
 // Add interface for window with webkitAudioContext
 interface WindowWithWebAudio extends Window {
@@ -25,9 +28,10 @@ let initialized = false;
 let toneInitialized = false;
 
 // Lazy load Tone.js only when needed
-const loadTone = async () => {
+const loadTone = async (): Promise<typeof ToneModule> => {
   if (!Tone) {
     Tone = await import("tone");
+    ensureToneClockUsesTimeout(Tone);
   }
   return Tone;
 };
@@ -283,6 +287,7 @@ interface ChordConfig {
 
 // Simple chord voicing function
 const buildChordVoicing = (
+  toneLib: typeof ToneModule,
   rootNote: string,
   chordType: string,
   extensions: number[] = []
@@ -327,7 +332,7 @@ const buildChordVoicing = (
   // Convert intervals to actual notes
   const notes = intervals.map((interval) => {
     // Using Tone.js only for note calculation
-    return Tone.Frequency(rootNote).transpose(interval).toNote();
+    return toneLib.Frequency(rootNote).transpose(interval).toNote();
   });
 
   return notes;
@@ -337,6 +342,13 @@ const buildChordVoicing = (
 export const playChordPad = async (chordRoot: string): Promise<void> => {
   if (!initialized) {
     await initAudio();
+  }
+
+  let toneLib: typeof ToneModule;
+  try {
+    toneLib = await loadTone();
+  } catch {
+    return;
   }
 
   // Specific chord type mapping for the chord buttons
@@ -379,18 +391,24 @@ export const playChordPad = async (chordRoot: string): Promise<void> => {
   const extensions = chordConfig.extensions || [];
 
   // Get the bass note (two octaves lower)
-  const bassRoot = Tone.Frequency(rootNote).transpose(-24).toNote();
+  const bassRoot = toneLib.Frequency(rootNote).transpose(-24).toNote();
 
   // Get the higher bass note (one octave lower)
-  const bassRootHigher = Tone.Frequency(rootNote).transpose(-12).toNote();
+  const bassRootHigher = toneLib.Frequency(rootNote).transpose(-12).toNote();
 
   // Fifth above the bass
-  const bassFifth = Tone.Frequency(rootNote)
+  const bassFifth = toneLib
+    .Frequency(rootNote)
     .transpose(-12 + 7)
     .toNote();
 
   // Get the chord voicing with extensions if present
-  const chordVoicing = buildChordVoicing(rootNote, chordType, extensions);
+  const chordVoicing = buildChordVoicing(
+    toneLib,
+    rootNote,
+    chordType,
+    extensions
+  );
 
   // Sort notes from low to high
   const sortedVoicing = [...chordVoicing].sort((a, b) => {
@@ -434,11 +452,17 @@ export const playLydianMaj7Chord = async (): Promise<void> => {
       return;
     }
   }
-  
+
+  if (!Tone) {
+    return;
+  }
+
+  const toneLib = Tone;
+
   // Initialize Tone.js context if needed
-  if (Tone && Tone.context && Tone.context.state !== 'running') {
+  if (toneLib.context.state !== "running") {
     try {
-      await Tone.start();
+      await toneLib.start();
     } catch (error) {
       console.error("Failed to start Tone.js context:", error);
       return;
@@ -449,7 +473,7 @@ export const playLydianMaj7Chord = async (): Promise<void> => {
   activeLydianChords++;
 
   // Create a synth with extremely short envelope settings
-  const synth = new Tone.PolySynth(Tone.Synth, {
+  const synth = new toneLib.PolySynth(toneLib.Synth, {
     oscillator: {
       type: "sine",
     },
@@ -459,13 +483,13 @@ export const playLydianMaj7Chord = async (): Promise<void> => {
       sustain: 0.2, // Keep sustain low
       release: 0.8, // Increased from 0.5 to 0.8 to blend better with reverb
     },
-  }).toDestination();
+  });
 
   // Keep volume low
   synth.volume.value = -17; // Increased from -20 to -17 (approx. 3dB louder)
 
-  // Enhanced reverb with more presence
-  const reverb = new Tone.Reverb({
+  // Enhanced reverb with more presence (single path to destination — avoid parallel dry tap)
+  const reverb = new toneLib.Reverb({
     decay: 7.0, // Increased from 5.0 to 7.0 for longer tail
     wet: 0.95, // Increased from 0.8 to 0.95 for more pronounced reverb
     preDelay: 0.03, // Increased from 0.02 to 0.03 for more depth
@@ -547,15 +571,15 @@ export const playLydianMaj7Chord = async (): Promise<void> => {
 
   // Play the bass note first
   synth.triggerAttack(
-    Tone.Frequency(bassNote, "midi").toFrequency(),
-    Tone.now(),
+    toneLib.Frequency(bassNote, "midi").toFrequency(),
+    toneLib.now(),
     0.42
   );
 
   // Play the fifth after a short delay
   synth.triggerAttack(
-    Tone.Frequency(fifthNote, "midi").toFrequency(),
-    Tone.now() + 0.03,
+    toneLib.Frequency(fifthNote, "midi").toFrequency(),
+    toneLib.now() + 0.03,
     0.28
   );
 
@@ -571,8 +595,8 @@ export const playLydianMaj7Chord = async (): Promise<void> => {
     const noteVelocity = Math.max(0.14, 0.42 - index * 0.056);
 
     synth.triggerAttack(
-      Tone.Frequency(note, "midi").toFrequency(),
-      Tone.now() + 0.06 + strumDelay, // Add strum timing
+      toneLib.Frequency(note, "midi").toFrequency(),
+      toneLib.now() + 0.06 + strumDelay, // Add strum timing
       noteVelocity
     );
   });

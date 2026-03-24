@@ -28,6 +28,7 @@ import { FaGift } from "react-icons/fa";
 // Removed server action imports - now using API routes
 import { PlanType } from "@/types/stripe";
 import * as Tone from "tone"; // Import Tone.js for audio playback
+import { ensureToneClockUsesTimeout } from "@/utils/toneClientConfig";
 // Import the CymasphereLogo component dynamically
 import dynamic from "next/dynamic";
 // Import useAuth hook
@@ -126,6 +127,8 @@ const ChordWeb = React.memo(() => {
 
   // Initialize Tone.js synth
   useEffect(() => {
+    ensureToneClockUsesTimeout(Tone);
+
     // Create a more ambient synth sound with underwater qualities
     const ambientSynth = new Tone.PolySynth(Tone.AMSynth, {
       oscillator: {
