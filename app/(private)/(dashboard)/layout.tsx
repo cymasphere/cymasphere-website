@@ -661,6 +661,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </LogoContainer>
 
           <nav>
+            {user.is_admin && (
+              <Link href="/admin">
+                <NavItem
+                  $active={pathname.startsWith("/admin") ? "true" : "false"}
+                  onClick={(e) => handleNavigation(e, "/admin")}
+                >
+                  <FaShieldAlt />{" "}
+                  {t("dashboard.layout.adminConsole", "Admin Console")}
+                </NavItem>
+              </Link>
+            )}
             <Link href="/dashboard">
               <NavItem
                 $active={pathname === "/dashboard" ? "true" : "false"}
@@ -719,17 +730,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <FaCog /> {t("dashboard.layout.settings", "Settings")}
               </NavItem>
             </Link>
-            {user.is_admin && (
-              <Link href="/admin">
-                <NavItem
-                  $active={pathname.startsWith("/admin") ? "true" : "false"}
-                  onClick={(e) => handleNavigation(e, "/admin")}
-                >
-                  <FaShieldAlt />{" "}
-                  {t("dashboard.layout.adminConsole", "Admin Console")}
-                </NavItem>
-              </Link>
-            )}
           </nav>
 
           <UserInfo>
@@ -794,11 +794,27 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               {t("dashboard.layout.account", "Account")}
             </MobileNavTitle>
 
+            {user.is_admin && (
+              <Link href="/admin">
+                <MobileNavItem
+                  $active={pathname.startsWith("/admin") ? "true" : "false"}
+                  variants={menuItemVariants}
+                  custom={0}
+                  initial="hidden"
+                  animate="visible"
+                  onClick={(e) => handleNavigation(e, "/admin")}
+                >
+                  <FaShieldAlt />{" "}
+                  {t("dashboard.layout.adminConsole", "Admin Console")}
+                </MobileNavItem>
+              </Link>
+            )}
+
             <Link href="/dashboard">
               <MobileNavItem
                 $active={pathname === "/dashboard" ? "true" : "false"}
                 variants={menuItemVariants}
-                custom={0}
+                custom={user.is_admin ? 1 : 0}
                 initial="hidden"
                 animate="visible"
                 onClick={(e) => handleNavigation(e, "/dashboard")}
@@ -812,7 +828,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <MobileNavItem
                 $active={pathname === "/profile" ? "true" : "false"}
                 variants={menuItemVariants}
-                custom={1}
+                custom={user.is_admin ? 2 : 1}
                 initial="hidden"
                 animate="visible"
                 onClick={(e) => handleNavigation(e, "/profile")}
@@ -825,7 +841,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <MobileNavItem
                 $active={pathname === "/billing" ? "true" : "false"}
                 variants={menuItemVariants}
-                custom={2}
+                custom={user.is_admin ? 3 : 2}
                 initial="hidden"
                 animate="visible"
                 onClick={(e) => handleNavigation(e, "/billing")}
@@ -838,7 +854,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <MobileNavItem
                 $active={pathname === "/downloads" ? "true" : "false"}
                 variants={menuItemVariants}
-                custom={3}
+                custom={user.is_admin ? 4 : 3}
                 initial="hidden"
                 animate="visible"
                 onClick={(e) => handleNavigation(e, "/downloads")}
@@ -851,7 +867,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <MobileNavItem
                 $active={pathname === "/getting-started" ? "true" : "false"}
                 variants={menuItemVariants}
-                custom={4}
+                custom={user.is_admin ? 5 : 4}
                 initial="hidden"
                 animate="visible"
                 onClick={(e) => handleNavigation(e, "/getting-started")}
