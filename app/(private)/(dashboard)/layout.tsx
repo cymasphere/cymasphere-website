@@ -881,7 +881,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <MobileNavItem
                 $active={pathname === "/support" ? "true" : "false"}
                 variants={menuItemVariants}
-                custom={5}
+                custom={user.is_admin ? 6 : 5}
                 initial="hidden"
                 animate="visible"
                 onClick={(e) => handleNavigation(e, "/support")}
@@ -894,7 +894,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <MobileNavItem
                 $active={pathname === "/settings" ? "true" : "false"}
                 variants={menuItemVariants}
-                custom={6}
+                custom={user.is_admin ? 7 : 6}
                 initial="hidden"
                 animate="visible"
                 onClick={(e) => handleNavigation(e, "/settings")}
@@ -903,27 +903,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </MobileNavItem>
             </Link>
 
-            {user.is_admin && (
-              <Link href="/admin">
-                <MobileNavItem
-                  $active={pathname.startsWith("/admin") ? "true" : "false"}
-                  variants={menuItemVariants}
-                  custom={7}
-                  initial="hidden"
-                  animate="visible"
-                  onClick={(e) => handleNavigation(e, "/admin")}
-                >
-                  <FaShieldAlt />{" "}
-                  {t("dashboard.layout.adminConsole", "Admin Console")}
-                </MobileNavItem>
-              </Link>
-            )}
-
             <Link href="/">
               <MobileNavItem
                 $active="false"
                 variants={menuItemVariants}
-                custom={8}
+                custom={user.is_admin ? 8 : 7}
                 initial="hidden"
                 animate="visible"
                 onClick={(e) => handleNavigation(e, "/")}
