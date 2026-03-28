@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Confirm your email change</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f7f7f7; font-family: Arial, Helvetica, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f7f7f7; padding: 20px 0;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="background: linear-gradient(135deg, #1a1a1a 0%, #121212 100%); padding: 30px 24px; text-align: center;">
+              <img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/logos//cymasphere-logo.png" alt="Cymasphere" style="max-width: 220px; height: auto; display: block; margin: 0 auto;" />
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px 24px;">
+              <h1 style="font-size: 1.5rem; color: #333; margin: 0 0 16px 0; font-weight: 600;">
+                Confirm your email change
+              </h1>
+              <p style="color: #666; line-height: 1.6; margin: 0 0 20px 0;">
+                We received a request to update the email address on your Cymasphere account. Use the button below to confirm this change.
+              </p>
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 24px 0; background-color: #f9f9f9; border-radius: 8px; border-left: 4px solid #6c63ff;">
+                <tr>
+                  <td style="padding: 16px 18px;">
+                    <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #6c63ff; text-transform: uppercase; letter-spacing: 0.5px;">
+                      Account details
+                    </p>
+                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #333;">
+                      <strong style="color: #555;">Current email:</strong> {{ .Email }}
+                    </p>
+                    <p style="margin: 0; font-size: 14px; color: #333;">
+                      <strong style="color: #555;">New email:</strong> {{ .NewEmail }}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              <div style="text-align: center; margin: 28px 0;">
+                <a href="{{ .ConfirmationURL }}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 1rem;">
+                  Confirm email change
+                </a>
+              </div>
+              {{ if .Token }}
+              <p style="color: #666; line-height: 1.6; margin: 0 0 12px 0; font-size: 14px;">
+                Or enter this code in the app if you prefer:
+              </p>
+              <p style="margin: 0 0 24px 0; text-align: center; font-size: 22px; font-weight: 700; letter-spacing: 0.35em; color: #333;">
+                {{ .Token }}
+              </p>
+              {{ end }}
+              <p style="color: #888; line-height: 1.5; margin: 0; font-size: 13px;">
+                If you did not request this change, you can ignore this email or contact us via
+                <a href="{{ .SiteURL }}/support" style="color: #6c63ff; text-decoration: none;">Support</a>.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 20px 24px; background-color: #f8f9fa; border-top: 1px solid #e9ecef; text-align: center; font-size: 0.85em; color: #666;">
+              <p style="margin: 0 0 10px 0;">
+                &copy; Cymasphere. All rights reserved.
+              </p>
+              <p style="margin: 0;">
+                <a href="{{ .SiteURL }}/support" style="color: #6c63ff; text-decoration: none;">Support</a>
+                &nbsp;|&nbsp;
+                <a href="{{ .SiteURL }}/terms-of-service" style="color: #6c63ff; text-decoration: none;">Terms</a>
+                &nbsp;|&nbsp;
+                <a href="{{ .SiteURL }}/privacy-policy" style="color: #6c63ff; text-decoration: none;">Privacy</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
