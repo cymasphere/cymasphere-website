@@ -7,8 +7,8 @@ import {
   FaSignOutAlt,
   FaBars,
   FaHome,
-  FaArrowLeft,
   FaShieldAlt,
+  FaTachometerAlt,
   FaUsers,
   FaUserShield,
   FaTicketAlt,
@@ -229,52 +229,6 @@ const LogoutButton = styled.button`
 
   svg {
     margin-right: 8px;
-  }
-`;
-
-const BackButtonContainer = styled.div`
-  position: fixed;
-  top: 25px;
-  right: 30px;
-  display: flex;
-  align-items: center;
-  z-index: 2000;
-  gap: 20px;
-
-  @media (max-width: 768px) {
-    top: 15px;
-    right: 15px;
-    z-index: 10001; /* Above mobile header */
-  }
-`;
-
-const BackButton = styled(Link)`
-  display: flex;
-  align-items: center;
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  padding: 8px 16px;
-  border-radius: 8px;
-  background-color: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  cursor: pointer;
-
-  &:hover {
-    color: var(--text);
-    background-color: rgba(0, 0, 0, 0.5);
-    border-color: var(--primary);
-  }
-
-  svg {
-    margin-left: 8px;
-  }
-
-  @media (max-width: 768px) {
-    font-size: 0.9rem;
-    padding: 6px 12px;
   }
 `;
 
@@ -700,6 +654,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 <FaShieldAlt /> Admin Dashboard
               </NavItem>
             </Link>
+            <Link href="/dashboard">
+              <NavItem
+                $active={pathname === "/dashboard" ? "true" : "false"}
+                onClick={(e) => handleNavigation(e, "/dashboard")}
+              >
+                <FaTachometerAlt /> User Dashboard
+              </NavItem>
+            </Link>
             <Link href="/admin/users">
               <NavItem
                 $active={pathname === "/admin/users" ? "true" : "false"}
@@ -1056,11 +1018,24 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
+          <Link href="/dashboard">
+            <MobileNavItem
+              $active={pathname === "/dashboard" ? "true" : "false"}
+              variants={menuItemVariants}
+              custom={1}
+              initial="hidden"
+              animate="visible"
+              onClick={(e) => handleNavigation(e, "/dashboard")}
+            >
+              <FaTachometerAlt /> User Dashboard
+            </MobileNavItem>
+          </Link>
+
           <Link href="/admin/users">
             <MobileNavItem
               $active={pathname === "/admin/users" ? "true" : "false"}
               variants={menuItemVariants}
-              custom={1}
+              custom={2}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/admin/users")}
@@ -1074,7 +1049,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <MobileNavItem
               $active={pathname === "/admin/coupons" ? "true" : "false"}
               variants={menuItemVariants}
-              custom={2}
+              custom={3}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/admin/coupons")}
@@ -1088,7 +1063,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <MobileNavItem
               $active={pathname === "/admin/promotions" ? "true" : "false"}
               variants={menuItemVariants}
-              custom={2}
+              custom={4}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/admin/promotions")}
@@ -1102,7 +1077,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <MobileNavItem
               $active={pathname === "/admin/support-tickets" ? "true" : "false"}
               variants={menuItemVariants}
-              custom={3}
+              custom={5}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/admin/support-tickets")}
@@ -1120,7 +1095,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   : "false"
               }
               variants={menuItemVariants}
-              custom={4}
+              custom={6}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/admin/tutorial-center")}
@@ -1137,7 +1112,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   : "false"
               }
               variants={menuItemVariants}
-              custom={5}
+              custom={7}
               initial="hidden"
               animate="visible"
               onClick={(e) =>
@@ -1156,7 +1131,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   : "false"
               }
               variants={menuItemVariants}
-              custom={6}
+              custom={8}
               initial="hidden"
               animate="visible"
               onClick={(e) =>
@@ -1175,7 +1150,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   : "false"
               }
               variants={menuItemVariants}
-              custom={7}
+              custom={9}
               initial="hidden"
               animate="visible"
               onClick={(e) =>
@@ -1194,7 +1169,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   : "false"
               }
               variants={menuItemVariants}
-              custom={8}
+              custom={10}
               initial="hidden"
               animate="visible"
               onClick={(e) =>
@@ -1213,7 +1188,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   : "false"
               }
               variants={menuItemVariants}
-              custom={9}
+              custom={11}
               initial="hidden"
               animate="visible"
               onClick={(e) =>
@@ -1232,7 +1207,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   : "false"
               }
               variants={menuItemVariants}
-              custom={10}
+              custom={12}
               initial="hidden"
               animate="visible"
               onClick={(e) =>
@@ -1247,7 +1222,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <MobileNavItem
               $active={pathname === "/admin/ad-manager" ? "true" : "false"}
               variants={menuItemVariants}
-              custom={11}
+              custom={13}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/admin/ad-manager")}
@@ -1265,7 +1240,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   : "false"
               }
               variants={menuItemVariants}
-              custom={12}
+              custom={14}
               initial="hidden"
               animate="visible"
               onClick={(e) =>
@@ -1285,7 +1260,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   : "false"
               }
               variants={menuItemVariants}
-              custom={13}
+              custom={15}
               initial="hidden"
               animate="visible"
               onClick={(e) =>
@@ -1302,7 +1277,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 pathname === "/admin/ad-manager/audiences" ? "true" : "false"
               }
               variants={menuItemVariants}
-              custom={14}
+              custom={16}
               initial="hidden"
               animate="visible"
               onClick={(e) =>
@@ -1319,7 +1294,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 pathname === "/admin/ad-manager/analytics" ? "true" : "false"
               }
               variants={menuItemVariants}
-              custom={15}
+              custom={17}
               initial="hidden"
               animate="visible"
               onClick={(e) =>
@@ -1336,7 +1311,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 pathname === "/admin/ad-manager/settings" ? "true" : "false"
               }
               variants={menuItemVariants}
-              custom={16}
+              custom={18}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/admin/ad-manager/settings")}
@@ -1349,7 +1324,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <MobileNavItem
               $active="false"
               variants={menuItemVariants}
-              custom={19}
+              custom={20}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/")}
@@ -1375,14 +1350,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </MobileMenu>
       )}
       <Content $sidebarVisible={!isTutorialCenter()}>
-        {!isTutorialCenter() && (
-          <BackButtonContainer>
-            <BackButton href="/dashboard">
-              Back to Dashboard <FaArrowLeft />
-            </BackButton>
-          </BackButtonContainer>
-        )}
-
         <PageTransition
           initial="hidden"
           animate="visible"

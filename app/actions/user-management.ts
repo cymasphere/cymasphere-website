@@ -2771,15 +2771,25 @@ export async function createSupportTicket(data: {
         // Ticket was created but message failed - still return success
         // as the ticket exists
       } else if (message) {
-        // Send email notification to SUPPORT_EMAIL when user creates a ticket
-        try {
-          await sendSupportTicketEmailNotificationToAdmin(ticket.id, message.id);
-        } catch (emailError) {
-          // Don't fail the ticket creation if email fails
-          console.error(
-            "Error sending support ticket email notification to admin:",
-            emailError
-          );
+        /**
+         * @note Notify support inbox for customer-originated tickets only. Admins
+         * who use /support with their own account should not receive duplicate
+         * notifications for their own submissions.
+         */
+        const notifySupportInbox = !(await checkAdmin(supabase));
+        if (notifySupportInbox) {
+          try {
+            await sendSupportTicketEmailNotificationToAdmin(
+              ticket.id,
+              message.id
+            );
+          } catch (emailError) {
+            // Don't fail the ticket creation if email fails
+            console.error(
+              "Error sending support ticket email notification to admin:",
+              emailError
+            );
+          }
         }
       }
     }
@@ -2859,16 +2869,23 @@ export async function addSupportTicketMessage(
       };
     }
 
-    // If this is a user message (not admin), send email notification to admin
+    /**
+     * @note Email support inbox for replies from non-admin users only. Admin
+     * accounts posting on /support skip inbox mail so support is not notified
+     * of their own correspondence (admin UI replies never trigger this path).
+     */
     if (message && !messageError) {
-      try {
-        await sendSupportTicketEmailNotificationToAdmin(ticketId, message.id);
-      } catch (emailError) {
-        // Don't fail the message creation if email fails
-        console.error(
-          "Error sending support ticket email notification to admin:",
-          emailError
-        );
+      const notifySupportInbox = !(await checkAdmin(supabase));
+      if (notifySupportInbox) {
+        try {
+          await sendSupportTicketEmailNotificationToAdmin(ticketId, message.id);
+        } catch (emailError) {
+          // Don't fail the message creation if email fails
+          console.error(
+            "Error sending support ticket email notification to admin:",
+            emailError
+          );
+        }
       }
     }
 
