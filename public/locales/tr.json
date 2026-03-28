@@ -824,7 +824,14 @@
       "processingDeletion": "Silme İsteği İşleniyor",
       "processingMessage": "Hesap silme isteğinizi işlerken lütfen bekleyin...",
       "accountDeleted": "Hesap Silindi",
-      "accountDeletedMessage": "Hesabınız başarıyla silindi. Ana sayfaya yönlendirileceksiniz."
+      "accountDeletedMessage": "Hesabınız başarıyla silindi. Ana sayfaya yönlendirileceksiniz.",
+      "emailAddressSection": "E-posta adresi",
+      "emailChangePending": "{{email}} için onay bekleniyor. Gelen kutunuzu kontrol edin ve gönderdiğimiz bağlantıyı kullanın.",
+      "currentEmailLabel": "Mevcut e-posta",
+      "newEmailLabel": "Yeni e-posta adresi",
+      "sendEmailConfirmation": "Onay e-postası gönder",
+      "emailChangeCheckInboxTitle": "E-postanızı kontrol edin",
+      "emailChangeCheckInboxMessage": "Bir onay bağlantısı gönderdik. Değişikliği tamamlamak için bağlantıyı açın. Projede güvenli e-posta değişikliği etkinse her iki gelen kutusunu da kontrol edin."
     }
   },
   "auth": {

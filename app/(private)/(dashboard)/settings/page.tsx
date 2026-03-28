@@ -1,10 +1,12 @@
+/**
+ * @fileoverview Dashboard settings: devices, email change (Supabase Auth), and account deletion.
+ * @module app/(private)/(dashboard)/settings/page
+ */
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
 import {
-  FaGlobe,
   FaTrash,
   FaExclamationTriangle,
   FaSignOutAlt,
@@ -14,6 +16,7 @@ import {
   FaTimes,
   FaCheck,
   FaInfoCircle,
+  FaEnvelope,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboard } from "@/contexts/DashboardContext";
@@ -314,7 +317,7 @@ function Settings() {
     deleteConfirmation: "",
   });
 
-  const { user, session, signOut, refreshUser } = useAuth();
+  const { user, signOut, refreshUser, requestEmailChange } = useAuth();
   const { devices, isLoadingDevices, refreshDevices } = useDashboard();
 
   // Refresh pro status on mount (same as login)
@@ -330,6 +333,10 @@ function Settings() {
   const [confirmationIcon, setConfirmationIcon] = useState<
     "success" | "warning" | "info"
   >("success");
+
+  const [newEmailInput, setNewEmailInput] = useState("");
+  const [emailChangeError, setEmailChangeError] = useState<string | null>(null);
+  const [isEmailChangeSubmitting, setIsEmailChangeSubmitting] = useState(false);
 
   // Use devices from DashboardContext instead of fetching separately
   const activeDevices = devices;
@@ -395,6 +402,36 @@ function Settings() {
 
   const handleLogout = () => {
     setShowLogoutModal(true);
+  };
+
+  /**
+   * @brief Submits a Supabase Auth email change request and shows success or inline error.
+   */
+  const handleEmailChangeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEmailChangeError(null);
+    setIsEmailChangeSubmitting(true);
+    try {
+      const { error } = await requestEmailChange(newEmailInput);
+      if (error) {
+        setEmailChangeError(error.message);
+        return;
+      }
+      setNewEmailInput("");
+      setConfirmationTitle(
+        t("dashboard.settings.emailChangeCheckInboxTitle", "Check your email"),
+      );
+      setConfirmationMessage(
+        t(
+          "dashboard.settings.emailChangeCheckInboxMessage",
+          "We sent a confirmation link. Open it to complete the change. If secure email change is enabled in your project, check both your current and new inboxes.",
+        ),
+      );
+      setConfirmationIcon("info");
+      setShowConfirmationModal(true);
+    } finally {
+      setIsEmailChangeSubmitting(false);
+    }
   };
 
   const confirmLogout = async () => {
@@ -644,6 +681,127 @@ function Settings() {
             <FaSignOutAlt style={{ marginRight: "0.5rem" }} />
             {t("dashboard.settings.logoutAll", "Logout from All Other Devices")}
           </Button>
+        </CardContent>
+      </AnimatedCard>
+
+      <AnimatedCard
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.15 }}
+      >
+        <CardTitle>
+          <FaEnvelope />{" "}
+          {t("dashboard.settings.emailAddressSection", "Email address")}
+        </CardTitle>
+        <CardContent>
+          {user?.new_email ? (
+            <div
+              style={{
+                padding: "0.75rem 1rem",
+                marginBottom: "1rem",
+                backgroundColor: "rgba(108, 99, 255, 0.12)",
+                border: "1px solid rgba(108, 99, 255, 0.35)",
+                borderRadius: "6px",
+                fontSize: "0.9rem",
+                color: "var(--text)",
+              }}
+            >
+              <FaInfoCircle
+                style={{
+                  marginRight: "0.5rem",
+                  verticalAlign: "middle",
+                  color: "var(--primary)",
+                }}
+              />
+              {t(
+                "dashboard.settings.emailChangePending",
+                "Confirmation pending for {{email}}. Check that inbox and use the link we sent.",
+                { email: user.new_email },
+              )}
+            </div>
+          ) : null}
+          <div style={{ marginBottom: "0.75rem" }}>
+            <div
+              style={{
+                fontSize: "0.85rem",
+                color: "var(--text-secondary)",
+                marginBottom: "0.35rem",
+              }}
+            >
+              {t("dashboard.settings.currentEmailLabel", "Current email")}
+            </div>
+            <div
+              style={{
+                padding: "0.75rem",
+                backgroundColor: "rgba(30, 30, 46, 0.5)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                color: "var(--text-secondary)",
+                borderRadius: "6px",
+                fontSize: "0.95rem",
+              }}
+            >
+              {user?.email ?? "—"}
+            </div>
+          </div>
+          <form onSubmit={handleEmailChangeSubmit}>
+            <label
+              htmlFor="settingsNewEmail"
+              style={{
+                display: "block",
+                marginBottom: "0.5rem",
+                fontSize: "0.9rem",
+                color: "var(--text)",
+              }}
+            >
+              {t("dashboard.settings.newEmailLabel", "New email address")}
+            </label>
+            <input
+              id="settingsNewEmail"
+              type="email"
+              autoComplete="email"
+              value={newEmailInput}
+              onChange={(e) => {
+                setNewEmailInput(e.target.value);
+                if (emailChangeError) setEmailChangeError(null);
+              }}
+              disabled={isEmailChangeSubmitting}
+              style={{
+                width: "100%",
+                padding: "0.75rem",
+                marginBottom: emailChangeError ? "0.5rem" : "1rem",
+                backgroundColor: "rgba(30, 30, 46, 0.5)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                color: "var(--text)",
+                borderRadius: "6px",
+              }}
+            />
+            {emailChangeError ? (
+              <div
+                style={{
+                  color: "var(--error)",
+                  fontSize: "0.85rem",
+                  marginBottom: "1rem",
+                }}
+              >
+                {emailChangeError}
+              </div>
+            ) : null}
+            <Button
+              type="submit"
+              disabled={isEmailChangeSubmitting}
+              style={{
+                marginTop: 0,
+                opacity: isEmailChangeSubmitting ? 0.7 : 1,
+                cursor: isEmailChangeSubmitting ? "not-allowed" : "pointer",
+              }}
+            >
+              <FaEnvelope style={{ marginRight: "0.5rem" }} />
+              {t(
+                "dashboard.settings.sendEmailConfirmation",
+                "Send confirmation email",
+              )}
+            </Button>
+          </form>
         </CardContent>
       </AnimatedCard>
 

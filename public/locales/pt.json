@@ -736,7 +736,14 @@
       "processingDeletion": "Processando solicitação de exclusão",
       "processingMessage": "Aguarde enquanto processamos sua solicitação de exclusão de conta...",
       "accountDeleted": "Conta excluída",
-      "accountDeletedMessage": "Sua conta foi excluída com sucesso. Você será redirecionado para a página inicial."
+      "accountDeletedMessage": "Sua conta foi excluída com sucesso. Você será redirecionado para a página inicial.",
+      "emailAddressSection": "Endereço de e-mail",
+      "emailChangePending": "Confirmação pendente para {{email}}. Verifique essa caixa de entrada e use o link enviado.",
+      "currentEmailLabel": "E-mail atual",
+      "newEmailLabel": "Novo endereço de e-mail",
+      "sendEmailConfirmation": "Enviar e-mail de confirmação",
+      "emailChangeCheckInboxTitle": "Verifique seu e-mail",
+      "emailChangeCheckInboxMessage": "Enviamos um link de confirmação. Abra-o para concluir a alteração. Se a alteração segura de e-mail estiver ativa no projeto, verifique ambas as caixas."
     }
   },
   "auth": {

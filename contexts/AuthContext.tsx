@@ -59,6 +59,10 @@ type AuthContextType = {
     data: object | null;
   }>;
   updateProfile: (profile: Profile) => Promise<{ error: string | null }>;
+  /**
+   * Requests an email change; Supabase sends confirmation link(s). Redirect target: `/api/auth/confirm`.
+   */
+  requestEmailChange: (newEmail: string) => Promise<{ error: AuthError | null }>;
   refreshUser: () => Promise<void>;
 };
 
@@ -711,6 +715,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   /**
+   * @brief Requests a change of the authenticated user's email via Supabase Auth.
+   * @param newEmail New email address (trimmed and lowercased before sending).
+   * @returns Supabase error if the request fails or client validation fails; null on success.
+   * @note Sends confirmation email(s) per project settings; user must complete the link to `/api/auth/confirm`.
+   */
+  const requestEmailChange = async (newEmail: string) => {
+    if (!user) {
+      return {
+        error: new AuthError(
+          "You must be signed in to change your email",
+          401,
+        ),
+      };
+    }
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+    if (!siteUrl) {
+      return {
+        error: new AuthError(
+          "NEXT_PUBLIC_SITE_URL is not configured",
+          500,
+        ),
+      };
+    }
+    const trimmed = newEmail.trim().toLowerCase();
+    if (!trimmed) {
+      return {
+        error: new AuthError("Enter a valid email address", 400),
+      };
+    }
+    const current = user.email?.trim().toLowerCase() ?? "";
+    if (trimmed === current) {
+      return {
+        error: new AuthError(
+          "New email must be different from your current email",
+          400,
+        ),
+      };
+    }
+    const { error } = await supabase.auth.updateUser(
+      { email: trimmed },
+      {
+        emailRedirectTo: `${siteUrl}/api/auth/confirm`,
+      },
+    );
+    if (!error) {
+      await refreshUser();
+    }
+    return { error };
+  };
+
+  /**
    * @brief Updates the user's profile information.
    * @param {Profile} profile - Profile object with updated fields.
    * @returns {Promise<{error: string | null}>} Promise resolving to update result.
@@ -744,6 +799,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signUp,
       signOut,
       resetPassword,
+      requestEmailChange,
       updateProfile,
       refreshUser,
     }),

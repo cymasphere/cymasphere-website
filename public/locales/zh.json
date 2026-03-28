@@ -766,7 +766,14 @@
       "processingDeletion": "处理删除请求",
       "processingMessage": "请等待我们处理您的账户删除请求...",
       "accountDeleted": "账户已删除",
-      "accountDeletedMessage": "您的账户已成功删除。您将被重定向到首页。"
+      "accountDeletedMessage": "您的账户已成功删除。您将被重定向到首页。",
+      "emailAddressSection": "电子邮箱",
+      "emailChangePending": "正在等待确认 {{email}}。请查看该邮箱并使用我们发送的链接。",
+      "currentEmailLabel": "当前邮箱",
+      "newEmailLabel": "新邮箱地址",
+      "sendEmailConfirmation": "发送确认邮件",
+      "emailChangeCheckInboxTitle": "请查收邮件",
+      "emailChangeCheckInboxMessage": "我们已发送确认链接。打开链接以完成更改。若项目启用了安全邮箱变更，请同时查看两个收件箱。"
     }
   },
   "billing": {

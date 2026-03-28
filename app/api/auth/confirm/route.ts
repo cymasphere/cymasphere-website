@@ -1,11 +1,10 @@
 /**
  * @fileoverview Email verification and OTP confirmation API endpoint
- * 
- * This endpoint handles email verification and password recovery OTP confirmation.
- * Users are redirected here from email verification links. After verifying the OTP token,
- * users are redirected to the appropriate page based on the verification type
- * (email confirmation or password recovery).
- * 
+ *
+ * Handles email verification, password recovery OTP confirmation, and email-change
+ * confirmation (Supabase `email_change` / related OTP types). Users arrive here from
+ * links in auth emails; after `verifyOtp` succeeds they are redirected by type.
+ *
  * @module api/auth/confirm
  */
 
@@ -18,36 +17,37 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 
 /**
- * @brief GET endpoint to confirm email verification or password recovery OTP
- * 
- * Verifies an OTP token from email verification or password recovery links.
- * After successful verification, redirects the user to the appropriate page:
- * - Password recovery: /reset-password
- * - Email confirmation: /dashboard
- * 
+ * @brief GET endpoint to confirm email verification, password recovery, or email-change OTPs.
+ *
+ * Verifies an OTP token from Supabase auth emails (`verifyOtp`). After success, redirects:
+ * - `recovery` → `/reset-password`
+ * - `signup`, `email`, `email_change`, and other non-recovery types → `/dashboard`
+ *
+ * @param request Next.js request object; must include `token_hash` and `type` query params.
+ * @returns Never returns JSON; redirects on success or failure.
+ *
  * Query parameters:
- * - token_hash: The OTP token hash from the email link (required)
- * - type: The type of OTP verification - "signup", "email", "recovery", "email_change", etc. (required)
- * 
- * Responses:
- * 
- * Redirects (302):
- * - Success (recovery type): Redirects to /reset-password
- * - Success (other types): Redirects to /dashboard
- * - Error: Redirects to /error
- * 
- * @param request Next.js request object containing query parameters
- * @returns Redirect response to appropriate page
- * @note Includes a 100ms delay after verification to ensure session is fully established
- * @note Prevents race conditions where client receives SIGNED_IN event before session is ready
- * 
+ * - `token_hash`: OTP token hash from the email link (required).
+ * - `type`: `EmailOtpType` (e.g. `signup`, `email`, `recovery`, `email_change`) (required).
+ *
+ * Responses (redirects):
+ * - 302 `recovery` success → `/reset-password`
+ * - 302 other success → `/dashboard` (including after confirming a new email address)
+ * - 302 missing/invalid token or verification error → `/error`
+ *
+ * @note 100ms delay after verification so the session is established before the client runs.
+ * @note Prevents race conditions where the client receives SIGNED_IN before session is ready.
+ *
  * @example
- * ```typescript
- * // GET /api/auth/confirm?token_hash=abc123&type=signup
- * // Redirects to: /dashboard
- * 
- * // GET /api/auth/confirm?token_hash=xyz789&type=recovery
- * // Redirects to: /reset-password
+ * ```text
+ * GET /api/auth/confirm?token_hash=abc123&type=signup
+ * → 302 /dashboard
+ *
+ * GET /api/auth/confirm?token_hash=xyz789&type=recovery
+ * → 302 /reset-password
+ *
+ * GET /api/auth/confirm?token_hash=def456&type=email_change
+ * → 302 /dashboard
  * ```
  */
 export async function GET(request: NextRequest) {

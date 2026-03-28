@@ -872,7 +872,14 @@
       "processingDeletion": "Procesando Solicitud de Eliminación",
       "processingMessage": "Por favor, espera mientras procesamos tu solicitud de eliminación de cuenta...",
       "accountDeleted": "Cuenta Eliminada",
-      "accountDeletedMessage": "Tu cuenta ha sido eliminada con éxito. Serás redirigido a la página de inicio."
+      "accountDeletedMessage": "Tu cuenta ha sido eliminada con éxito. Serás redirigido a la página de inicio.",
+      "emailAddressSection": "Correo electrónico",
+      "emailChangePending": "Confirmación pendiente para {{email}}. Revisa esa bandeja y usa el enlace que enviamos.",
+      "currentEmailLabel": "Correo actual",
+      "newEmailLabel": "Nuevo correo electrónico",
+      "sendEmailConfirmation": "Enviar correo de confirmación",
+      "emailChangeCheckInboxTitle": "Revisa tu correo",
+      "emailChangeCheckInboxMessage": "Te enviamos un enlace de confirmación. Ábrelo para completar el cambio. Si la verificación en ambas direcciones está activada en tu proyecto, revisa ambas bandejas."
     }
   },
   "freeTrial": {

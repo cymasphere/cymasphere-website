@@ -831,6 +831,13 @@
       "processingMessage": "Bitte warten Sie, während wir Ihre Kontolöschungsanfrage verarbeiten...",
       "accountDeleted": "Konto gelöscht",
       "accountDeletedMessage": "Ihr Konto wurde erfolgreich gelöscht. Sie werden zur Startseite weitergeleitet.",
+      "emailAddressSection": "E-Mail-Adresse",
+      "emailChangePending": "Bestätigung ausstehend für {{email}}. Prüfen Sie dieses Postfach und nutzen Sie den gesendeten Link.",
+      "currentEmailLabel": "Aktuelle E-Mail",
+      "newEmailLabel": "Neue E-Mail-Adresse",
+      "sendEmailConfirmation": "Bestätigungs-E-Mail senden",
+      "emailChangeCheckInboxTitle": "Prüfen Sie Ihre E-Mails",
+      "emailChangeCheckInboxMessage": "Wir haben einen Bestätigungslink gesendet. Öffnen Sie ihn, um die Änderung abzuschließen. Wenn in Ihrem Projekt die sichere E-Mail-Änderung aktiviert ist, prüfen Sie beide Postfächer.",
       "deleteWarning": "Konto dauerhaft löschen",
       "deleteDesc": "Diese Aktion kann nicht rückgängig gemacht werden. Alle Ihre Daten werden dauerhaft gelöscht."
     }
