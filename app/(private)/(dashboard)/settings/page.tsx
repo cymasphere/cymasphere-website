@@ -1,5 +1,5 @@
 /**
- * @fileoverview Dashboard settings: devices, email change (Supabase Auth), and account deletion.
+ * @fileoverview Dashboard settings: profile (name, password reset), devices, email change, and account deletion.
  * @module app/(private)/(dashboard)/settings/page
  */
 "use client";
@@ -17,10 +17,16 @@ import {
   FaCheck,
   FaInfoCircle,
   FaEnvelope,
+  FaUser,
+  FaLock,
+  FaTimesCircle,
+  FaSave,
 } from "react-icons/fa";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboard } from "@/contexts/DashboardContext";
 import AnimatedCard from "@/components/settings/CardComponent";
+import NextSEO from "@/components/NextSEO";
 import { useTranslation } from "react-i18next";
 
 const SettingsContainer = styled.div`

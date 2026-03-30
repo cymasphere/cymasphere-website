@@ -186,7 +186,6 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   // Check if the route is in the dashboard section
   const isDashboardRoute =
     pathname?.includes("/dashboard") ||
-    pathname?.includes("/profile") ||
     pathname?.includes("/billing") ||
     pathname?.includes("/downloads") ||
     pathname?.includes("/settings") ||
