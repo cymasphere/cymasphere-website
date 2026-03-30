@@ -230,6 +230,110 @@ const DeviceCounter: React.FC<
   );
 };
 
+const TwoColumnGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+  }
+`;
+
+const ProfileFieldInput = styled.input`
+  width: 100%;
+  background-color: rgba(30, 30, 46, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.85rem 1rem;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+`;
+
+const ProfileFieldReadOnly = styled(ProfileFieldInput)`
+  background-color: rgba(30, 30, 46, 0.3);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+
+  &:focus {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+`;
+
+interface ProfileFlashRowProps {
+  $variant: "error" | "success";
+}
+
+/**
+ * @brief Inline alert for profile name save and password-reset email actions.
+ */
+const ProfileFlashRow = styled.div<ProfileFlashRowProps>`
+  padding: 1rem;
+  border-radius: 6px;
+  margin: 0 0 1.5rem;
+  color: ${(p) =>
+    p.$variant === "error" ? "var(--error)" : "var(--success)"};
+  background-color: ${(p) =>
+    p.$variant === "error"
+      ? "rgba(255, 87, 51, 0.1)"
+      : "rgba(0, 201, 167, 0.1)"};
+  border: 1px solid
+    ${(p) =>
+      p.$variant === "error"
+        ? "rgba(255, 87, 51, 0.3)"
+        : "rgba(0, 201, 167, 0.3)"};
+  display: flex;
+  align-items: center;
+
+  svg {
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+  }
+`;
+
+const profileActionButtonVariants = {
+  hover: {
+    scale: 1.03,
+    boxShadow: "0 5px 15px rgba(108, 99, 255, 0.4)",
+    transition: {
+      duration: 0.3,
+    },
+  },
+  tap: {
+    scale: 0.98,
+  },
+};
+
+const ProfileFormGroup = styled.div`
+  margin-bottom: 1.5rem;
+
+  @media (max-width: 768px) {
+    margin-bottom: 1.25rem;
+  }
+`;
+
+const ProfileFieldLabel = styled.label`
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text);
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+  }
+`;
+
 // Modal components
 const ModalOverlay = styled(motion.div)`
   position: fixed;
@@ -297,13 +401,18 @@ const ModalFooter = styled.div`
   justify-content: flex-end;
 `;
 
-interface SettingsState {
-  // Remove the language: string; entry
-  // If this is the only entry, make it an empty interface
+interface DeleteAccountFormState {
+  deleteConfirmation: string;
 }
 
-interface ProfileState {
-  deleteConfirmation: string;
+interface PersonalInfoFormState {
+  first_name: string;
+  last_name: string;
+}
+
+interface ProfileFlashMessageState {
+  text: string;
+  type: "error" | "success" | "";
 }
 
 interface Device {
@@ -315,21 +424,40 @@ interface Device {
 
 function Settings() {
   const { t } = useTranslation();
-  const [settings, setSettings] = useState<SettingsState>({
-    // Remove the language: "en" entry
-  });
 
-  const [profile, setProfile] = useState<ProfileState>({
-    deleteConfirmation: "",
-  });
+  const [deleteAccountForm, setDeleteAccountForm] =
+    useState<DeleteAccountFormState>({
+      deleteConfirmation: "",
+    });
 
-  const { user, signOut, refreshUser, requestEmailChange } = useAuth();
+  const { user, signOut, refreshUser, requestEmailChange, updateProfile, resetPassword } =
+    useAuth();
+
+  const [personalInfoForm, setPersonalInfoForm] =
+    useState<PersonalInfoFormState>({
+      first_name: user?.profile?.first_name || "",
+      last_name: user?.profile?.last_name || "",
+    });
+
+  const [profileFlash, setProfileFlash] = useState<ProfileFlashMessageState>({
+    text: "",
+    type: "",
+  });
   const { devices, isLoadingDevices, refreshDevices } = useDashboard();
 
   // Refresh pro status on mount (same as login)
   useEffect(() => {
     refreshUser();
   }, [refreshUser]); // Run on mount and when refreshUser changes
+
+  useEffect(() => {
+    if (user?.profile) {
+      setPersonalInfoForm({
+        first_name: user.profile.first_name || "",
+        last_name: user.profile.last_name || "",
+      });
+    }
+  }, [user]);
 
   // Modal states
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -386,22 +514,142 @@ function Settings() {
     }
   };
 
-  const handleSelectChange = (
-    e: React.ChangeEvent<HTMLSelectElement>,
-    key: keyof SettingsState
+  /**
+   * @brief Updates local first/last name fields before save to Supabase profile.
+   */
+  const handlePersonalInfoFieldChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    key: keyof PersonalInfoFormState,
   ) => {
-    setSettings((prevSettings) => ({
-      ...prevSettings,
-      [key]: e.target.value,
-    }));
+    setPersonalInfoForm((prev) => ({ ...prev, [key]: e.target.value }));
   };
 
-  const handleProfileChange = (
+  /**
+   * @brief Persists name fields via AuthContext `updateProfile`.
+   */
+  const handleSavePersonalInfo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user?.profile) return;
+
+    const updatedProfile = {
+      ...user.profile,
+      ...personalInfoForm,
+    };
+
+    try {
+      const { error } = await updateProfile(updatedProfile);
+      if (error) {
+        setProfileFlash({
+          text: t(
+            "dashboard.profile.errorUpdating",
+            "Error updating profile: {{error}}",
+            { error: error.toString() },
+          ),
+          type: "error",
+        });
+      } else {
+        setProfileFlash({
+          text: t(
+            "dashboard.profile.profileUpdated",
+            "Profile information updated successfully!",
+          ),
+          type: "success",
+        });
+      }
+    } catch (err) {
+      setProfileFlash({
+        text: t(
+          "dashboard.profile.unexpectedError",
+          "An unexpected error occurred: {{error}}",
+          {
+            error: err instanceof Error ? err.message : "Unknown error",
+          },
+        ),
+        type: "error",
+      });
+    }
+
+    setTimeout(() => {
+      setProfileFlash({ text: "", type: "" });
+    }, 3000);
+  };
+
+  /**
+   * @brief Sends Supabase password reset email to the signed-in user's address.
+   */
+  const handleSendPasswordResetEmail = async () => {
+    if (!user?.email) {
+      setProfileFlash({
+        text: t(
+          "dashboard.profile.noEmailFound",
+          "No email address found for password reset",
+        ),
+        type: "error",
+      });
+      setTimeout(() => setProfileFlash({ text: "", type: "" }), 3000);
+      return;
+    }
+
+    try {
+      const { error } = await resetPassword(user.email);
+      if (error) {
+        if (
+          error.message.includes("email rate limit exceeded") ||
+          error.message.includes("rate limit")
+        ) {
+          setProfileFlash({
+            text: t(
+              "dashboard.profile.tooManyAttempts",
+              "Too many password reset attempts. Please wait a few minutes before trying again.",
+            ),
+            type: "error",
+          });
+        } else {
+          setProfileFlash({
+            text: t(
+              "dashboard.profile.errorSendingReset",
+              "Error sending reset email: {{error}}",
+              { error: error.message },
+            ),
+            type: "error",
+          });
+        }
+      } else {
+        setProfileFlash({
+          text: t(
+            "dashboard.profile.passwordResetSent",
+            "Password reset email sent! Please check your inbox.",
+          ),
+          type: "success",
+        });
+      }
+    } catch (err) {
+      setProfileFlash({
+        text: t(
+          "dashboard.profile.unexpectedError",
+          "An unexpected error occurred: {{error}}",
+          {
+            error: err instanceof Error ? err.message : "Unknown error",
+          },
+        ),
+        type: "error",
+      });
+    }
+
+    setTimeout(() => {
+      setProfileFlash({ text: "", type: "" });
+    }, 3000);
+  };
+
+  /**
+   * @brief Controlled input for the account deletion confirmation phrase.
+   */
+  const handleDeleteAccountFieldChange = (
     e: React.ChangeEvent<HTMLInputElement>,
-    key: keyof ProfileState
+    key: keyof DeleteAccountFormState,
   ) => {
-    setProfile((prevProfile) => ({
-      ...prevProfile,
+    setDeleteAccountForm((prev) => ({
+      ...prev,
       [key]: e.target.value,
     }));
   };
@@ -480,7 +728,7 @@ function Settings() {
     e.preventDefault();
     // Handle account deletion logic
 
-    if (profile.deleteConfirmation !== "DELETE") {
+    if (deleteAccountForm.deleteConfirmation !== "DELETE") {
       setConfirmationTitle(
         t("dashboard.settings.confirmationRequired", "Confirmation Required")
       );
@@ -565,7 +813,7 @@ function Settings() {
     }
 
     // Reset confirmation field
-    setProfile((prev) => ({
+    setDeleteAccountForm((prev) => ({
       ...prev,
       deleteConfirmation: "",
     }));
@@ -618,10 +866,109 @@ function Settings() {
     <SettingsContainer>
       <SectionTitle>{t("dashboard.settings.title", "Settings")}</SectionTitle>
 
+      {profileFlash.text ? (
+        <ProfileFlashRow $variant={profileFlash.type as "error" | "success"}>
+          {profileFlash.type === "error" ? <FaTimesCircle /> : <FaUser />}
+          {profileFlash.text}
+        </ProfileFlashRow>
+      ) : null}
+
       <AnimatedCard
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
+      >
+        <CardTitle>
+          <FaUser />{" "}
+          {t("dashboard.profile.personalInfo", "Personal Information")}
+        </CardTitle>
+        <CardContent>
+          <form onSubmit={handleSavePersonalInfo}>
+            <TwoColumnGrid>
+              <ProfileFormGroup>
+                <ProfileFieldLabel>
+                  {t("dashboard.profile.firstName", "First Name")}
+                </ProfileFieldLabel>
+                <ProfileFieldInput
+                  type="text"
+                  value={personalInfoForm.first_name}
+                  onChange={(e) =>
+                    handlePersonalInfoFieldChange(e, "first_name")
+                  }
+                  required
+                />
+              </ProfileFormGroup>
+              <ProfileFormGroup>
+                <ProfileFieldLabel>
+                  {t("dashboard.profile.lastName", "Last Name")}
+                </ProfileFieldLabel>
+                <ProfileFieldInput
+                  type="text"
+                  value={personalInfoForm.last_name}
+                  onChange={(e) =>
+                    handlePersonalInfoFieldChange(e, "last_name")
+                  }
+                  required
+                />
+              </ProfileFormGroup>
+            </TwoColumnGrid>
+            <ProfileFormGroup>
+              <ProfileFieldLabel>
+                {t("dashboard.profile.email", "Email Address")}
+              </ProfileFieldLabel>
+              <ProfileFieldReadOnly
+                type="email"
+                value={user?.email || ""}
+                readOnly
+                disabled
+                aria-readonly
+              />
+            </ProfileFormGroup>
+            <Button
+              type="submit"
+              as={motion.button}
+              whileHover="hover"
+              whileTap="tap"
+              variants={profileActionButtonVariants}
+            >
+              <FaSave style={{ marginRight: "0.5rem" }} />
+              {t("dashboard.profile.saveChanges", "Save Changes")}
+            </Button>
+          </form>
+        </CardContent>
+      </AnimatedCard>
+
+      <AnimatedCard
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.08 }}
+      >
+        <CardTitle>
+          <FaLock />{" "}
+          {t("dashboard.profile.passwordSection", "Change Password")}
+        </CardTitle>
+        <CardContent>
+          <Button
+            type="button"
+            onClick={handleSendPasswordResetEmail}
+            as={motion.button}
+            whileHover="hover"
+            whileTap="tap"
+            variants={profileActionButtonVariants}
+          >
+            <FaLock style={{ marginRight: "0.5rem" }} />
+            {t(
+              "dashboard.profile.sendResetEmail",
+              "Send Password Reset Email",
+            )}
+          </Button>
+        </CardContent>
+      </AnimatedCard>
+
+      <AnimatedCard
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.16 }}
       >
         <CardTitle>
           <FaMobileAlt /> {t("dashboard.settings.devices", "Active Devices")}
@@ -693,7 +1040,7 @@ function Settings() {
       <AnimatedCard
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.15 }}
+        transition={{ duration: 0.4, delay: 0.24 }}
       >
         <CardTitle>
           <FaEnvelope />{" "}
@@ -814,7 +1161,7 @@ function Settings() {
       <AnimatedCard
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.2 }}
+        transition={{ duration: 0.4, delay: 0.32 }}
       >
         <CardTitle>
           <FaTrash style={{ color: "var(--error)" }} />{" "}
@@ -874,8 +1221,10 @@ function Settings() {
                 <input
                   type="text"
                   id="deleteConfirmation"
-                  value={profile.deleteConfirmation}
-                  onChange={(e) => handleProfileChange(e, "deleteConfirmation")}
+                  value={deleteAccountForm.deleteConfirmation}
+                  onChange={(e) =>
+                    handleDeleteAccountFieldChange(e, "deleteConfirmation")
+                  }
                   style={{
                     width: "100%",
                     padding: "0.75rem",
@@ -1007,94 +1356,26 @@ function Settings() {
   );
 }
 
-// Additional styled components for the new form elements
-const Form = styled.form`
-  width: 100%;
-`;
+/**
+ * @brief Settings route entry: SEO wrapper and remount on navigation.
+ * @returns Fragment with NextSEO and settings content.
+ */
+export default function SettingsPage() {
+  const pathname = usePathname();
+  const { t } = useTranslation();
 
-const FormGroup = styled.div`
-  margin-bottom: 1.5rem;
-`;
-
-const Label = styled.label`
-  display: block;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-  color: var(--text);
-`;
-
-const Input = styled.input`
-  width: 100%;
-  background-color: rgba(30, 30, 46, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--text);
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
-  font-size: 0.95rem;
-
-  &:focus {
-    outline: none;
-    border-color: var(--primary);
-  }
-`;
-
-const WarningBox = styled.div`
-  background-color: rgba(255, 87, 51, 0.1);
-  border: 1px solid rgba(255, 87, 51, 0.3);
-  border-radius: 6px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: flex-start;
-
-  svg {
-    color: var(--danger);
-    margin-right: 0.75rem;
-    font-size: 1.2rem;
-    margin-top: 0.1rem;
-  }
-
-  p {
-    margin: 0;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    line-height: 1.5;
-  }
-`;
-
-const DangerButton = styled(Button)`
-  background: linear-gradient(135deg, #ff5733, #c70039);
-
-  &:hover {
-    box-shadow: 0 5px 15px rgba(255, 87, 51, 0.3);
-  }
-`;
-
-// Styled component for outline button
-const OutlineButton = styled.button`
-  background: transparent;
-  color: var(--text);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-top: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  svg {
-    margin-right: 0.5rem;
-  }
-
-  &:hover {
-    border-color: var(--primary);
-    color: var(--primary);
-    transform: translateY(-2px);
-  }
-`;
-
-export default Settings;
+  return (
+    <>
+      <NextSEO
+        title={`${t("dashboard.settings.title", "Settings")} - Cymasphere`}
+        description={t(
+          "dashboard.settings.seoDescription",
+          "Account settings, devices, email, and profile for Cymasphere.",
+        )}
+        canonical="/settings"
+        noindex={true}
+      />
+      <Settings key={pathname} />
+    </>
+  );
+}
