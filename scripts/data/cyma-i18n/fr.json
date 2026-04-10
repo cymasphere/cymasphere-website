@@ -1,0 +1,79 @@
+{
+  "hero": {
+    "bundleEyebrow": "Un abonnement · deux produits",
+    "bundleCymasphereDesc": "Suite composition & théorie",
+    "bundleCymaSynthDesc": "Synthé wavetable · valeur 149 $ incluse",
+    "bundleFootnote": "CymaSynth vaut 149 $ à l’achat séparé—inclus avec chaque offre Cymasphere sans supplément · Standalone, AU et VST3",
+    "bundleCymasphereImageAlt": "Cymasphere — visuel carré du catalogue",
+    "bundleCymaSynthImageAlt": "Interface produit du synthétiseur wavetable CymaSynth",
+    "includedSynth": "Inclut CymaSynth—un synthétiseur wavetable professionnel (VST3 et AU)—inclus avec chaque abonnement et licence à vie. Suite de composition complète et instrument phare réunis.",
+    "tooltips": {
+      "playNote": "Cliquer pour jouer cette note",
+      "playChord": "Cliquer pour jouer l’accord"
+    }
+  },
+  "features": {
+    "subtitle": "Harmonie, mélodie, arrangement—plus CymaSynth, un instrument wavetable d’une valeur de 149 $ inclus dans votre forfait. Une suite, deux produits.",
+    "cymaSynth": {
+      "title": "CymaSynth inclus",
+      "description": "Un synthé wavetable pro d’une valeur de 149 $—triple oscillateur, modulation profonde, effets studio—offert avec Cymasphere.",
+      "modalTitle": "Votre instrument phare intégré",
+      "modalDescription": "Seul, CymaSynth est un produit à 149 $. Avec Cymasphere, il est inclus sans frais supplémentaires sur chaque abonnement et licence à vie—de l’esquisse harmonique au son final sans second achat. Synthèse wavetable pro, modulation souple et effets soignés—dans Cymasphere ou en plugins VST3 et AU autonomes dans votre DAW.",
+      "keyFeatures": "Points clés :",
+      "features": [
+        "Valeur 149 $ seul—inclus gratuitement avec toutes les offres Cymasphere (abonnement et à vie) ; pas d’achat CymaSynth séparé",
+        "Triple oscillateur avec morphing wavetable (256 images) et formes d’onde classiques",
+        "Matrice de modulation 64 chemins avec 5 LFO et 4 enveloppes ADSR+Hold",
+        "Deux filtres, jusqu’à 32 voix, unisson et chaîne d’effets intégrée",
+        "Formats VST3 et AU—aux côtés de Cymasphere ou directement dans votre DAW",
+        "Conçu pour s’accorder aux outils d’harmonie et de motifs : la progression ici, le timbre dans CymaSynth"
+      ]
+    }
+  },
+  "pricing": {
+    "allFeatures": "Chaque offre inclut la suite Cymasphere complète plus CymaSynth—synthé wavetable d’une valeur de 149 $, offert gratuitement—et toutes les fonctions ci-dessous.",
+    "features": [
+      "Song Builder avec gestion multipiste",
+      "Éditeur de motifs intelligent et adaptation d’accords",
+      "Interface de palette harmonique gestuelle",
+      "Conduite des voix avancée et voicings d’accords",
+      "Timeline interactive de progressions d’accords",
+      "Contrôle complet des voix et de la tessiture",
+      "Application autonome et prise en charge plugin DAW",
+      "Outils de réharmonisation en temps réel",
+      "Vue d’arrangement complète",
+      "Moteur de génération de voicings personnalisés",
+      "Support premium et toutes les mises à jour futures",
+      "Synthé wavetable CymaSynth (VST3 et AU)—valeur 149 $, inclus gratuitement"
+    ],
+    "freeTrial": {
+      "description": "Découvrez la suite complète—CymaSynth inclus—avec deux options d’essai."
+    }
+  },
+  "footer": {
+    "description": "Cymasphere est un outil compositionnel interactif pour producteurs, compositeurs, musiciens, enseignants et étudiants—avec CymaSynth, un synthé wavetable d’une valeur de 149 $, offert gratuitement sur chaque offre."
+  },
+  "chat": {
+    "greeting": "Bonjour ! Je suis l’assistant Cymasphere. Posez vos questions sur l’harmonie et la mélodie, CymaSynth (le synthé wavetable inclus dans chaque offre), les tarifs ou les premiers pas. Que souhaitez-vous savoir ?"
+  },
+  "dashboard": {
+    "main": {
+      "fullAccess": "Vous avez accès à toutes les fonctions premium, CymaSynth compris :",
+      "trialMessage": "Vous êtes en essai gratuit de {{trialDays}} jours avec accès complet à toutes les fonctions premium, CymaSynth compris. Aucun paiement avant la fin de l’essai.",
+      "lifetimeMessage": "Vous avez une adhésion à vie avec mises à jour à vie. Profitez en permanence de toutes les fonctions premium, CymaSynth compris.",
+      "activeSubscriptionMessage": "Votre abonnement {{plan}} est actif. Profitez de toutes les fonctions premium, CymaSynth compris.",
+      "downloadAvailable": "Téléchargez les installateurs Cymasphere et CymaSynth les plus récents—votre abonnement inclut les deux."
+    }
+  },
+  "faq": {
+    "questions": {
+      "0": {
+        "answer": "Cymasphere est une suite complète de création musicale, en application autonome et en plugin (AU et VST3) pour votre DAW. Outils intégrés pour l’harmonie et la mélodie, voicings intelligents, motifs mélodiques et visualisation interactive rendant la théorie accessible à tous niveaux. Chaque abonnement et licence à vie inclut aussi CymaSynth—notre synthétiseur wavetable professionnel (VST3 et AU)—sans frais supplémentaires."
+      },
+      "1": {
+        "question": "Qu’est-ce que CymaSynth et est-il vraiment inclus avec Cymasphere ?",
+        "answer": "CymaSynth est le synthétiseur wavetable professionnel de NNAudio : oscillateurs multiples, modulation poussée, deux filtres, effets et polyphonie 32 voix. Seul, c’est un produit à 149 $ ; avec Cymasphere, il est inclus sans frais supplémentaires sur chaque abonnement et licence à vie. Vous ne l’achetez pas séparément en vous abonnant—suite de composition et instrument phare en un seul ensemble."
+      }
+    }
+  }
+}

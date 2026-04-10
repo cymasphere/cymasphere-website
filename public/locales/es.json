@@ -30,7 +30,21 @@
       "emailRequired": "Por favor, introduce tu dirección de correo electrónico",
       "invalidEmail": "Por favor, introduce una dirección de correo electrónico válida",
       "unexpectedError": "Ha ocurrido un error inesperado. Por favor, inténtalo de nuevo."
-    }
+    },
+    "adminConsole": "Consola de administración",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "view": "Ver",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "error": "Error",
+    "success": "Éxito",
+    "warning": "Advertencia",
+    "info": "Información"
   },
   "header": {
     "home": "Inicio",
@@ -69,13 +83,27 @@
       "gMajor": "Sol Mayor"
     },
     "tooltips": {
-      "playNote": "Haz clic para reproducir esta nota",
-      "playChord": "Haz clic para reproducir el acorde"
+      "playNote": "Clic para reproducir esta nota",
+      "playChord": "Clic para reproducir el acorde"
+    },
+    "includedSynth": "Incluye CymaSynth—un sintetizador wavetable profesional (VST3 y AU)—incluido con cada suscripción y licencia de por vida. Suite de composición completa e instrumento insignia, juntos.",
+    "bundleEyebrow": "Una suscripción · dos productos",
+    "bundleCymasphereTitle": "Cymasphere",
+    "bundleCymasphereDesc": "Suite de composición y teoría",
+    "bundleCymaSynthTitle": "CymaSynth",
+    "bundleCymaSynthDesc": "Sintetizador wavetable · valor 149 $ incluido",
+    "bundleFootnote": "CymaSynth tiene un valor de 149 $ por separado—va incluido en todos los planes Cymasphere sin coste adicional · Standalone, AU y VST3",
+    "bundleCymasphereImageAlt": "Cymasphere — arte cuadrado del catálogo",
+    "bundleCymaSynthImageAlt": "Interfaz del producto sintetizador wavetable CymaSynth",
+    "platforms": {
+      "macos": "macOS",
+      "windows": "Windows",
+      "ipad": "iPad"
     }
   },
   "features": {
     "title": "Características",
-    "subtitle": "Descubre lo que Cymasphere puede hacer por ti",
+    "subtitle": "Armonía, melodía, arreglos—más CymaSynth, un instrumento wavetable de 149 $ incluido en tu plan. Una suite, dos productos.",
     "aiComposition": "Composición con IA",
     "aiCompositionDesc": "Genera música con solo un clic usando nuestra IA avanzada",
     "livePerformance": "Interpretación en Vivo",
@@ -215,6 +243,21 @@
         "Generación Consciente del Contexto que considera elementos musicales existentes al crear nuevo contenido",
         "Generación Basada en Estilo con opciones para diferentes géneros musicales y estados de ánimo",
         "Adaptación Tiempo Real donde el contenido generado se actualiza automáticamente cuando modificas tu composición"
+      ]
+    },
+    "cymaSynth": {
+      "title": "CymaSynth incluido",
+      "description": "Un sintetizador wavetable profesional valorado en 149 $—triple oscilador, modulación profunda, efectos de estudio—gratis con Cymasphere.",
+      "modalTitle": "Tu instrumento insignia integrado",
+      "modalDescription": "Por separado, CymaSynth cuesta 149 $. Con Cymasphere va incluido sin coste extra en cada suscripción y licencia de por vida—del boceto armónico al sonido final sin una segunda compra. Síntesis wavetable de nivel profesional, modulación flexible y efectos pulidos—en tu flujo Cymasphere o como plugins VST3 y AU independientes en tu DAW.",
+      "keyFeatures": "Funciones clave:",
+      "features": [
+        "Valor de 149 $ al comprarlo solo—incluido gratis con todos los planes Cymasphere (suscripción y de por vida); sin compra separada de CymaSynth",
+        "Arquitectura de triple oscilador con morphing wavetable (256 fotogramas) más formas de onda clásicas",
+        "Matriz de modulación de 64 rutas con 5 LFO y 4 envolventes ADSR+Hold",
+        "Dos filtros, hasta 32 voces de polifonía, unísono y cadena de efectos integrada",
+        "Formatos VST3 y AU—junto a Cymasphere o directamente en tu DAW",
+        "Diseñado para combinar con la armonía y los patrones de Cymasphere: la progresión aquí, el timbre en CymaSynth"
       ]
     }
   },
@@ -367,7 +410,7 @@
     "copyright": "© {{year}} Cymasphere. Todos los derechos reservados.",
     "privacyPolicy": "Política de Privacidad",
     "termsOfService": "Términos de Servicio",
-    "description": "Cymasphere es una herramienta interactiva de composición musical para productores, compositores, músicos, educadores y estudiantes.",
+    "description": "Cymasphere es una herramienta compositiva interactiva para productores, compositores, músicos en vivo, educadores y estudiantes—incluye CymaSynth, un sintetizador wavetable valorado en 149 $, gratis en todos los planes.",
     "navigation": "Navegación",
     "account": "Cuenta",
     "accountDashboard": "Panel de Control",
@@ -392,7 +435,7 @@
     "subtitle": "Opciones flexibles para adaptarse a tus necesidades",
     "simpleTransparent": "Precios Simples y Transparentes",
     "chooseOption": "Elige la opción de facturación que mejor te funcione.",
-    "allFeatures": "Todas las opciones incluyen acceso completo a todas las funciones.",
+    "allFeatures": "Cada plan incluye la suite completa de Cymasphere más CymaSynth—sintetizador wavetable valorado en 149 $, gratis—incluido—y todas las funciones siguientes.",
     "monthly": "Mensual",
     "yearly": "Anual",
     "lifetime": "De por Vida",
@@ -417,21 +460,22 @@
     "lifetimeOwner": "Propietario Vitalicio",
     "noTrialAvailable": "Ya has usado una prueba gratuita. Inicia una suscripción para seguir disfrutando de todas las funciones premium.",
     "features": [
-      "Creador de Canciones con Gestión Multi-Pista",
-      "Editor de Patrones Inteligente y Adaptación de Acordes",
-      "Interfaz de Paleta de Armonía Gestual",
-      "Conducción de Voces Avanzada y Voicings de Acordes",
-      "Línea de Tiempo de Progresión de Acordes Interactiva",
-      "Control Completo de Voces y Rangos",
-      "Soporte para Aplicación Independiente y Plugin DAW",
-      "Herramientas de Rearmonización de Acordes en Tiempo Real",
-      "Vista de Arreglos Integral",
-      "Motor de Generación de Voicings Personalizado",
-      "Soporte Premium y Todas las Actualizaciones Futuras"
+      "Song Builder con gestión multipista",
+      "Editor de patrones inteligente y adaptación de acordes",
+      "Interfaz de paleta armónica por gestos",
+      "Voice leading avanzado y voicings de acordes",
+      "Línea de tiempo interactiva de progresiones",
+      "Control completo de voces y rango",
+      "App standalone y soporte de plugin DAW",
+      "Herramientas de rearmonización en tiempo real",
+      "Vista de arreglo completa",
+      "Motor de generación de voicings personalizados",
+      "Soporte premium y todas las actualizaciones futuras",
+      "Sintetizador wavetable CymaSynth (VST3 y AU)—valor 149 $, incluido gratis"
     ],
     "freeTrial": {
       "title": "Prueba GRATIS hasta por 14 días",
-      "description": "Experimenta todas las funciones premium con dos opciones de prueba.",
+      "description": "Prueba la suite completa—incluido CymaSynth—con dos opciones de prueba.",
       "options": "Elige 7 días sin tarjeta o 14 días con tarjeta registrada.",
       "chooseFree": "Elige tu opción de prueba gratuita:",
       "withCard": "Prueba de 14 días - Agrega tarjeta",
@@ -442,7 +486,6 @@
       "or": "o"
     },
     "processing": "Procesando",
-    "upgradeNow": "Actualizar Ahora",
     "buyNow": "Comprar Ahora"
   },
   "promotion": {
@@ -454,7 +497,11 @@
     "questions": [
       {
         "question": "¿Qué es Cymasphere?",
-        "answer": "Cymasphere es una suite completa de creación musical disponible tanto como aplicación independiente como plugin (AU y VST3) para tu DAW. Proporciona herramientas integradas para componer tanto armonía como melodía, con voicing inteligente de acordes, construcción de patrones melódicos y visualización interactiva que hace que la teoría musical sea accesible e intuitiva para todos los niveles de habilidad."
+        "answer": "Cymasphere es una suite completa de creación musical, disponible como aplicación independiente y como plugin (AU y VST3) para tu DAW. Ofrece herramientas integradas para componer armonía y melodía, voicings inteligentes, construcción de patrones melódicos y visualización interactiva que hace la teoría accesible para todos los niveles. Cada suscripción y licencia de por vida también incluye CymaSynth—nuestro sintetizador wavetable profesional (VST3 y AU)—sin coste adicional."
+      },
+      {
+        "question": "¿Qué es CymaSynth y va realmente incluido con Cymasphere?",
+        "answer": "CymaSynth es el sintetizador wavetable profesional de NNAudio: múltiples osciladores, modulación profunda, dos filtros, efectos y polifonía de 32 voces. Por separado cuesta 149 $; con Cymasphere va incluido sin coste extra en cada suscripción y licencia de por vida. No lo compras aparte al suscribirte—recibes la suite de composición y este instrumento insignia en uno."
       },
       {
         "question": "¿Qué problemas resuelve Cymasphere para los músicos?",
@@ -587,7 +634,10 @@
       "userNotFound": "No se encontró ningún usuario con esta dirección de correo electrónico",
       "invalidEmail": "Dirección de correo electrónico inválida",
       "rateLimit": "Demasiados intentos de restablecimiento de contraseña. Por favor, espera unos minutos antes de intentarlo de nuevo.",
-      "generic": "Error al enviar el correo electrónico de restablecimiento de contraseña. Por favor, inténtalo de nuevo."
+      "generic": "Error al enviar el correo electrónico de restablecimiento de contraseña. Por favor, inténtalo de nuevo.",
+      "linkExpired": "El enlace de restablecimiento de contraseña ha caducado. Solicite uno nuevo.",
+      "accessDenied": "El enlace de restablecimiento no es válido o ha caducado. Solicite uno nuevo.",
+      "invalidLink": "El enlace de restablecimiento no es válido. Solicite uno nuevo."
     }
   },
   "dashboard": {
@@ -600,7 +650,11 @@
       "backToSite": "Volver al Sitio",
       "backToHome": "Volver al Inicio",
       "logout": "Cerrar Sesión",
-      "loading": "Cargando panel de control..."
+      "loading": "Cargando panel de control...",
+      "adminConsole": "Consola de administración",
+      "account": "Account",
+      "welcomeUser": "{{name}}",
+      "emailLabel": "{{email}}"
     },
     "main": {
       "welcome": "Bienvenido de nuevo, {{name}}!",
@@ -637,7 +691,7 @@
       "membership": "Membresía",
       "free": "Gratis",
       "upgradeToPro": "Actualiza a Pro para acceso completo",
-      "fullAccess": "Actualmente tienes acceso completo a todas las funciones premium:",
+      "fullAccess": "Tienes acceso completo a todas las funciones premium, incluido CymaSynth:",
       "upgradeToLifetime": "Actualiza a acceso de por vida",
       "upgradeNow": "Actualizar Ahora",
       "lifetimeAccess": "Incluye actualizaciones gratuitas de por vida",
@@ -654,9 +708,9 @@
       "trialStatus": "Estado de la Prueba",
       "daysRemaining": "{{days}} días restantes",
       "renewalDate": "Fecha de Renovación",
-      "trialMessage": "Actualmente estás en una prueba gratuita de {{trialDays}} días con acceso completo a todas las funciones premium. Sin pagos hasta que termine tu prueba.",
-      "lifetimeMessage": "Tienes una membresía de por vida con actualizaciones gratuitas de por vida. Disfruta de todas las funciones y beneficios premium.",
-      "activeSubscriptionMessage": "Tu suscripción {{plan}} está activa. Disfruta de todas las funciones y beneficios premium.",
+      "trialMessage": "Estás en una prueba gratuita de {{trialDays}} días con acceso completo a todas las funciones premium, incluido CymaSynth. Sin pago hasta que termine la prueba.",
+      "lifetimeMessage": "Tienes membresía de por vida con actualizaciones de por vida. Disfruta permanentemente de todas las funciones premium, incluido CymaSynth.",
+      "activeSubscriptionMessage": "Tu suscripción {{plan}} está activa. Disfruta de todas las funciones premium, incluido CymaSynth.",
       "upgradeMessage": "Actualiza para desbloquear funciones premium y capacidades avanzadas de procesamiento de audio.",
       "featureAdvancedChords": "Progresiones de Acordes Avanzadas",
       "featureUnlimitedSaves": "Guardado Ilimitado de Progresiones",
@@ -683,8 +737,17 @@
       "sending": "Enviando...",
       "product": "Producto",
       "downloads": "Descargas",
-      "standaloneAndPlugins": "Aplicación Independiente y Plugins",
-      "subscribeForAccess": "Suscríbete para acceder"
+      "standaloneAndPlugins": "Aplicación independiente y plugins",
+      "subscribeForAccess": "Suscríbete para obtener acceso",
+      "downloadAvailable": "Descarga los instaladores más recientes de Cymasphere y CymaSynth—tu suscripción incluye ambos.",
+      "downloadIntro": "Accede a tus descargas de software e instaladores.",
+      "downloadRequiresSubscription": "Suscríbete para descargar software y usar funciones premium.",
+      "goToDownloads": "Ir a descargas",
+      "viewDownloads": "Ver descargas",
+      "available": "Disponible",
+      "restricted": "Restringido",
+      "downloadReady": "Descargas de software listas",
+      "subscribeForDownloads": "Suscríbete para acceder a las descargas"
     },
     "profile": {
       "title": "Mi Perfil",
@@ -822,7 +885,13 @@
       "resources": "Recursos",
       "quickStart": "Guía de Inicio Rápido",
       "quickStartDesc": "Comience a utilizar Cymasphere en minutos",
-      "downloadPdf": "Descargar PDF"
+      "downloadPdf": "Descargar PDF",
+      "ipadTitle": "Cymasphere for iPad",
+      "ipadDesc": "Native iPad app with full feature set, optimized for iPad. Available now on the App Store.",
+      "comingSoon": "Coming Soon",
+      "availableNow": "Available Now",
+      "viewOnAppStore": "View on App Store",
+      "loading": "Loading..."
     },
     "settings": {
       "title": "Configuración",
@@ -885,8 +954,8 @@
     }
   },
   "freeTrial": {
-    "startTrial": "Comienza tu Prueba Gratuita",
-    "enterEmail": "Ingresa tu dirección de correo electrónico para comenzar tu prueba gratuita de {{days}} días {{requirement}}.",
+    "startTrial": "Comenzar prueba gratuita",
+    "enterEmail": "Introduce tu correo para comenzar tu prueba gratuita de {{days}} días {{requirement}}.",
     "cardRequired": "(se requiere tarjeta de crédito)",
     "noCardRequired": "(no se requiere tarjeta de crédito)"
   },
@@ -1017,7 +1086,9 @@
         "title": "10. Contáctenos",
         "content": "Si tiene preguntas sobre esta Política de Privacidad, contáctenos en support@cymasphere.com."
       }
-    }
+    },
+    "contactInformation": "Información de contacto",
+    "email": "Correo electrónico"
   },
   "aboutUs": {
     "mission": {
@@ -1063,11 +1134,30 @@
       "title": "Mirando hacia el Futuro",
       "content1": "A medida que continuamos desarrollando Cymasphere, estamos entusiasmados con el futuro de la creación musical. Nuestra hoja de ruta incluye integración avanzada con los principales DAWs, paletas armónicas expandidas, funciones de composición asistida por IA más profundas y mucho más.",
       "content2": "Le invitamos a unirse a nosotros en este viaje y ayudar a dar forma al futuro de las herramientas inteligentes de creación musical."
+    },
+    "team": {
+      "title": "Our Team",
+      "member1": {
+        "name": "David Chen",
+        "role": "Founder & Lead Developer"
+      },
+      "member2": {
+        "name": "Sarah Nguyen",
+        "role": "Music Theory Specialist"
+      },
+      "member3": {
+        "name": "Michael Park",
+        "role": "UI/UX Designer"
+      },
+      "member4": {
+        "name": "Emma Rodriguez",
+        "role": "Product Manager"
+      }
     }
   },
   "chat": {
     "language": "es",
-    "greeting": "¡Hola! Soy tu asistente de Cymasphere. Puedo ayudarte con preguntas sobre nuestras herramientas de producción musical, precios, características y más. ¿Qué te gustaría saber?",
+    "greeting": "¡Hola! Soy tu asistente de Cymasphere. Pregúntame por armonía y melodía, CymaSynth (el sintetizador wavetable incluido en cada plan), precios o primeros pasos. ¿Qué te gustaría saber?",
     "error_process": "Lo siento, no pude procesar tu mensaje en este momento. Por favor, inténtalo de nuevo.",
     "error_connecting": "Tengo problemas para conectarme en este momento. Por favor, intenta de nuevo en un momento.",
     "view_pricing": "Ver precios",
@@ -1075,6 +1165,114 @@
     "placeholder": "Pregúntame cualquier cosa sobre Cymasphere...",
     "typing": "El asistente está escribiendo",
     "open_label": "Abrir chat",
-    "close_label": "Cerrar chat"
+    "close_label": "Cerrar chat",
+    "tooltip_hint": "¿Necesitas ayuda? ¡Chatea con nosotros!"
+  },
+  "createPassword": {
+    "title": "Establecer nueva contraseña",
+    "description": "Crea una nueva contraseña para tu cuenta. Por seguridad, elige una contraseña fuerte que no uses en otros sitios.",
+    "backToLogin": "Volver al inicio de sesión",
+    "newPasswordLabel": "Nueva contraseña",
+    "newPasswordPlaceholder": "Introduce tu nueva contraseña",
+    "confirmPasswordLabel": "Confirmar contraseña",
+    "confirmPasswordPlaceholder": "Confirma tu nueva contraseña",
+    "setPassword": "Establecer nueva contraseña",
+    "updating": "Actualizando…",
+    "success": "¡Tu contraseña se ha restablecido correctamente! Ya has iniciado sesión.",
+    "proceedToLogin": "Ir al inicio de sesión",
+    "proceedToDashboard": "Ir al panel",
+    "rememberPassword": "¿Recuerdas tu contraseña?",
+    "login": "Iniciar sesión",
+    "requestNewLink": "Solicita un nuevo enlace de restablecimiento de contraseña.",
+    "requestHere": "Haz clic aquí para solicitar uno.",
+    "errors": {
+      "passwordMismatch": "Las contraseñas no coinciden",
+      "passwordTooShort": "La contraseña debe tener al menos 6 caracteres",
+      "invalidSession": "Sesión no válida o caducada. Solicita un nuevo restablecimiento de contraseña.",
+      "generic": "Ha ocurrido un error inesperado. Inténtalo de nuevo.",
+      "linkExpired": "El enlace de restablecimiento ha caducado. Solicita uno nuevo.",
+      "accessDenied": "El enlace de restablecimiento no es válido o ha caducado. Solicita uno nuevo.",
+      "invalidLink": "El enlace de restablecimiento no es válido. Solicita uno nuevo."
+    }
+  },
+  "admin": {
+    "title": "Consola de administración",
+    "dashboard": "Panel de administración",
+    "crm": "CRM",
+    "supportTickets": {
+      "title": "Tickets de soporte",
+      "subtitle": "Gestiona solicitudes e incidencias de clientes",
+      "totalTickets": "Tickets totales",
+      "openTickets": "Tickets abiertos",
+      "avgResponseTime": "Tiempo medio de respuesta",
+      "createTicket": "Crear ticket",
+      "searchPlaceholder": "Buscar tickets por asunto, usuario o ID…",
+      "filters": {
+        "all": "Todos los tickets",
+        "open": "Abiertos",
+        "inProgress": "En curso",
+        "resolved": "Resueltos",
+        "closed": "Cerrados"
+      },
+      "priority": {
+        "low": "Baja",
+        "medium": "Media",
+        "high": "Alta",
+        "urgent": "Urgente"
+      },
+      "ticketTable": {
+        "id": "ID del ticket",
+        "subject": "Asunto",
+        "user": "Usuario",
+        "status": "Estado",
+        "priority": "Prioridad",
+        "created": "Creado",
+        "lastUpdate": "Última actualización",
+        "assignedTo": "Asignado a",
+        "actions": "Acciones"
+      },
+      "ticketActions": {
+        "view": "Ver ticket",
+        "reply": "Responder",
+        "assign": "Asignar",
+        "changeStatus": "Cambiar estado",
+        "changePriority": "Cambiar prioridad",
+        "close": "Cerrar ticket"
+      }
+    },
+    "users": "Usuarios",
+    "analytics": "Analíticas",
+    "settings": "Ajustes de administración",
+    "crmPage": {
+      "title": "Gestión de relaciones con clientes",
+      "subtitle": "Gestiona relaciones e interacciones con clientes",
+      "totalUsers": "Usuarios totales",
+      "activeSubscriptions": "Suscripciones activas",
+      "revenue": "Ingresos mensuales",
+      "searchPlaceholder": "Buscar usuarios por nombre, correo o ID…",
+      "filters": {
+        "all": "Todos los usuarios",
+        "free": "Usuarios gratuitos",
+        "monthly": "Suscriptores mensuales",
+        "annual": "Suscriptores anuales",
+        "lifetime": "Usuarios de por vida",
+        "admin": "Administradores"
+      },
+      "userTable": {
+        "name": "Nombre",
+        "email": "Correo",
+        "subscription": "Suscripción",
+        "joinDate": "Fecha de alta",
+        "lastLogin": "Último acceso",
+        "actions": "Acciones"
+      },
+      "userActions": {
+        "viewProfile": "Ver perfil",
+        "editUser": "Editar usuario",
+        "sendEmail": "Enviar correo",
+        "changeSubscription": "Cambiar suscripción",
+        "deleteUser": "Eliminar usuario"
+      }
+    }
   }
 }

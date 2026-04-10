@@ -12,7 +12,13 @@
     "test": "node --test tests/",
     "test:e2e": "echo \"No E2E tests configured. Replace npm script 'test:e2e' with your E2E runner.\"",
     "supabase-gen-types": "bun x supabase gen types typescript --project-id \"jibirpbauzqhdiwjlrmf\" --schema public,stripe_tables > database.types.ts",
-    "supabase-migrate": "bun x supabase db push"
+    "supabase-migrate": "bun x supabase db push",
+    "sync:cymasynth-assets": "npx tsx scripts/sync-cymasynth-assets.ts",
+    "sync:nnaudio-product-images": "npx tsx scripts/sync-cymasynth-assets.ts",
+    "i18n:sync-from-en": "node scripts/sync-missing-locale-keys-from-en.mjs",
+    "i18n:apply-cyma": "node scripts/apply-cyma-i18n-patches.mjs",
+    "i18n:apply-overrides": "node scripts/apply-locale-overrides.mjs",
+    "i18n:refresh": "node scripts/sync-missing-locale-keys-from-en.mjs && node scripts/apply-cyma-i18n-patches.mjs && node scripts/apply-locale-overrides.mjs"
   },
   "packageManager": "bun@1.2.2",
   "overrides": {

@@ -1,0 +1,170 @@
+{
+  "common": {
+    "adminConsole": "管理控制台",
+    "delete": "删除",
+    "edit": "编辑",
+    "view": "查看",
+    "search": "搜索",
+    "filter": "筛选",
+    "export": "导出",
+    "back": "返回",
+    "next": "下一步",
+    "previous": "上一步",
+    "error": "错误",
+    "success": "成功",
+    "warning": "警告",
+    "info": "信息"
+  },
+  "hero": {
+    "platforms": {
+      "macos": "macOS",
+      "windows": "Windows",
+      "ipad": "iPad"
+    }
+  },
+  "resetPassword": {
+    "errors": {
+      "linkExpired": "密码重置链接已过期。请重新申请。",
+      "accessDenied": "密码重置链接无效或已过期。请重新申请。",
+      "invalidLink": "密码重置链接无效。请重新申请。"
+    }
+  },
+  "dashboard": {
+    "layout": {
+      "adminConsole": "管理控制台"
+    },
+    "main": {
+      "downloadIntro": "访问您的软件下载与安装文件。",
+      "downloadRequiresSubscription": "订阅后即可下载软件并使用高级功能。",
+      "goToDownloads": "前往下载",
+      "viewDownloads": "查看下载",
+      "available": "可用",
+      "restricted": "受限",
+      "downloadReady": "软件下载已就绪",
+      "subscribeForDownloads": "订阅以访问下载",
+      "product": "产品",
+      "standaloneAndPlugins": "独立应用与插件",
+      "subscribeForAccess": "订阅以获取访问权限"
+    }
+  },
+  "legal": {
+    "contactInformation": "联系信息",
+    "email": "邮箱"
+  },
+  "chat": {
+    "tooltip_hint": "需要帮助？与我们在线聊天！"
+  },
+  "createPassword": {
+    "title": "设置新密码",
+    "description": "为您的账户创建新密码。为保障安全，请选择强度足够且未在其他地方使用的密码。",
+    "backToLogin": "返回登录",
+    "newPasswordLabel": "新密码",
+    "newPasswordPlaceholder": "输入新密码",
+    "confirmPasswordLabel": "确认密码",
+    "confirmPasswordPlaceholder": "再次输入新密码",
+    "setPassword": "设置新密码",
+    "updating": "更新中…",
+    "success": "密码已成功重置！您已登录。",
+    "proceedToLogin": "前往登录",
+    "proceedToDashboard": "前往控制台",
+    "rememberPassword": "记起密码了？",
+    "login": "登录",
+    "requestNewLink": "请重新申请密码重置链接。",
+    "requestHere": "点击此处重新申请。",
+    "errors": {
+      "passwordMismatch": "两次输入的密码不一致",
+      "passwordTooShort": "密码至少需要 6 个字符",
+      "invalidSession": "会话无效或已过期。请重新申请密码重置。",
+      "generic": "发生意外错误，请重试。",
+      "linkExpired": "密码重置链接已过期。请重新申请。",
+      "accessDenied": "密码重置链接无效或已过期。请重新申请。",
+      "invalidLink": "密码重置链接无效。请重新申请。"
+    }
+  },
+  "freeTrial": {
+    "startTrial": "开始免费试用",
+    "enterEmail": "输入邮箱以开始 {{days}} 天免费试用{{requirement}}。",
+    "cardRequired": "（需要信用卡）",
+    "noCardRequired": "（无需信用卡）"
+  },
+  "admin": {
+    "title": "管理控制台",
+    "dashboard": "管理仪表板",
+    "crm": "客户关系管理",
+    "users": "用户",
+    "analytics": "分析",
+    "settings": "管理设置",
+    "supportTickets": {
+      "title": "支持工单",
+      "subtitle": "管理客户支持与问题请求",
+      "totalTickets": "工单总数",
+      "openTickets": "待处理工单",
+      "avgResponseTime": "平均响应时间",
+      "createTicket": "新建工单",
+      "searchPlaceholder": "按主题、用户或工单编号搜索…",
+      "filters": {
+        "all": "全部工单",
+        "open": "待处理",
+        "inProgress": "处理中",
+        "resolved": "已解决",
+        "closed": "已关闭"
+      },
+      "priority": {
+        "low": "低",
+        "medium": "中",
+        "high": "高",
+        "urgent": "紧急"
+      },
+      "ticketTable": {
+        "id": "工单编号",
+        "subject": "主题",
+        "user": "用户",
+        "status": "状态",
+        "priority": "优先级",
+        "created": "创建时间",
+        "lastUpdate": "最后更新",
+        "assignedTo": "指派给",
+        "actions": "操作"
+      },
+      "ticketActions": {
+        "view": "查看工单",
+        "reply": "回复",
+        "assign": "指派",
+        "changeStatus": "更改状态",
+        "changePriority": "更改优先级",
+        "close": "关闭工单"
+      }
+    },
+    "crmPage": {
+      "title": "客户关系管理",
+      "subtitle": "管理客户关系与互动",
+      "totalUsers": "用户总数",
+      "activeSubscriptions": "有效订阅",
+      "revenue": "月度收入",
+      "searchPlaceholder": "按姓名、邮箱或 ID 搜索用户…",
+      "filters": {
+        "all": "全部用户",
+        "free": "免费用户",
+        "monthly": "月付订阅",
+        "annual": "年付订阅",
+        "lifetime": "终身用户",
+        "admin": "管理员"
+      },
+      "userTable": {
+        "name": "姓名",
+        "email": "邮箱",
+        "subscription": "订阅",
+        "joinDate": "注册日期",
+        "lastLogin": "上次登录",
+        "actions": "操作"
+      },
+      "userActions": {
+        "viewProfile": "查看资料",
+        "editUser": "编辑用户",
+        "sendEmail": "发送邮件",
+        "changeSubscription": "更改订阅",
+        "deleteUser": "删除用户"
+      }
+    }
+  }
+}

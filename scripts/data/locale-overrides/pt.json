@@ -1,0 +1,170 @@
+{
+  "common": {
+    "adminConsole": "Console de administração",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "view": "Ver",
+    "search": "Pesquisar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "back": "Voltar",
+    "next": "Seguinte",
+    "previous": "Anterior",
+    "error": "Erro",
+    "success": "Sucesso",
+    "warning": "Aviso",
+    "info": "Informação"
+  },
+  "hero": {
+    "platforms": {
+      "macos": "macOS",
+      "windows": "Windows",
+      "ipad": "iPad"
+    }
+  },
+  "resetPassword": {
+    "errors": {
+      "linkExpired": "O link de redefinição de senha expirou. Solicite um novo.",
+      "accessDenied": "O link de redefinição é inválido ou expirou. Solicite um novo.",
+      "invalidLink": "O link de redefinição é inválido. Solicite um novo."
+    }
+  },
+  "dashboard": {
+    "layout": {
+      "adminConsole": "Console de administração"
+    },
+    "main": {
+      "downloadIntro": "Aceda aos seus downloads de software e instaladores.",
+      "downloadRequiresSubscription": "Subscreva para descarregar software e usar funcionalidades premium.",
+      "goToDownloads": "Ir para downloads",
+      "viewDownloads": "Ver downloads",
+      "available": "Disponível",
+      "restricted": "Restrito",
+      "downloadReady": "Downloads de software prontos",
+      "subscribeForDownloads": "Subscreva para aceder aos downloads",
+      "product": "Produto",
+      "standaloneAndPlugins": "Aplicação autónoma e plugins",
+      "subscribeForAccess": "Subscreva para obter acesso"
+    }
+  },
+  "legal": {
+    "contactInformation": "Informações de contacto",
+    "email": "E-mail"
+  },
+  "chat": {
+    "tooltip_hint": "Precisa de ajuda? Fale connosco no chat!"
+  },
+  "createPassword": {
+    "title": "Definir nova palavra-passe",
+    "description": "Crie uma nova palavra-passe para a sua conta. Por segurança, escolha uma palavra-passe forte que não use noutros sítios.",
+    "backToLogin": "Voltar ao início de sessão",
+    "newPasswordLabel": "Nova palavra-passe",
+    "newPasswordPlaceholder": "Introduza a nova palavra-passe",
+    "confirmPasswordLabel": "Confirmar palavra-passe",
+    "confirmPasswordPlaceholder": "Confirme a nova palavra-passe",
+    "setPassword": "Definir nova palavra-passe",
+    "updating": "A atualizar…",
+    "success": "A sua palavra-passe foi redefinida com sucesso! Já tem sessão iniciada.",
+    "proceedToLogin": "Ir para o início de sessão",
+    "proceedToDashboard": "Ir para o painel",
+    "rememberPassword": "Lembra-se da palavra-passe?",
+    "login": "Iniciar sessão",
+    "requestNewLink": "Solicite um novo link de redefinição de palavra-passe.",
+    "requestHere": "Clique aqui para solicitar.",
+    "errors": {
+      "passwordMismatch": "As palavras-passe não coincidem",
+      "passwordTooShort": "A palavra-passe deve ter pelo menos 6 caracteres",
+      "invalidSession": "Sessão inválida ou expirada. Solicite uma nova redefinição.",
+      "generic": "Ocorreu um erro inesperado. Tente novamente.",
+      "linkExpired": "O link de redefinição expirou. Solicite um novo.",
+      "accessDenied": "O link de redefinição é inválido ou expirou. Solicite um novo.",
+      "invalidLink": "O link de redefinição é inválido. Solicite um novo."
+    }
+  },
+  "freeTrial": {
+    "startTrial": "Começar teste gratuito",
+    "enterEmail": "Introduza o seu e-mail para começar o teste gratuito de {{days}} dias {{requirement}}.",
+    "cardRequired": "(cartão de crédito necessário)",
+    "noCardRequired": "(sem cartão de crédito)"
+  },
+  "admin": {
+    "title": "Console de administração",
+    "dashboard": "Painel de administração",
+    "crm": "CRM",
+    "users": "Utilizadores",
+    "analytics": "Análises",
+    "settings": "Definições de administração",
+    "supportTickets": {
+      "title": "Tickets de suporte",
+      "subtitle": "Gerir pedidos e problemas de clientes",
+      "totalTickets": "Total de tickets",
+      "openTickets": "Tickets abertos",
+      "avgResponseTime": "Tempo médio de resposta",
+      "createTicket": "Criar ticket",
+      "searchPlaceholder": "Pesquisar tickets por assunto, utilizador ou ID…",
+      "filters": {
+        "all": "Todos os tickets",
+        "open": "Abertos",
+        "inProgress": "Em curso",
+        "resolved": "Resolvidos",
+        "closed": "Fechados"
+      },
+      "priority": {
+        "low": "Baixa",
+        "medium": "Média",
+        "high": "Alta",
+        "urgent": "Urgente"
+      },
+      "ticketTable": {
+        "id": "ID do ticket",
+        "subject": "Assunto",
+        "user": "Utilizador",
+        "status": "Estado",
+        "priority": "Prioridade",
+        "created": "Criado",
+        "lastUpdate": "Última atualização",
+        "assignedTo": "Atribuído a",
+        "actions": "Ações"
+      },
+      "ticketActions": {
+        "view": "Ver ticket",
+        "reply": "Responder",
+        "assign": "Atribuir",
+        "changeStatus": "Alterar estado",
+        "changePriority": "Alterar prioridade",
+        "close": "Fechar ticket"
+      }
+    },
+    "crmPage": {
+      "title": "Gestão de relacionamento com clientes",
+      "subtitle": "Gerir relações e interações com clientes",
+      "totalUsers": "Total de utilizadores",
+      "activeSubscriptions": "Subscrições ativas",
+      "revenue": "Receita mensal",
+      "searchPlaceholder": "Pesquisar utilizadores por nome, e-mail ou ID…",
+      "filters": {
+        "all": "Todos os utilizadores",
+        "free": "Utilizadores gratuitos",
+        "monthly": "Subscritores mensais",
+        "annual": "Subscritores anuais",
+        "lifetime": "Utilizadores vitalícios",
+        "admin": "Administradores"
+      },
+      "userTable": {
+        "name": "Nome",
+        "email": "E-mail",
+        "subscription": "Subscrição",
+        "joinDate": "Data de registo",
+        "lastLogin": "Último acesso",
+        "actions": "Ações"
+      },
+      "userActions": {
+        "viewProfile": "Ver perfil",
+        "editUser": "Editar utilizador",
+        "sendEmail": "Enviar e-mail",
+        "changeSubscription": "Alterar subscrição",
+        "deleteUser": "Eliminar utilizador"
+      }
+    }
+  }
+}

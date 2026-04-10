@@ -53,6 +53,15 @@
     "titlePartA": "Intelligent",
     "titlePartB": "Creation",
     "subtitle": "Enter the next evolution of music creation, where theoretical foundations invisibly guide your workflow. Chords and melodies connect with purpose, empowering your unique musical vision.",
+    "bundleEyebrow": "One subscription · two products",
+    "bundleCymasphereTitle": "Cymasphere",
+    "bundleCymasphereDesc": "Composition & theory suite",
+    "bundleCymaSynthTitle": "CymaSynth",
+    "bundleCymaSynthDesc": "Wavetable synth · $149 value included",
+    "bundleFootnote": "CymaSynth is a $149 value when sold separately—included with every Cymasphere plan at no extra cost · Standalone, AU & VST3",
+    "bundleCymasphereImageAlt": "Cymasphere — square catalog artwork",
+    "bundleCymaSynthImageAlt": "CymaSynth wavetable synthesizer product interface",
+    "includedSynth": "Includes CymaSynth—a professional wavetable synthesizer (VST3 & AU)—bundled with every subscription and lifetime license. A complete composition suite and a flagship instrument, together.",
     "cta": "Try It Now",
     "titleWords": {
       "music": "Music",
@@ -84,7 +93,7 @@
   },
   "features": {
     "title": "Features",
-    "subtitle": "Discover what Cymasphere can do for you",
+    "subtitle": "Harmony, melody, arrangement—plus CymaSynth, a $149 wavetable instrument included with your plan. One suite, two products.",
     "aiComposition": "AI Composition",
     "aiCompositionDesc": "Generate music with the click of a button using our advanced AI",
     "livePerformance": "Live Performance",
@@ -92,6 +101,21 @@
     "customSounds": "Custom Sounds",
     "customSoundsDesc": "Create and save your own custom sound presets",
     "sectionTitle": "Powerful Features",
+    "cymaSynth": {
+      "title": "CymaSynth Included",
+      "description": "A $149-value professional wavetable synth—triple oscillators, deep modulation, studio effects—yours free with Cymasphere.",
+      "modalTitle": "Your Built-In Flagship Instrument",
+      "modalDescription": "Sold separately, CymaSynth is a $149 instrument. With Cymasphere it is included at no extra cost on every subscription and lifetime license—so you go from harmonic sketch to finished sound without a second purchase. Professional-grade wavetable synthesis, flexible modulation, and polished effects—inside your Cymasphere workflow or as standalone VST3 and AU plugins in your DAW.",
+      "keyFeatures": "Key Features:",
+      "features": [
+        "$149 value when purchased alone—included free with every Cymasphere plan (subscriptions and lifetime); no separate CymaSynth purchase",
+        "Triple oscillator architecture with wavetable morphing (256 frames) plus classic waveforms",
+        "64-route modulation matrix with 5 LFOs and 4 ADSR+Hold envelopes for evolving, expressive patches",
+        "Dual filters, up to 32-voice polyphony, unison, and a full built-in effects chain",
+        "VST3 and AU formats—use alongside Cymasphere or load directly in your favorite DAW",
+        "Designed to pair with Cymasphere’s harmony and pattern tools: write the progression here, design the timbre in CymaSynth"
+      ]
+    },
     "songBuilder": {
       "title": "Song Builder",
       "description": "Combine tracks, progressions, and harmony palettes in one intuitive workspace for seamless composition.",
@@ -289,7 +313,7 @@
       },
       "step4": {
         "title": "Seamless Workflow",
-        "description": "Integrate Cymasphere into your production process as a powerful harmony and pattern generator. Use it to quickly sketch ideas, develop complex progressions, and create musical patterns that feed directly into your DAW's instruments."
+        "description": "Integrate Cymasphere into your production process as a powerful harmony and pattern generator—then voice your ideas with CymaSynth, the professional wavetable synthesizer included with your plan (VST3 & AU). Route MIDI from Cymasphere to any instrument, or design patches in CymaSynth for a complete sketch-to-sound workflow."
       }
     }
   },
@@ -298,7 +322,7 @@
     "subtitle": "Flexible options to fit your needs",
     "simpleTransparent": "Simple, Transparent Pricing",
     "chooseOption": "Choose the billing option that works best for you.",
-    "allFeatures": "All options include full access to all features.",
+    "allFeatures": "Every plan includes the full Cymasphere suite plus CymaSynth—a $149 wavetable synth value, included free—and every feature below.",
     "monthly": "Monthly",
     "yearly": "Yearly",
     "lifetime": "Lifetime",
@@ -334,11 +358,12 @@
       "Real-Time Chord Reharmonization Tools",
       "Comprehensive Arrangement View",
       "Custom Voicing Generation Engine",
-      "Premium Support & All Future Updates"
+      "Premium Support & All Future Updates",
+      "CymaSynth wavetable synth (VST3 & AU)—$149 value, included free"
     ],
     "freeTrial": {
       "title": "Try FREE for up to 14 days",
-      "description": "Experience all premium features with two trial options.",
+      "description": "Experience the full suite—including CymaSynth—with two trial options.",
       "options": "Choose 7 days with no card or 14 days with card on file.",
       "chooseFree": "Choose your free trial option:",
       "withCard": "14-day trial - Add card on file",
@@ -360,7 +385,11 @@
     "questions": [
       {
         "question": "What is Cymasphere?",
-        "answer": "Cymasphere is a complete song creation suite available both as a standalone application and as a plugin (AU & VST3) for your DAW. It provides integrated tools for composing both harmony and melody, featuring intelligent chord voicing, melody pattern construction, and interactive visualization that makes music theory accessible and intuitive for all skill levels."
+        "answer": "Cymasphere is a complete song creation suite available both as a standalone application and as a plugin (AU & VST3) for your DAW. It provides integrated tools for composing both harmony and melody, featuring intelligent chord voicing, melody pattern construction, and interactive visualization that makes music theory accessible and intuitive for all skill levels. Every subscription and lifetime license also includes CymaSynth—our professional wavetable synthesizer (VST3 & AU)—bundled at no extra cost."
+      },
+      {
+        "question": "What is CymaSynth, and is it really included with Cymasphere?",
+        "answer": "CymaSynth is NNAudio’s professional wavetable synthesizer: multiple oscillators, deep modulation, dual filters, effects, and 32-voice polyphony—designed for serious sound design. Sold on its own it’s a $149 product; with Cymasphere it’s included at no extra cost on every subscription and lifetime license. You don’t buy it separately when you subscribe—you get both the composition suite and this flagship instrument in one."
       },
       {
         "question": "What problems does Cymasphere solve for musicians?",
@@ -438,7 +467,7 @@
     "copyright": "© {{year}} Cymasphere. All rights reserved.",
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service",
-    "description": "Cymasphere is an interactive music compositional tool for producers, composers, performing musicians, educators, and students.",
+    "description": "Cymasphere is an interactive music compositional tool for producers, composers, performing musicians, educators, and students—bundled with CymaSynth, a $149 wavetable synth value included free on every plan.",
     "navigation": "Navigation",
     "account": "Account",
     "accountDashboard": "Account Dashboard",
@@ -604,7 +633,7 @@
       "membership": "Membership",
       "free": "Free",
       "upgradeToPro": "Upgrade to Pro for full access",
-      "fullAccess": "You currently have full access to all premium features:",
+      "fullAccess": "You currently have full access to all premium features, including CymaSynth:",
       "upgradeToLifetime": "Upgrade to Lifetime access",
       "upgradeNow": "Upgrade Now",
       "lifetimeAccess": "Includes free updates for life",
@@ -621,9 +650,9 @@
       "trialStatus": "Trial Status",
       "daysRemaining": "{{days}} days remaining",
       "renewalDate": "Renewal Date",
-      "trialMessage": "You're currently on a {{trialDays}}-day free trial with full access to all premium features. No payment until your trial ends.",
-      "lifetimeMessage": "You have a lifetime membership with free updates for life. Enjoy all premium features and benefits permanently.",
-      "activeSubscriptionMessage": "Your {{plan}} subscription is active. Enjoy all premium features and benefits.",
+      "trialMessage": "You're currently on a {{trialDays}}-day free trial with full access to all premium features, including CymaSynth. No payment until your trial ends.",
+      "lifetimeMessage": "You have a lifetime membership with free updates for life. Enjoy all premium features and benefits permanently, including CymaSynth.",
+      "activeSubscriptionMessage": "Your {{plan}} subscription is active. Enjoy all premium features and benefits, including CymaSynth.",
       "upgradeMessage": "Upgrade to unlock premium features and advanced audio processing capabilities.",
       "featureAdvancedChords": "Advanced Chord Progressions",
       "featureUnlimitedSaves": "Unlimited Saved Progressions",
@@ -650,7 +679,7 @@
       "sending": "Sending...",
       "downloads": "Downloads",
       "downloadIntro": "Access your software downloads and installation files.",
-      "downloadAvailable": "Download the latest version of Cymasphere and get started with your music production.",
+      "downloadAvailable": "Download the latest Cymasphere and CymaSynth installers and get started—your subscription includes both.",
       "downloadRequiresSubscription": "Subscribe to access software downloads and premium features.",
       "goToDownloads": "Go to Downloads",
       "viewDownloads": "View Downloads",
@@ -982,7 +1011,7 @@
   "aboutUs": {
     "mission": {
       "title": "Our Mission",
-      "content": "Cymasphere's mission is to make music theory accessible without requiring years of study or technical application to an instrument. We believe deep musical understanding should be within reach of all creators, not just classically trained musicians. Our tools are designed to remove traditional barriers to music creation while still offering creative freedom.",
+      "content": "Cymasphere's mission is to make music theory accessible without requiring years of study or technical application to an instrument. We believe deep musical understanding should be within reach of all creators, not just classically trained musicians. Our tools are designed to remove traditional barriers to music creation while still offering creative freedom. Every paid plan includes CymaSynth—a flagship wavetable synthesizer—so composition and sound design stay in one ecosystem.",
       "highlight": "We're committed to empowering creators of all levels by making the theoretical complexity of music intuitive and accessible. Our goal is to enable you to realize your creative vision without the years of study typically required."
     },
     "story": {
@@ -1126,7 +1155,7 @@
   },
   "chat": {
     "language": "en",
-    "greeting": "Hi! I'm your Cymasphere assistant. I can help you with questions about our music production tools, pricing, features, and more. What would you like to know?",
+    "greeting": "Hi! I'm your Cymasphere assistant. Ask me about harmony and melody tools, CymaSynth (the wavetable synth included with every plan), pricing, or getting started. What would you like to know?",
     "error_process": "I'm sorry, I couldn't process your message right now. Please try again.",
     "error_connecting": "I'm having trouble connecting right now. Please try again in a moment.",
     "view_pricing": "View pricing",

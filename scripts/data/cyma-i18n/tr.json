@@ -1,0 +1,79 @@
+{
+  "hero": {
+    "bundleEyebrow": "Bir abonelik · iki ürün",
+    "bundleCymasphereDesc": "Kompozisyon ve teori paketi",
+    "bundleCymaSynthDesc": "Wavetable sentezleyici · 149 $ değerinde dahil",
+    "bundleFootnote": "CymaSynth tek başına 149 $ değerinde—tüm Cymasphere planlarında ek ücret olmadan dahil · Bağımsız, AU ve VST3",
+    "bundleCymasphereImageAlt": "Cymasphere — katalog kare görseli",
+    "bundleCymaSynthImageAlt": "Wavetable sentezleyici CymaSynth ürün arayüzü",
+    "includedSynth": "CymaSynth—profesyonel wavetable sentezleyici (VST3 ve AU)—her abonelik ve ömür boyu lisansla birlikte gelir. Tam kompozisyon paketi ve amiral gemisi enstrüman tek pakette.",
+    "tooltips": {
+      "playNote": "Bu notayı çalmak için tıklayın",
+      "playChord": "Akoru çalmak için tıklayın"
+    }
+  },
+  "features": {
+    "subtitle": "Armoni, melodi, düzenleme—artı planınıza dahil 149 $ değerinde wavetable enstrüman CymaSynth. Bir paket, iki ürün.",
+    "cymaSynth": {
+      "title": "CymaSynth dahil",
+      "description": "149 $ değerinde profesyonel wavetable sentezleyici—üç osilatör, derin modülasyon, stüdyo efektleri—Cymasphere ile ücretsiz.",
+      "modalTitle": "Entegre amiral gemisi enstrümanınız",
+      "modalDescription": "Tek başına CymaSynth 149 $. Cymasphere ile her abonelik ve ömür boyu lisans için ek ücret yok—armonik taslaktan bitmiş sese ikinci bir satın alma gerekmez. Profesyonel wavetable sentezi, esnek modülasyon ve cilalı efektler—Cymasphere akışında veya DAW’ınızda VST3 ve AU eklentileri olarak.",
+      "keyFeatures": "Öne çıkan özellikler:",
+      "features": [
+        "Tek başına 149 $ değeri—tüm Cymasphere planlarında (abonelik ve ömür boyu) ücretsiz; ayrı CymaSynth satın alımı yok",
+        "Üç osilatör mimarisi, wavetable morfing (256 kare) ve klasik dalga formları",
+        "5 LFO ve 4 ADSR+Hold zarf ile 64 yönlü modülasyon matrisi",
+        "Çift filtre, 32’ye kadar ses, unison ve entegre efekt zinciri",
+        "VST3 ve AU formatları—Cymasphere ile birlikte veya doğrudan DAW’da",
+        "Cymasphere armoni ve desenleriyle uyumlu: progresyon burada, tını CymaSynth’te"
+      ]
+    }
+  },
+  "pricing": {
+    "allFeatures": "Her plan tam Cymasphere paketini ve 149 $ değerindeki wavetable sentezleyici CymaSynth’i—ücretsiz dahil—ve aşağıdaki tüm özellikleri içerir.",
+    "features": [
+      "Çok kanal yönetimli Song Builder",
+      "Akıllı desen düzenleyici ve akor uyumu",
+      "Jest tabanlı Harmony Palette arayüzü",
+      "İleri düzey voice-leading ve akor voicing’leri",
+      "Etkileşimli akor ilerleme zaman çizelgesi",
+      "Sesler ve gerilimler üzerinde tam kontrol",
+      "Bağımsız uygulama ve DAW eklenti desteği",
+      "Gerçek zamanlı reharmonizasyon araçları",
+      "Tam düzenleme görünümü",
+      "Özel voicing üretim motoru",
+      "Premium destek ve gelecekteki tüm güncellemeler",
+      "Wavetable sentezleyici CymaSynth (VST3 ve AU)—149 $ değer, ücretsiz dahil"
+    ],
+    "freeTrial": {
+      "description": "CymaSynth dahil tam paketi iki deneme seçeneğiyle deneyin."
+    }
+  },
+  "footer": {
+    "description": "Cymasphere; yapımcılar, besteciler, müzisyenler, eğitmenler ve öğrenciler için etkileşimli bir kompozisyon aracıdır—her planda 149 $ değerinde wavetable sentezleyici CymaSynth ücretsiz dahildir."
+  },
+  "chat": {
+    "greeting": "Merhaba! Ben Cymasphere asistanıyım. Armoni ve melodi, CymaSynth (her planda dahil wavetable sentezleyici), fiyatlar veya ilk adımlar hakkında sorabilirsiniz. Ne öğrenmek istersiniz?"
+  },
+  "dashboard": {
+    "main": {
+      "fullAccess": "CymaSynth dahil tüm premium özelliklere tam erişiminiz var:",
+      "trialMessage": "{{trialDays}} günlük ücretsiz deneme süresindesiniz; CymaSynth dahil tüm premium özelliklere tam erişiminiz var. Deneme bitene kadar ödeme alınmaz.",
+      "lifetimeMessage": "Ömür boyu aboneliğiniz var; ömür boyu güncellemeler dahil. CymaSynth dahil tüm premium özelliklerden süresiz yararlanın.",
+      "activeSubscriptionMessage": "{{plan}} aboneliğiniz aktif. CymaSynth dahil tüm premium özelliklerden yararlanın.",
+      "downloadAvailable": "En son Cymasphere ve CymaSynth yükleyicilerini indirin—aboneliğiniz ikisini de kapsar."
+    }
+  },
+  "faq": {
+    "questions": {
+      "0": {
+        "answer": "Cymasphere; bağımsız uygulama ve DAW için eklenti (AU ve VST3) olarak kullanılabilen tam bir müzik üretim paketidir. Armoni ve melodi, akıllı voicing’ler, desen oluşturma ve teoriyi her seviyede erişilebilir kılan etkileşimli görselleştirme sunar. Her abonelik ve ömür boyu lisans, profesyonel wavetable sentezleyici CymaSynth’i (VST3 ve AU) ek ücret olmadan içerir."
+      },
+      "1": {
+        "question": "CymaSynth nedir ve gerçekten Cymasphere ile mi geliyor?",
+        "answer": "CymaSynth, NNAudio’nun profesyonel wavetable sentezleyicisidir: çoklu osilatörler, derin modülasyon, iki filtre, efektler ve 32 ses polifoni. Tek başına 149 $; Cymasphere ile her abonelik ve ömür boyu lisansa ek ücret olmadan dahildir. Abonelikle ayrıca satın almanız gerekmez—kompozisyon paketi ve amiral gemisi enstrüman tek çatı altında."
+      }
+    }
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "hero": {
+    "bundleEyebrow": "一次订阅 · 两款产品",
+    "bundleCymasphereTitle": "Cymasphere",
+    "bundleCymasphereDesc": "作曲与理论套件",
+    "bundleCymaSynthTitle": "CymaSynth",
+    "bundleCymaSynthDesc": "波表合成器 · 价值 149 美元已包含",
+    "bundleFootnote": "CymaSynth 单独售价 149 美元—已包含在所有 Cymasphere 方案中，无额外费用 · 独立版、AU 与 VST3",
+    "bundleCymasphereImageAlt": "Cymasphere — 目录方形主图",
+    "bundleCymaSynthImageAlt": "波表合成器 CymaSynth 产品界面",
+    "includedSynth": "包含 CymaSynth—专业波表合成器（VST3 与 AU）—随每次订阅与终身许可捆绑。完整作曲套件与旗舰乐器合一。",
+    "tooltips": {
+      "playNote": "点击播放此音",
+      "playChord": "点击播放和弦"
+    }
+  },
+  "features": {
+    "subtitle": "和声、旋律、编曲—另有价值 149 美元的波表乐器 CymaSynth 已纳入您的方案。一套产品，两款工具。",
+    "cymaSynth": {
+      "title": "包含 CymaSynth",
+      "description": "价值 149 美元的专业波表合成器—三振荡器、深度调制、录音室级效果—随 Cymasphere 免费提供。",
+      "modalTitle": "集成的旗舰乐器",
+      "modalDescription": "单独购买 CymaSynth 为 149 美元。搭配 Cymasphere，每次订阅与终身许可均无需加价—从和声草稿到成品音色，无需第二次购买。专业波表合成、灵活调制与精致效果—可在 Cymasphere 工作流中使用，也可在 DAW 中作为 VST3 与 AU 插件。",
+      "keyFeatures": "主要特性：",
+      "features": [
+        "单独售价 149 美元—所有 Cymasphere 方案（订阅与终身）均免费包含；无需另购 CymaSynth",
+        "三振荡器架构，波表变形（256 帧）及经典波形",
+        "64 路调制矩阵，5 个 LFO 与 4 个 ADSR+Hold 包络",
+        "双滤波器、最多 32 复音、齐奏与内置效果链",
+        "VST3 与 AU 格式—与 Cymasphere 并用或直接在 DAW 中使用",
+        "与 Cymasphere 和声与 pattern 搭配：在此写进行，在 CymaSynth 塑音色"
+      ]
+    }
+  },
+  "pricing": {
+    "allFeatures": "每个方案均包含完整 Cymasphere 套件以及价值 149 美元的波表合成器 CymaSynth（免费包含），以及下方全部功能。",
+    "features": [
+      "含多轨管理的歌曲构建器",
+      "智能 pattern 编辑器与和弦适配",
+      "手势式 Harmony Palette 界面",
+      "进阶声部进行与和弦 voicing",
+      "交互式和弦进行时间轴",
+      "声部与延伸音的完整控制",
+      "独立应用与 DAW 插件支持",
+      "实时重配和声工具",
+      "完整编曲视图",
+      "自定义 voicing 生成引擎",
+      "高级支持与未来全部更新",
+      "波表合成器 CymaSynth（VST3 与 AU）—价值 149 美元，免费包含"
+    ],
+    "freeTrial": {
+      "description": "通过两种试用方式体验完整套件（含 CymaSynth）。"
+    }
+  },
+  "footer": {
+    "description": "Cymasphere 是面向制作人、作曲家、演奏者、教育工作者与学生的互动作曲工具—每个方案均免费包含价值 149 美元的波表合成器 CymaSynth。"
+  },
+  "chat": {
+    "greeting": "您好！我是 Cymasphere 助手。可询问和声与旋律、CymaSynth（每个方案均含的波表合成器）、价格或入门步骤。您想了解什么？"
+  },
+  "dashboard": {
+    "main": {
+      "fullAccess": "您可完整使用所有高级功能，包括 CymaSynth：",
+      "trialMessage": "您正处于 {{trialDays}} 天免费试用中，可完整使用所有高级功能（含 CymaSynth）。试用结束前不扣款。",
+      "lifetimeMessage": "您拥有终身订阅与终身更新。永久享受所有高级功能，包括 CymaSynth。",
+      "activeSubscriptionMessage": "您的 {{plan}} 订阅已生效。享受所有高级功能，包括 CymaSynth。",
+      "downloadAvailable": "下载最新 Cymasphere 与 CymaSynth 安装包—您的订阅包含两者。"
+    }
+  },
+  "faq": {
+    "questions": {
+      "0": {
+        "answer": "Cymasphere 是完整的音乐创作套件，可作为独立应用，也可作为 DAW 插件（AU 与 VST3）。提供和声与旋律、智能 voicing、pattern 构建与交互式可视化，让各水平用户都能运用理论。每次订阅与终身许可还包含专业波表合成器 CymaSynth（VST3 与 AU），无额外费用。"
+      },
+      "1": {
+        "question": "什么是 CymaSynth？真的包含在 Cymasphere 中吗？",
+        "answer": "CymaSynth 是 NNAudio 的专业波表合成器：多振荡器、深度调制、双滤波器、效果与 32 复音。单独售价 149 美元；搭配 Cymasphere，每次订阅与终身许可均无需加价。订阅时无需另购—作曲套件与旗舰乐器合二为一。"
+      }
+    }
+  }
+}

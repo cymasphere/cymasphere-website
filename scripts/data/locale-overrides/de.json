@@ -1,0 +1,170 @@
+{
+  "common": {
+    "adminConsole": "Admin-Konsole",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "view": "Ansehen",
+    "search": "Suchen",
+    "filter": "Filtern",
+    "export": "Exportieren",
+    "back": "Zurück",
+    "next": "Weiter",
+    "previous": "Zurück",
+    "error": "Fehler",
+    "success": "Erfolg",
+    "warning": "Warnung",
+    "info": "Information"
+  },
+  "hero": {
+    "platforms": {
+      "macos": "macOS",
+      "windows": "Windows",
+      "ipad": "iPad"
+    }
+  },
+  "resetPassword": {
+    "errors": {
+      "linkExpired": "Der Link zum Zurücksetzen des Passworts ist abgelaufen. Bitte fordern Sie einen neuen an.",
+      "accessDenied": "Der Link zum Zurücksetzen des Passworts ist ungültig oder abgelaufen. Bitte fordern Sie einen neuen an.",
+      "invalidLink": "Der Link zum Zurücksetzen des Passworts ist ungültig. Bitte fordern Sie einen neuen an."
+    }
+  },
+  "dashboard": {
+    "layout": {
+      "adminConsole": "Admin-Konsole"
+    },
+    "main": {
+      "downloadIntro": "Zugriff auf Ihre Software-Downloads und Installationsdateien.",
+      "downloadRequiresSubscription": "Abonnieren Sie, um Downloads und Premium-Funktionen zu nutzen.",
+      "goToDownloads": "Zu Downloads",
+      "viewDownloads": "Downloads anzeigen",
+      "available": "Verfügbar",
+      "restricted": "Eingeschränkt",
+      "downloadReady": "Software-Downloads bereit",
+      "subscribeForDownloads": "Abonnieren für Zugriff auf Downloads",
+      "product": "Produkt",
+      "standaloneAndPlugins": "Standalone-App und Plugins",
+      "subscribeForAccess": "Abonnieren für Zugriff"
+    }
+  },
+  "legal": {
+    "contactInformation": "Kontaktinformationen",
+    "email": "E-Mail"
+  },
+  "chat": {
+    "tooltip_hint": "Hilfe benötigt? Chatten Sie mit uns!"
+  },
+  "createPassword": {
+    "title": "Neues Passwort festlegen",
+    "description": "Erstellen Sie ein neues Passwort für Ihr Konto. Wählen Sie aus Sicherheitsgründen ein starkes Passwort, das Sie nirgendwo sonst verwenden.",
+    "backToLogin": "Zurück zur Anmeldung",
+    "newPasswordLabel": "Neues Passwort",
+    "newPasswordPlaceholder": "Neues Passwort eingeben",
+    "confirmPasswordLabel": "Passwort bestätigen",
+    "confirmPasswordPlaceholder": "Neues Passwort bestätigen",
+    "setPassword": "Neues Passwort festlegen",
+    "updating": "Wird aktualisiert…",
+    "success": "Ihr Passwort wurde zurückgesetzt! Sie sind jetzt angemeldet.",
+    "proceedToLogin": "Zur Anmeldung",
+    "proceedToDashboard": "Zum Dashboard",
+    "rememberPassword": "Passwort wieder eingefallen?",
+    "login": "Anmelden",
+    "requestNewLink": "Bitte fordern Sie einen neuen Link zum Zurücksetzen an.",
+    "requestHere": "Hier klicken, um einen anzufordern.",
+    "errors": {
+      "passwordMismatch": "Die Passwörter stimmen nicht überein",
+      "passwordTooShort": "Das Passwort muss mindestens 6 Zeichen haben",
+      "invalidSession": "Ungültige oder abgelaufene Sitzung. Bitte Passwort-Zurücksetzung erneut anfordern.",
+      "generic": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+      "linkExpired": "Der Link zum Zurücksetzen ist abgelaufen. Bitte fordern Sie einen neuen an.",
+      "accessDenied": "Der Link zum Zurücksetzen ist ungültig oder abgelaufen. Bitte fordern Sie einen neuen an.",
+      "invalidLink": "Der Link zum Zurücksetzen ist ungültig. Bitte fordern Sie einen neuen an."
+    }
+  },
+  "freeTrial": {
+    "startTrial": "Kostenlose Testversion starten",
+    "enterEmail": "Geben Sie Ihre E-Mail ein, um Ihre {{days}}-tägige kostenlose Testversion zu starten {{requirement}}.",
+    "cardRequired": "(Kreditkarte erforderlich)",
+    "noCardRequired": "(keine Kreditkarte erforderlich)"
+  },
+  "admin": {
+    "title": "Admin-Konsole",
+    "dashboard": "Admin-Dashboard",
+    "crm": "CRM",
+    "users": "Benutzer",
+    "analytics": "Analysen",
+    "settings": "Admin-Einstellungen",
+    "supportTickets": {
+      "title": "Support-Tickets",
+      "subtitle": "Kundenanfragen und Probleme verwalten",
+      "totalTickets": "Tickets gesamt",
+      "openTickets": "Offene Tickets",
+      "avgResponseTime": "Ø Antwortzeit",
+      "createTicket": "Ticket erstellen",
+      "searchPlaceholder": "Tickets nach Betreff, Nutzer oder ID suchen…",
+      "filters": {
+        "all": "Alle Tickets",
+        "open": "Offen",
+        "inProgress": "In Bearbeitung",
+        "resolved": "Gelöst",
+        "closed": "Geschlossen"
+      },
+      "priority": {
+        "low": "Niedrig",
+        "medium": "Mittel",
+        "high": "Hoch",
+        "urgent": "Dringend"
+      },
+      "ticketTable": {
+        "id": "Ticket-ID",
+        "subject": "Betreff",
+        "user": "Nutzer",
+        "status": "Status",
+        "priority": "Priorität",
+        "created": "Erstellt",
+        "lastUpdate": "Letzte Aktualisierung",
+        "assignedTo": "Zugewiesen an",
+        "actions": "Aktionen"
+      },
+      "ticketActions": {
+        "view": "Ticket ansehen",
+        "reply": "Antworten",
+        "assign": "Zuweisen",
+        "changeStatus": "Status ändern",
+        "changePriority": "Priorität ändern",
+        "close": "Ticket schließen"
+      }
+    },
+    "crmPage": {
+      "title": "Kundenbeziehungsmanagement",
+      "subtitle": "Kundenbeziehungen und Interaktionen verwalten",
+      "totalUsers": "Nutzer gesamt",
+      "activeSubscriptions": "Aktive Abonnements",
+      "revenue": "Monatlicher Umsatz",
+      "searchPlaceholder": "Nutzer nach Name, E-Mail oder ID suchen…",
+      "filters": {
+        "all": "Alle Nutzer",
+        "free": "Kostenlose Nutzer",
+        "monthly": "Monatsabonnements",
+        "annual": "Jahresabonnements",
+        "lifetime": "Lifetime-Nutzer",
+        "admin": "Admin-Nutzer"
+      },
+      "userTable": {
+        "name": "Name",
+        "email": "E-Mail",
+        "subscription": "Abonnement",
+        "joinDate": "Beitrittsdatum",
+        "lastLogin": "Letzte Anmeldung",
+        "actions": "Aktionen"
+      },
+      "userActions": {
+        "viewProfile": "Profil ansehen",
+        "editUser": "Nutzer bearbeiten",
+        "sendEmail": "E-Mail senden",
+        "changeSubscription": "Abonnement ändern",
+        "deleteUser": "Nutzer löschen"
+      }
+    }
+  }
+}

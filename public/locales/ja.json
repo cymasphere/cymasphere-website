@@ -30,7 +30,21 @@
       "emailRequired": "メールアドレスを入力してください",
       "invalidEmail": "有効なメールアドレスを入力してください",
       "unexpectedError": "予期せぬエラーが発生しました。もう一度お試しください。"
-    }
+    },
+    "adminConsole": "管理コンソール",
+    "delete": "削除",
+    "edit": "編集",
+    "view": "表示",
+    "search": "検索",
+    "filter": "フィルター",
+    "export": "エクスポート",
+    "back": "戻る",
+    "next": "次へ",
+    "previous": "前へ",
+    "error": "エラー",
+    "success": "成功",
+    "warning": "警告",
+    "info": "情報"
   },
   "header": {
     "home": "ホーム",
@@ -69,13 +83,27 @@
       "gMajor": "G Major"
     },
     "tooltips": {
-      "playNote": "クリックして音を再生",
-      "playChord": "クリックしてコードを再生"
+      "playNote": "クリックでこの音を再生",
+      "playChord": "クリックでコードを再生"
+    },
+    "includedSynth": "CymaSynth—プロ仕様のウェーブテーブルシンセ（VST3・AU）—を全サブスクリプションと永久ライセンスに同梱。作曲スイートとフラッグシップ楽器をひとつに。",
+    "bundleEyebrow": "1つのサブスクリプション · 2つのプロダクト",
+    "bundleCymasphereTitle": "Cymasphere",
+    "bundleCymasphereDesc": "作曲・理論スイート",
+    "bundleCymaSynthTitle": "CymaSynth",
+    "bundleCymaSynthDesc": "ウェーブテーブルシンセ · 149ドル相当が同梱",
+    "bundleFootnote": "CymaSynthは単体で149ドル相当—Cymasphereの全プランに追加料金なしで同梱 · スタンドアロン、AU、VST3",
+    "bundleCymasphereImageAlt": "Cymasphere — カタログ用スクエアアート",
+    "bundleCymaSynthImageAlt": "ウェーブテーブルシンセ CymaSynth の製品画面",
+    "platforms": {
+      "macos": "macOS",
+      "windows": "Windows",
+      "ipad": "iPad"
     }
   },
   "features": {
     "title": "機能",
-    "subtitle": "Cymasphereがあなたにできることを発見しよう",
+    "subtitle": "和声、メロディ、アレンジ—さらにプランに含まれる149ドル相当のウェーブテーブル楽器 CymaSynth。1つのスイート、2つのプロダクト。",
     "aiComposition": "AI作曲",
     "aiCompositionDesc": "高度なAIを使ってボタン一つで音楽を生成",
     "livePerformance": "ライブパフォーマンス",
@@ -155,7 +183,8 @@
         "再和声化ツール - 代替コードで既存の進行を変換",
         "コード提案 - 進行のためのインテリジェントな推奨を受ける",
         "セクションマーカー - 構造的な目印で曲を整理",
-        "機能分析 - 進行内の各コードの役割を理解"
+        "機能分析 - 進行内の各コードの役割を理解",
+        "Dynamic Pattern Updates where patterns and voicings automatically adapt when changes are made to the progression"
       ]
     },
     "voiceHandling": {
@@ -216,6 +245,21 @@
         "コンテキスト認識生成 - 新しいコンテンツを作成する際に既存の音楽要素を考慮",
         "スタイルベース生成 - 異なる音楽ジャンルとムードのオプション",
         "リアルタイム適応 - 作曲を変更すると生成されたコンテンツが自動的に更新"
+      ]
+    },
+    "cymaSynth": {
+      "title": "CymaSynth 同梱",
+      "description": "149ドル相当のプロ仕様ウェーブテーブルシンセ—トリプルOSC、深いモジュレーション、スタジオ級エフェクト—Cymasphereに無償で付属。",
+      "modalTitle": "統合されたフラッグシップ楽器",
+      "modalDescription": "単体では149ドルのCymaSynth。Cymasphereなら全サブスクリプションと永久ライセンスに追加費用なしで同梱—和声のたたきから完成サウンドまで、二度目の購入は不要です。プロ級ウェーブテーブル合成、柔軟なモジュレーション、磨かれたエフェクト—Cymasphereのワークフローでも、DAWではVST3・AUプラグインとして。",
+      "keyFeatures": "主な特長:",
+      "features": [
+        "単体149ドル相当—全Cymasphereプラン（サブスク・永久）に無償同梱。CymaSynthの別売り購入は不要",
+        "トリプルOSC構成、ウェーブテーブルモーフィング（256フレーム）とクラシック波形",
+        "64ルートのモジュレーションマトリクス、5 LFO、4 ADSR+Hold エンベロープ",
+        "デュアルフィルター、最大32ボイス、ユニゾン、内蔵エフェクトチェーン",
+        "VST3・AU形式—Cymasphereと併用、またはDAWに直接",
+        "Cymasphereの和声・パターンと連携—進行はここで、音色はCymaSynthで"
       ]
     }
   },
@@ -368,7 +412,7 @@
     "copyright": "© {{year}} Cymasphere. すべての権利を保有。",
     "privacyPolicy": "プライバシーポリシー",
     "termsOfService": "利用規約",
-    "description": "Cymasphereは、プロデューサー、作曲家、ミュージシャン、教育者、学生のためのインタラクティブな音楽作曲ツールです。",
+    "description": "Cymasphereは、プロデューサー、作曲家、演奏者、教育者、学生向けのインタラクティブ作曲ツールです。全プランに149ドル相当のウェーブテーブルシンセ CymaSynthが無償で含まれます。",
     "navigation": "ナビゲーション",
     "account": "アカウント",
     "accountDashboard": "アカウントダッシュボード",
@@ -393,7 +437,7 @@
     "subtitle": "あなたのニーズに合わせた柔軟なオプション",
     "simpleTransparent": "シンプルで透明性のある価格設定",
     "chooseOption": "最適な請求オプションを選択してください。",
-    "allFeatures": "すべてのオプションで全機能へのアクセスが含まれています。",
+    "allFeatures": "各プランには完全なCymasphereスイートに加え、149ドル相当のウェーブテーブルシンセ CymaSynth（無償同梱）と以下の全機能が含まれます。",
     "monthly": "月額",
     "yearly": "年額",
     "lifetime": "生涯",
@@ -418,21 +462,22 @@
     "lifetimeOwner": "ライフタイムオーナー",
     "noTrialAvailable": "すでに無料トライアルを使用しました。すべてのプレミアム機能を引き続き楽しむにはサブスクリプションを開始してください。",
     "features": [
-      "マルチトラック管理を備えたソングビルダー",
-      "インテリジェントパターンエディタとコード適応",
-      "ジェスチャー式ハーモニーパレットインターフェース",
-      "高度な声部進行とコードボイシング",
+      "マルチトラック管理付きソングビルダー",
+      "インテリジェントパターンエディターとコード適合",
+      "ジェスチャーベースのハーモニーパレットUI",
+      "高度なボイスリーディングとコードボイシング",
       "インタラクティブなコード進行タイムライン",
-      "完全な声部とレンジコントロール",
-      "スタンドアロンアプリとDAWプラグインサポート",
-      "リアルタイムコード再和声化ツール",
-      "総合的なアレンジメントビュー",
+      "ボイスとテンションの完全コントロール",
+      "スタンドアロンアプリとDAWプラグイン対応",
+      "リアルタイムリハーモナイズツール",
+      "フルアレンジビュー",
       "カスタムボイシング生成エンジン",
-      "プレミアムサポートと将来のすべてのアップデート"
+      "プレミアムサポートと今後の全アップデート",
+      "ウェーブテーブルシンセ CymaSynth（VST3・AU）—149ドル相当、無償同梱"
     ],
     "freeTrial": {
       "title": "最大14日間無料で試す",
-      "description": "2つの試用オプションですべてのプレミアム機能を体験してください。",
+      "description": "CymaSynthを含むフルスイートを、2種類のトライアルでお試しください。",
       "options": "カードなしで7日間、またはカード登録で14日間を選択できます。",
       "chooseFree": "無料トライアルオプションを選択：",
       "withCard": "14日間トライアル - カード登録",
@@ -443,7 +488,6 @@
       "or": "または"
     },
     "processing": "処理中",
-    "upgradeNow": "今すぐアップグレード",
     "buyNow": "今すぐ購入"
   },
   "promotion": {
@@ -455,7 +499,11 @@
     "questions": [
       {
         "question": "Cymasphereとは何ですか？",
-        "answer": "Cymasphereは、スタンドアロンアプリケーションとしてもDAW用プラグイン（AU＆VST3）としても利用可能な完全な楽曲制作スイートです。和声とメロディの両方を作曲するための統合ツールを提供し、インテリジェントなコードボイシング、メロディパターン構築、インタラクティブな視覚化機能を備え、あらゆるスキルレベルの人が音楽理論に直感的にアクセスできるようにしています。"
+        "answer": "Cymasphereは、スタンドアロンアプリとDAW用プラグイン（AU・VST3）として使える、曲づくりのためのフルスイートです。和声・メロディ、インテリジェントなボイシング、パターン構築、理論をどのレベルでも扱いやすくするインタラクティブな可視化を統合しています。各サブスクリプションと永久ライセンスには、プロ仕様のウェーブテーブルシンセ CymaSynth（VST3・AU）も追加費用なしで含まれます。"
+      },
+      {
+        "question": "CymaSynthとは何ですか。本当にCymasphereに含まれますか。",
+        "answer": "CymaSynthはNNAudioのプロ仕様ウェーブテーブルシンセです。複数オシレーター、深いモジュレーション、2つのフィルター、エフェクト、32ボイスポリフォニー。単体では149ドル相当ですが、Cymasphereでは全サブスクリプションと永久ライセンスに追加費用なしで同梱されます。サブスク時に別途購入する必要はありません—作曲スイートとフラッグシップ楽器がひとつにまとまっています。"
       },
       {
         "question": "Cymasphereはミュージシャンにどのような問題を解決しますか？",
@@ -588,7 +636,10 @@
       "userNotFound": "このメールアドレスを持つユーザーが見つかりません",
       "invalidEmail": "無効なメールアドレス形式です",
       "rateLimit": "パスワードリセットの試行回数が多すぎます。数分待ってから再試行してください。",
-      "generic": "パスワードリセットメールの送信に失敗しました。もう一度お試しください。"
+      "generic": "パスワードリセットメールの送信に失敗しました。もう一度お試しください。",
+      "linkExpired": "パスワード再設定リンクの有効期限が切れました。新しいリンクを請求してください。",
+      "accessDenied": "パスワード再設定リンクが無効か期限切れです。新しいリンクを請求してください。",
+      "invalidLink": "パスワード再設定リンクが無効です。新しいリンクを請求してください。"
     }
   },
   "dashboard": {
@@ -604,7 +655,8 @@
       "loading": "ダッシュボードを読み込み中...",
       "account": "アカウント",
       "welcomeUser": "{{name}}",
-      "emailLabel": "{{email}}"
+      "emailLabel": "{{email}}",
+      "adminConsole": "管理コンソール"
     },
     "main": {
       "welcome": "おかえりなさい、{{name}}さん！",
@@ -655,11 +707,11 @@
       "trialStatus": "トライアル状況",
       "daysRemaining": "残り{{days}}日",
       "renewalDate": "更新日",
-      "trialMessage": "現在{{trialDays}}日間の無料トライアル中で、すべてのプレミアム機能にフルアクセスできます。トライアル終了まで支払いはありません。",
-      "lifetimeMessage": "生涯無料アップデート付きのライフタイムメンバーシップをお持ちです。すべてのプレミアム機能と特典を永続的にお楽しみください。",
-      "activeSubscriptionMessage": "{{plan}}サブスクリプションがアクティブです。すべてのプレミアム機能と特典をお楽しみください。",
+      "trialMessage": "{{trialDays}}日間の無料トライアル中です。CymaSynthを含むすべてのプレミアム機能にフルアクセスできます。トライアル終了までは課金されません。",
+      "lifetimeMessage": "永久サブスクリプションです。生涯アップデート付き。CymaSynthを含むすべてのプレミアム機能をご利用いただけます。",
+      "activeSubscriptionMessage": "{{plan}} のサブスクリプションが有効です。CymaSynthを含むすべてのプレミアム機能をご利用いただけます。",
       "upgradeMessage": "プレミアム機能と高度なオーディオ処理機能のロックを解除するためにアップグレードしてください。",
-      "fullAccess": "現在、すべてのプレミアム機能にフルアクセスできます：",
+      "fullAccess": "CymaSynthを含む、すべてのプレミアム機能にフルアクセスできます:",
       "featureAdvancedChords": "高度なコード進行",
       "featureUnlimitedSaves": "無制限の進行保存",
       "featureMIDI": "MIDIエクスポート＆インポート",
@@ -686,8 +738,18 @@
       "sending": "送信中...",
       "product": "製品",
       "downloads": "ダウンロード",
-      "standaloneAndPlugins": "スタンドアロンアプリとプラグイン",
-      "subscribeForAccess": "アクセスするには購読してください"
+      "standaloneAndPlugins": "スタンドアプリとプラグイン",
+      "subscribeForAccess": "利用するにはご契約ください",
+      "downloadAvailable": "最新のCymasphereとCymaSynthインストーラーをダウンロード—サブスクリプションは両方を含みます。",
+      "upgradeToLifetime": "Upgrade to Lifetime access",
+      "downloadIntro": "ソフトウェアのダウンロードとインストーラーにアクセスします。",
+      "downloadRequiresSubscription": "ソフトウェアのダウンロードとプレミアム機能を利用するにはご契約ください。",
+      "goToDownloads": "ダウンロードへ",
+      "viewDownloads": "ダウンロードを表示",
+      "available": "利用可能",
+      "restricted": "制限あり",
+      "downloadReady": "ソフトウェアのダウンロード準備完了",
+      "subscribeForDownloads": "ダウンロードするにはご契約ください"
     },
     "profile": {
       "title": "マイプロフィール",
@@ -801,7 +863,13 @@
       "resources": "リソース",
       "quickStart": "クイックスタートガイド",
       "quickStartDesc": "Cymasphereを数分で使い始める",
-      "downloadPdf": "PDFをダウンロード"
+      "downloadPdf": "PDFをダウンロード",
+      "ipadTitle": "Cymasphere for iPad",
+      "ipadDesc": "Native iPad app with full feature set, optimized for iPad. Available now on the App Store.",
+      "comingSoon": "Coming Soon",
+      "availableNow": "Available Now",
+      "viewOnAppStore": "View on App Store",
+      "loading": "Loading..."
     },
     "settings": {
       "title": "設定",
@@ -901,7 +969,13 @@
     "specificError": "サブスクリプションの更新に失敗しました: {{error}}",
     "cancelNotice": "サブスクリプションは{{date}}にキャンセルされます。それまでアクセスできます。",
     "continueToCheckout": "チェックアウトに進む",
-    "gotIt": "了解"
+    "gotIt": "了解",
+    "enterCardNow": "Enter card info now:",
+    "percentDiscount": "{{percent}}% discount applied!",
+    "amountDiscount": "${{amount}} off!",
+    "oneTimePurchase": "one-time purchase",
+    "provideCard": "Provide payment method now for a {{days}}-day trial",
+    "cardTooltip": "Adding your payment method now extends your trial to 14 days instead of 7. You won't be charged until your trial ends."
   },
   "legal": {
     "termsOfService": "利用規約",
@@ -1000,7 +1074,9 @@
         "title": "10. お問い合わせ",
         "content": "このプライバシーポリシーに関するご質問は、support@cymasphere.comまでお問い合わせください。"
       }
-    }
+    },
+    "contactInformation": "連絡先情報",
+    "email": "メール"
   },
   "aboutUs": {
     "mission": {
@@ -1046,17 +1122,36 @@
       "title": "未来を見据えて",
       "content1": "Cymasphereの開発を続ける中で、私たちは音楽創造の未来に興奮しています。私たちのロードマップには、主要なDAWとの高度な統合、拡張されたハーモニーパレット、より深いAIアシスト作曲機能などが含まれています。",
       "content2": "私たちはあなたをこの旅に招待し、インテリジェントな音楽創造ツールの未来を形作るのを助けることを歓迎します。"
+    },
+    "team": {
+      "title": "Our Team",
+      "member1": {
+        "name": "David Chen",
+        "role": "Founder & Lead Developer"
+      },
+      "member2": {
+        "name": "Sarah Nguyen",
+        "role": "Music Theory Specialist"
+      },
+      "member3": {
+        "name": "Michael Park",
+        "role": "UI/UX Designer"
+      },
+      "member4": {
+        "name": "Emma Rodriguez",
+        "role": "Product Manager"
+      }
     }
   },
   "freeTrial": {
     "startTrial": "無料トライアルを開始",
-    "enterEmail": "{{days}}日間の無料トライアルを開始するには、メールアドレスを入力してください{{requirement}}。",
-    "cardRequired": "(クレジットカードが必要)",
-    "noCardRequired": "(クレジットカード不要)"
+    "enterEmail": "{{days}}日間の無料トライアルを開始するにはメールアドレスを入力してください{{requirement}}。",
+    "cardRequired": "（クレジットカードが必要）",
+    "noCardRequired": "（クレジットカード不要）"
   },
   "chat": {
     "language": "ja",
-    "greeting": "こんにちは!私はCymasphereアシスタントです。音楽制作ツール、価格設定、機能などに関するご質問をお手伝いできます。何をお知りになりたいですか?",
+    "greeting": "こんにちは。Cymasphereアシスタントです。和声・メロディ、CymaSynth（全プランに含まれるウェーブテーブルシンセ）、料金、はじめの一歩など、何でもどうぞ。",
     "error_process": "申し訳ございませんが、この時点でメッセージを処理できませんでした。もう一度お試しください。",
     "error_connecting": "現在接続に問題があります。しばらくしてからもう一度お試しください。",
     "view_pricing": "価格を表示",
@@ -1064,6 +1159,114 @@
     "placeholder": "Cymasphereについて何でも聞いてください...",
     "typing": "アシスタントが入力中です",
     "open_label": "チャットを開く",
-    "close_label": "チャットを閉じる"
+    "close_label": "チャットを閉じる",
+    "tooltip_hint": "お困りですか？チャットでご相談ください。"
+  },
+  "createPassword": {
+    "title": "新しいパスワードを設定",
+    "description": "アカウント用の新しいパスワードを作成してください。安全のため、他で使っていない強力なパスワードを選んでください。",
+    "backToLogin": "ログインに戻る",
+    "newPasswordLabel": "新しいパスワード",
+    "newPasswordPlaceholder": "新しいパスワードを入力",
+    "confirmPasswordLabel": "パスワード確認",
+    "confirmPasswordPlaceholder": "新しいパスワードを再入力",
+    "setPassword": "新しいパスワードを設定",
+    "updating": "更新中…",
+    "success": "パスワードをリセットしました。ログイン済みです。",
+    "proceedToLogin": "ログインへ進む",
+    "proceedToDashboard": "ダッシュボードへ進む",
+    "rememberPassword": "パスワードを思い出しましたか？",
+    "login": "ログイン",
+    "requestNewLink": "新しいパスワード再設定リンクを請求してください。",
+    "requestHere": "ここをクリックして請求",
+    "errors": {
+      "passwordMismatch": "パスワードが一致しません",
+      "passwordTooShort": "パスワードは6文字以上にしてください",
+      "invalidSession": "セッションが無効または期限切れです。パスワード再設定をやり直してください。",
+      "generic": "予期しないエラーが発生しました。もう一度お試しください。",
+      "linkExpired": "再設定リンクの期限が切れました。新しいリンクを請求してください。",
+      "accessDenied": "再設定リンクが無効または期限切れです。新しいリンクを請求してください。",
+      "invalidLink": "再設定リンクが無効です。新しいリンクを請求してください。"
+    }
+  },
+  "admin": {
+    "title": "管理コンソール",
+    "dashboard": "管理ダッシュボード",
+    "crm": "CRM",
+    "supportTickets": {
+      "title": "サポートチケット",
+      "subtitle": "カスタマーサポートの依頼と問題を管理",
+      "totalTickets": "チケット総数",
+      "openTickets": "未対応チケット",
+      "avgResponseTime": "平均応答時間",
+      "createTicket": "チケット作成",
+      "searchPlaceholder": "件名、ユーザー、チケットIDで検索…",
+      "filters": {
+        "all": "すべてのチケット",
+        "open": "未対応",
+        "inProgress": "対応中",
+        "resolved": "解決済み",
+        "closed": "クローズ"
+      },
+      "priority": {
+        "low": "低",
+        "medium": "中",
+        "high": "高",
+        "urgent": "緊急"
+      },
+      "ticketTable": {
+        "id": "チケットID",
+        "subject": "件名",
+        "user": "ユーザー",
+        "status": "ステータス",
+        "priority": "優先度",
+        "created": "作成日",
+        "lastUpdate": "最終更新",
+        "assignedTo": "担当",
+        "actions": "操作"
+      },
+      "ticketActions": {
+        "view": "チケットを表示",
+        "reply": "返信",
+        "assign": "割り当て",
+        "changeStatus": "ステータス変更",
+        "changePriority": "優先度変更",
+        "close": "チケットを閉じる"
+      }
+    },
+    "users": "ユーザー",
+    "analytics": "分析",
+    "settings": "管理設定",
+    "crmPage": {
+      "title": "顧客関係管理",
+      "subtitle": "顧客との関係とやり取りを管理",
+      "totalUsers": "ユーザー総数",
+      "activeSubscriptions": "有効なサブスクリプション",
+      "revenue": "月次売上",
+      "searchPlaceholder": "名前、メール、IDでユーザー検索…",
+      "filters": {
+        "all": "すべてのユーザー",
+        "free": "無料ユーザー",
+        "monthly": "月額契約",
+        "annual": "年額契約",
+        "lifetime": "買い切りユーザー",
+        "admin": "管理者"
+      },
+      "userTable": {
+        "name": "名前",
+        "email": "メール",
+        "subscription": "サブスクリプション",
+        "joinDate": "登録日",
+        "lastLogin": "最終ログイン",
+        "actions": "操作"
+      },
+      "userActions": {
+        "viewProfile": "プロフィール表示",
+        "editUser": "ユーザーを編集",
+        "sendEmail": "メール送信",
+        "changeSubscription": "プラン変更",
+        "deleteUser": "ユーザーを削除"
+      }
+    }
   }
 }

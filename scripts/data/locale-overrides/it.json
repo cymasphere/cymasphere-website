@@ -1,0 +1,170 @@
+{
+  "common": {
+    "adminConsole": "Console di amministrazione",
+    "delete": "Elimina",
+    "edit": "Modifica",
+    "view": "Visualizza",
+    "search": "Cerca",
+    "filter": "Filtra",
+    "export": "Esporta",
+    "back": "Indietro",
+    "next": "Avanti",
+    "previous": "Precedente",
+    "error": "Errore",
+    "success": "Operazione riuscita",
+    "warning": "Avviso",
+    "info": "Informazioni"
+  },
+  "hero": {
+    "platforms": {
+      "macos": "macOS",
+      "windows": "Windows",
+      "ipad": "iPad"
+    }
+  },
+  "resetPassword": {
+    "errors": {
+      "linkExpired": "Il link per reimpostare la password è scaduto. Richiedine uno nuovo.",
+      "accessDenied": "Il link per reimpostare la password non è valido o è scaduto. Richiedine uno nuovo.",
+      "invalidLink": "Il link per reimpostare la password non è valido. Richiedine uno nuovo."
+    }
+  },
+  "dashboard": {
+    "layout": {
+      "adminConsole": "Console di amministrazione"
+    },
+    "main": {
+      "downloadIntro": "Accedi ai download del software e agli installer.",
+      "downloadRequiresSubscription": "Abbonati per scaricare il software e usare le funzioni premium.",
+      "goToDownloads": "Vai ai download",
+      "viewDownloads": "Visualizza download",
+      "available": "Disponibile",
+      "restricted": "Limitato",
+      "downloadReady": "Download del software pronti",
+      "subscribeForDownloads": "Abbonati per accedere ai download",
+      "product": "Prodotto",
+      "standaloneAndPlugins": "App standalone e plugin",
+      "subscribeForAccess": "Abbonati per ottenere l’accesso"
+    }
+  },
+  "legal": {
+    "contactInformation": "Informazioni di contatto",
+    "email": "Email"
+  },
+  "chat": {
+    "tooltip_hint": "Serve aiuto? Chatta con noi!"
+  },
+  "createPassword": {
+    "title": "Imposta nuova password",
+    "description": "Crea una nuova password per il tuo account. Per sicurezza, scegli una password robusta che non usi altrove.",
+    "backToLogin": "Torna al login",
+    "newPasswordLabel": "Nuova password",
+    "newPasswordPlaceholder": "Inserisci la nuova password",
+    "confirmPasswordLabel": "Conferma password",
+    "confirmPasswordPlaceholder": "Conferma la nuova password",
+    "setPassword": "Imposta nuova password",
+    "updating": "Aggiornamento…",
+    "success": "Password reimpostata con successo! Ora hai effettuato l’accesso.",
+    "proceedToLogin": "Vai al login",
+    "proceedToDashboard": "Vai alla dashboard",
+    "rememberPassword": "Ti ricordi la password?",
+    "login": "Accedi",
+    "requestNewLink": "Richiedi un nuovo link per reimpostare la password.",
+    "requestHere": "Clicca qui per richiederne uno.",
+    "errors": {
+      "passwordMismatch": "Le password non coincidono",
+      "passwordTooShort": "La password deve avere almeno 6 caratteri",
+      "invalidSession": "Sessione non valida o scaduta. Richiedi una nuova reimpostazione.",
+      "generic": "Si è verificato un errore imprevisto. Riprova.",
+      "linkExpired": "Il link di reimpostazione è scaduto. Richiedine uno nuovo.",
+      "accessDenied": "Il link di reimpostazione non è valido o è scaduto. Richiedine uno nuovo.",
+      "invalidLink": "Il link di reimpostazione non è valido. Richiedine uno nuovo."
+    }
+  },
+  "freeTrial": {
+    "startTrial": "Inizia la prova gratuita",
+    "enterEmail": "Inserisci la tua email per iniziare la prova gratuita di {{days}} giorni {{requirement}}.",
+    "cardRequired": "(carta di credito richiesta)",
+    "noCardRequired": "(nessuna carta di credito richiesta)"
+  },
+  "admin": {
+    "title": "Console di amministrazione",
+    "dashboard": "Dashboard amministratore",
+    "crm": "CRM",
+    "users": "Utenti",
+    "analytics": "Analitiche",
+    "settings": "Impostazioni amministratore",
+    "supportTickets": {
+      "title": "Ticket di supporto",
+      "subtitle": "Gestisci richieste e problemi dei clienti",
+      "totalTickets": "Ticket totali",
+      "openTickets": "Ticket aperti",
+      "avgResponseTime": "Tempo medio di risposta",
+      "createTicket": "Crea ticket",
+      "searchPlaceholder": "Cerca ticket per oggetto, utente o ID…",
+      "filters": {
+        "all": "Tutti i ticket",
+        "open": "Aperti",
+        "inProgress": "In corso",
+        "resolved": "Risolti",
+        "closed": "Chiusi"
+      },
+      "priority": {
+        "low": "Bassa",
+        "medium": "Media",
+        "high": "Alta",
+        "urgent": "Urgente"
+      },
+      "ticketTable": {
+        "id": "ID ticket",
+        "subject": "Oggetto",
+        "user": "Utente",
+        "status": "Stato",
+        "priority": "Priorità",
+        "created": "Creato",
+        "lastUpdate": "Ultimo aggiornamento",
+        "assignedTo": "Assegnato a",
+        "actions": "Azioni"
+      },
+      "ticketActions": {
+        "view": "Visualizza ticket",
+        "reply": "Rispondi",
+        "assign": "Assegna",
+        "changeStatus": "Cambia stato",
+        "changePriority": "Cambia priorità",
+        "close": "Chiudi ticket"
+      }
+    },
+    "crmPage": {
+      "title": "Gestione relazioni con i clienti",
+      "subtitle": "Gestisci relazioni e interazioni con i clienti",
+      "totalUsers": "Utenti totali",
+      "activeSubscriptions": "Abbonamenti attivi",
+      "revenue": "Ricavi mensili",
+      "searchPlaceholder": "Cerca utenti per nome, email o ID…",
+      "filters": {
+        "all": "Tutti gli utenti",
+        "free": "Utenti gratuiti",
+        "monthly": "Abbonati mensili",
+        "annual": "Abbonati annuali",
+        "lifetime": "Utenti a vita",
+        "admin": "Amministratori"
+      },
+      "userTable": {
+        "name": "Nome",
+        "email": "Email",
+        "subscription": "Abbonamento",
+        "joinDate": "Data di iscrizione",
+        "lastLogin": "Ultimo accesso",
+        "actions": "Azioni"
+      },
+      "userActions": {
+        "viewProfile": "Visualizza profilo",
+        "editUser": "Modifica utente",
+        "sendEmail": "Invia email",
+        "changeSubscription": "Cambia abbonamento",
+        "deleteUser": "Elimina utente"
+      }
+    }
+  }
+}

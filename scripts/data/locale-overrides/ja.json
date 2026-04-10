@@ -1,0 +1,170 @@
+{
+  "common": {
+    "adminConsole": "管理コンソール",
+    "delete": "削除",
+    "edit": "編集",
+    "view": "表示",
+    "search": "検索",
+    "filter": "フィルター",
+    "export": "エクスポート",
+    "back": "戻る",
+    "next": "次へ",
+    "previous": "前へ",
+    "error": "エラー",
+    "success": "成功",
+    "warning": "警告",
+    "info": "情報"
+  },
+  "hero": {
+    "platforms": {
+      "macos": "macOS",
+      "windows": "Windows",
+      "ipad": "iPad"
+    }
+  },
+  "resetPassword": {
+    "errors": {
+      "linkExpired": "パスワード再設定リンクの有効期限が切れました。新しいリンクを請求してください。",
+      "accessDenied": "パスワード再設定リンクが無効か期限切れです。新しいリンクを請求してください。",
+      "invalidLink": "パスワード再設定リンクが無効です。新しいリンクを請求してください。"
+    }
+  },
+  "dashboard": {
+    "layout": {
+      "adminConsole": "管理コンソール"
+    },
+    "main": {
+      "downloadIntro": "ソフトウェアのダウンロードとインストーラーにアクセスします。",
+      "downloadRequiresSubscription": "ソフトウェアのダウンロードとプレミアム機能を利用するにはご契約ください。",
+      "goToDownloads": "ダウンロードへ",
+      "viewDownloads": "ダウンロードを表示",
+      "available": "利用可能",
+      "restricted": "制限あり",
+      "downloadReady": "ソフトウェアのダウンロード準備完了",
+      "subscribeForDownloads": "ダウンロードするにはご契約ください",
+      "product": "製品",
+      "standaloneAndPlugins": "スタンドアプリとプラグイン",
+      "subscribeForAccess": "利用するにはご契約ください"
+    }
+  },
+  "legal": {
+    "contactInformation": "連絡先情報",
+    "email": "メール"
+  },
+  "chat": {
+    "tooltip_hint": "お困りですか？チャットでご相談ください。"
+  },
+  "createPassword": {
+    "title": "新しいパスワードを設定",
+    "description": "アカウント用の新しいパスワードを作成してください。安全のため、他で使っていない強力なパスワードを選んでください。",
+    "backToLogin": "ログインに戻る",
+    "newPasswordLabel": "新しいパスワード",
+    "newPasswordPlaceholder": "新しいパスワードを入力",
+    "confirmPasswordLabel": "パスワード確認",
+    "confirmPasswordPlaceholder": "新しいパスワードを再入力",
+    "setPassword": "新しいパスワードを設定",
+    "updating": "更新中…",
+    "success": "パスワードをリセットしました。ログイン済みです。",
+    "proceedToLogin": "ログインへ進む",
+    "proceedToDashboard": "ダッシュボードへ進む",
+    "rememberPassword": "パスワードを思い出しましたか？",
+    "login": "ログイン",
+    "requestNewLink": "新しいパスワード再設定リンクを請求してください。",
+    "requestHere": "ここをクリックして請求",
+    "errors": {
+      "passwordMismatch": "パスワードが一致しません",
+      "passwordTooShort": "パスワードは6文字以上にしてください",
+      "invalidSession": "セッションが無効または期限切れです。パスワード再設定をやり直してください。",
+      "generic": "予期しないエラーが発生しました。もう一度お試しください。",
+      "linkExpired": "再設定リンクの期限が切れました。新しいリンクを請求してください。",
+      "accessDenied": "再設定リンクが無効または期限切れです。新しいリンクを請求してください。",
+      "invalidLink": "再設定リンクが無効です。新しいリンクを請求してください。"
+    }
+  },
+  "freeTrial": {
+    "startTrial": "無料トライアルを開始",
+    "enterEmail": "{{days}}日間の無料トライアルを開始するにはメールアドレスを入力してください{{requirement}}。",
+    "cardRequired": "（クレジットカードが必要）",
+    "noCardRequired": "（クレジットカード不要）"
+  },
+  "admin": {
+    "title": "管理コンソール",
+    "dashboard": "管理ダッシュボード",
+    "crm": "CRM",
+    "users": "ユーザー",
+    "analytics": "分析",
+    "settings": "管理設定",
+    "supportTickets": {
+      "title": "サポートチケット",
+      "subtitle": "カスタマーサポートの依頼と問題を管理",
+      "totalTickets": "チケット総数",
+      "openTickets": "未対応チケット",
+      "avgResponseTime": "平均応答時間",
+      "createTicket": "チケット作成",
+      "searchPlaceholder": "件名、ユーザー、チケットIDで検索…",
+      "filters": {
+        "all": "すべてのチケット",
+        "open": "未対応",
+        "inProgress": "対応中",
+        "resolved": "解決済み",
+        "closed": "クローズ"
+      },
+      "priority": {
+        "low": "低",
+        "medium": "中",
+        "high": "高",
+        "urgent": "緊急"
+      },
+      "ticketTable": {
+        "id": "チケットID",
+        "subject": "件名",
+        "user": "ユーザー",
+        "status": "ステータス",
+        "priority": "優先度",
+        "created": "作成日",
+        "lastUpdate": "最終更新",
+        "assignedTo": "担当",
+        "actions": "操作"
+      },
+      "ticketActions": {
+        "view": "チケットを表示",
+        "reply": "返信",
+        "assign": "割り当て",
+        "changeStatus": "ステータス変更",
+        "changePriority": "優先度変更",
+        "close": "チケットを閉じる"
+      }
+    },
+    "crmPage": {
+      "title": "顧客関係管理",
+      "subtitle": "顧客との関係とやり取りを管理",
+      "totalUsers": "ユーザー総数",
+      "activeSubscriptions": "有効なサブスクリプション",
+      "revenue": "月次売上",
+      "searchPlaceholder": "名前、メール、IDでユーザー検索…",
+      "filters": {
+        "all": "すべてのユーザー",
+        "free": "無料ユーザー",
+        "monthly": "月額契約",
+        "annual": "年額契約",
+        "lifetime": "買い切りユーザー",
+        "admin": "管理者"
+      },
+      "userTable": {
+        "name": "名前",
+        "email": "メール",
+        "subscription": "サブスクリプション",
+        "joinDate": "登録日",
+        "lastLogin": "最終ログイン",
+        "actions": "操作"
+      },
+      "userActions": {
+        "viewProfile": "プロフィール表示",
+        "editUser": "ユーザーを編集",
+        "sendEmail": "メール送信",
+        "changeSubscription": "プラン変更",
+        "deleteUser": "ユーザーを削除"
+      }
+    }
+  }
+}

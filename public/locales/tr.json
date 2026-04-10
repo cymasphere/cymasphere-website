@@ -30,7 +30,21 @@
       "emailRequired": "Lütfen e-posta adresinizi girin",
       "invalidEmail": "Lütfen geçerli bir e-posta adresi girin",
       "unexpectedError": "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin."
-    }
+    },
+    "adminConsole": "Yönetici konsolu",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "view": "Görüntüle",
+    "search": "Ara",
+    "filter": "Filtrele",
+    "export": "Dışa aktar",
+    "back": "Geri",
+    "next": "İleri",
+    "previous": "Önceki",
+    "error": "Hata",
+    "success": "Başarılı",
+    "warning": "Uyarı",
+    "info": "Bilgi"
   },
   "header": {
     "home": "Ana sayfa",
@@ -71,11 +85,25 @@
     "tooltips": {
       "playNote": "Bu notayı çalmak için tıklayın",
       "playChord": "Akoru çalmak için tıklayın"
+    },
+    "includedSynth": "CymaSynth—profesyonel wavetable sentezleyici (VST3 ve AU)—her abonelik ve ömür boyu lisansla birlikte gelir. Tam kompozisyon paketi ve amiral gemisi enstrüman tek pakette.",
+    "bundleEyebrow": "Bir abonelik · iki ürün",
+    "bundleCymasphereTitle": "Cymasphere",
+    "bundleCymasphereDesc": "Kompozisyon ve teori paketi",
+    "bundleCymaSynthTitle": "CymaSynth",
+    "bundleCymaSynthDesc": "Wavetable sentezleyici · 149 $ değerinde dahil",
+    "bundleFootnote": "CymaSynth tek başına 149 $ değerinde—tüm Cymasphere planlarında ek ücret olmadan dahil · Bağımsız, AU ve VST3",
+    "bundleCymasphereImageAlt": "Cymasphere — katalog kare görseli",
+    "bundleCymaSynthImageAlt": "Wavetable sentezleyici CymaSynth ürün arayüzü",
+    "platforms": {
+      "macos": "macOS",
+      "windows": "Windows",
+      "ipad": "iPad"
     }
   },
   "features": {
     "title": "Özellikler",
-    "subtitle": "Cymasphere'in sizin için neler yapabileceğini keşfedin",
+    "subtitle": "Armoni, melodi, düzenleme—artı planınıza dahil 149 $ değerinde wavetable enstrüman CymaSynth. Bir paket, iki ürün.",
     "aiComposition": "AI Kompozisyon",
     "aiCompositionDesc": "Gelişmiş AI'mızı kullanarak tek tıkla müzik oluşturun",
     "livePerformance": "Canlı Performans",
@@ -216,6 +244,21 @@
         "Stil Tabanlı Üretim - Farklı müzik türleri ve ruh halleri için seçenekler",
         "Gerçek Zamanlı Uyarlama - Kompozisyonunuzu değiştirdiğinizde üretilen içerik otomatik olarak güncellenir"
       ]
+    },
+    "cymaSynth": {
+      "title": "CymaSynth dahil",
+      "description": "149 $ değerinde profesyonel wavetable sentezleyici—üç osilatör, derin modülasyon, stüdyo efektleri—Cymasphere ile ücretsiz.",
+      "modalTitle": "Entegre amiral gemisi enstrümanınız",
+      "modalDescription": "Tek başına CymaSynth 149 $. Cymasphere ile her abonelik ve ömür boyu lisans için ek ücret yok—armonik taslaktan bitmiş sese ikinci bir satın alma gerekmez. Profesyonel wavetable sentezi, esnek modülasyon ve cilalı efektler—Cymasphere akışında veya DAW’ınızda VST3 ve AU eklentileri olarak.",
+      "keyFeatures": "Öne çıkan özellikler:",
+      "features": [
+        "Tek başına 149 $ değeri—tüm Cymasphere planlarında (abonelik ve ömür boyu) ücretsiz; ayrı CymaSynth satın alımı yok",
+        "Üç osilatör mimarisi, wavetable morfing (256 kare) ve klasik dalga formları",
+        "5 LFO ve 4 ADSR+Hold zarf ile 64 yönlü modülasyon matrisi",
+        "Çift filtre, 32’ye kadar ses, unison ve entegre efekt zinciri",
+        "VST3 ve AU formatları—Cymasphere ile birlikte veya doğrudan DAW’da",
+        "Cymasphere armoni ve desenleriyle uyumlu: progresyon burada, tını CymaSynth’te"
+      ]
     }
   },
   "howItWorks": {
@@ -259,6 +302,10 @@
       "step3": {
         "title": "Etkileşimli pratik",
         "description": "Temponuza ve stilinize uyum sağlayan akıllı eşlik ile pratik yapın. Sistem girişlerinize yanıt vererek becerilerinizle birlikte gelişen dinamik bir pratik deneyimi oluşturur."
+      },
+      "step4": {
+        "title": "Refine Your Skills",
+        "description": "Improve your musical ear by experimenting with different chord substitutions and modal interchange. As you refine your harmonic choices, you'll develop a deeper understanding of chord qualities and progressions, naturally building both your technical skills and creative voice."
       }
     },
     "integrateWorkflow": {
@@ -273,6 +320,10 @@
       "step3": {
         "title": "Bulut işbirliği",
         "description": "Bulut platformumuz aracılığıyla işbirlikçilerle projeler paylaşın. Gerçek zamanlı veya asenkron çalışın, sürüm kontrolü ve değişiklik geçmişini koruyun."
+      },
+      "step4": {
+        "title": "Seamless Workflow",
+        "description": "Integrate Cymasphere into your production process as a powerful harmony and pattern generator—then voice your ideas with CymaSynth, the professional wavetable synthesizer included with your plan (VST3 & AU). Route MIDI from Cymasphere to any instrument, or design patches in CymaSynth for a complete sketch-to-sound workflow."
       }
     }
   },
@@ -342,7 +393,7 @@
     "subtitle": "İhtiyaçlarınıza uygun esnek seçenekler",
     "simpleTransparent": "Basit, Şeffaf Fiyatlandırma",
     "chooseOption": "Size en uygun faturalama seçeneğini seçin.",
-    "allFeatures": "Tüm seçenekler tüm özelliklere tam erişim içerir.",
+    "allFeatures": "Her plan tam Cymasphere paketini ve 149 $ değerindeki wavetable sentezleyici CymaSynth’i—ücretsiz dahil—ve aşağıdaki tüm özellikleri içerir.",
     "monthly": "Aylık",
     "yearly": "Yıllık",
     "lifetime": "Yaşam Boyu",
@@ -368,21 +419,22 @@
     "lifetimeOwner": "Ömür Boyu Sahibi",
     "noTrialAvailable": "Zaten ücretsiz deneme kullandınız. Tüm premium özelliklerin keyfini çıkarmaya devam etmek için bir abonelik başlatın.",
     "features": [
-      "Çoklu Parça Yönetimi ile Şarkı Oluşturucu",
-      "Akıllı Desen Editörü ve Akor Adaptasyonu",
-      "Jestsel Armoni Paleti Arayüzü",
-      "Gelişmiş Ses Yönlendirme ve Akor Seslendirmeleri",
-      "Etkileşimli Akor İlerlemesi Zaman Çizelgesi",
-      "Tam Ses ve Aralık Kontrolü",
-      "Bağımsız Uygulama ve DAW Eklenti Desteği",
-      "Gerçek Zamanlı Akor Yeniden Armonizasyon Araçları",
-      "Kapsamlı Düzenleme Görünümü",
-      "Özel Seslendirme Üretim Motoru",
-      "Premium Destek ve Gelecekteki Tüm Güncellemeler"
+      "Çok kanal yönetimli Song Builder",
+      "Akıllı desen düzenleyici ve akor uyumu",
+      "Jest tabanlı Harmony Palette arayüzü",
+      "İleri düzey voice-leading ve akor voicing’leri",
+      "Etkileşimli akor ilerleme zaman çizelgesi",
+      "Sesler ve gerilimler üzerinde tam kontrol",
+      "Bağımsız uygulama ve DAW eklenti desteği",
+      "Gerçek zamanlı reharmonizasyon araçları",
+      "Tam düzenleme görünümü",
+      "Özel voicing üretim motoru",
+      "Premium destek ve gelecekteki tüm güncellemeler",
+      "Wavetable sentezleyici CymaSynth (VST3 ve AU)—149 $ değer, ücretsiz dahil"
     ],
     "freeTrial": {
       "title": "14 güne kadar ÜCRETSİZ deneyin",
-      "description": "İki deneme seçeneği ile tüm premium özellikleri deneyimleyin.",
+      "description": "CymaSynth dahil tam paketi iki deneme seçeneğiyle deneyin.",
       "options": "Kartsız 7 gün veya dosyada kartla 14 gün seçin.",
       "chooseFree": "Ücretsiz deneme seçeneğinizi seçin:",
       "withCard": "14 günlük deneme - Dosyada kart ekle",
@@ -446,7 +498,6 @@
       "answer4": "MIDI dışa aktarımının yanı sıra analiz ve yeniden armonizasyon için MIDI ve MusicXML dosya içe aktarımını destekliyoruz."
     },
     "processing": "İşleniyor...",
-    "upgradeNow": "Şimdi Yükselt",
     "buyNow": "Şimdi Satın Al"
   },
   "promotion": {
@@ -512,7 +563,7 @@
     "copyright": "© {{year}} Cymasphere. Tüm hakları saklıdır.",
     "privacyPolicy": "Gizlilik Politikası",
     "termsOfService": "Hizmet Şartları",
-    "description": "Cymasphere, prodüktörler, besteciler, müzisyenler, eğitmenler ve öğrenciler için etkileşimli bir müzik kompozisyon aracıdır.",
+    "description": "Cymasphere; yapımcılar, besteciler, müzisyenler, eğitmenler ve öğrenciler için etkileşimli bir kompozisyon aracıdır—her planda 149 $ değerinde wavetable sentezleyici CymaSynth ücretsiz dahildir.",
     "navigation": "Navigasyon",
     "account": "Hesap",
     "accountDashboard": "Hesap Kontrol Paneli",
@@ -576,7 +627,8 @@
       "loading": "Kontrol paneli yükleniyor...",
       "account": "Hesap",
       "welcomeUser": "{{name}}",
-      "emailLabel": "{{email}}"
+      "emailLabel": "{{email}}",
+      "adminConsole": "Yönetici konsolu"
     },
     "main": {
       "welcome": "Tekrar hoş geldiniz, {{name}}!",
@@ -613,7 +665,7 @@
       "membership": "Üyelik",
       "free": "Ücretsiz",
       "upgradeToPro": "Tam erişim için Pro'ya yükseltin",
-      "fullAccess": "Şu anda tüm premium özelliklere tam erişiminiz var:",
+      "fullAccess": "CymaSynth dahil tüm premium özelliklere tam erişiminiz var:",
       "upgradeToLifetime": "Yaşam boyu erişime yükseltin",
       "upgradeNow": "Şimdi Yükselt",
       "lifetimeAccess": "Yaşam boyu ücretsiz güncellemeleri içerir",
@@ -630,9 +682,9 @@
       "trialStatus": "Deneme Durumu",
       "daysRemaining": "{{days}} gün kaldı",
       "renewalDate": "Yenileme Tarihi",
-      "trialMessage": "Şu anda tüm premium özelliklere tam erişimi olan {{trialDays}} günlük ücretsiz deneme sürecindesiniz. Denemeniz bitene kadar ödeme yok.",
-      "lifetimeMessage": "Yaşam boyu ücretsiz güncellemelerle yaşam boyu üyeliğiniz var. Tüm premium özelliklerin ve avantajların kalıcı olarak tadını çıkarın.",
-      "activeSubscriptionMessage": "{{plan}} aboneliğiniz aktif. Tüm premium özelliklerin ve avantajların tadını çıkarın.",
+      "trialMessage": "{{trialDays}} günlük ücretsiz deneme süresindesiniz; CymaSynth dahil tüm premium özelliklere tam erişiminiz var. Deneme bitene kadar ödeme alınmaz.",
+      "lifetimeMessage": "Ömür boyu aboneliğiniz var; ömür boyu güncellemeler dahil. CymaSynth dahil tüm premium özelliklerden süresiz yararlanın.",
+      "activeSubscriptionMessage": "{{plan}} aboneliğiniz aktif. CymaSynth dahil tüm premium özelliklerden yararlanın.",
       "upgradeMessage": "Premium özellikleri ve gelişmiş ses işleme yeteneklerini açmak için yükseltin.",
       "featureAdvancedChords": "Gelişmiş Akor İlerlemeleri",
       "featureUnlimitedSaves": "Sınırsız Kayıtlı İlerlemeler",
@@ -659,8 +711,17 @@
       "sending": "Gönderiliyor...",
       "product": "Ürün",
       "downloads": "İndirmeler",
-      "standaloneAndPlugins": "Bağımsız Uygulama ve Eklentiler",
-      "subscribeForAccess": "Erişim için abone olun"
+      "standaloneAndPlugins": "Bağımsız uygulama ve eklentiler",
+      "subscribeForAccess": "Erişim için abone olun",
+      "downloadAvailable": "En son Cymasphere ve CymaSynth yükleyicilerini indirin—aboneliğiniz ikisini de kapsar.",
+      "downloadIntro": "Yazılım indirmelerinize ve kurulum dosyalarınıza erişin.",
+      "downloadRequiresSubscription": "Yazılım indirmek ve premium özellikleri kullanmak için abone olun.",
+      "goToDownloads": "İndirmelere git",
+      "viewDownloads": "İndirmeleri görüntüle",
+      "available": "Kullanılabilir",
+      "restricted": "Kısıtlı",
+      "downloadReady": "Yazılım indirmeleri hazır",
+      "subscribeForDownloads": "İndirmelere erişmek için abone olun"
     },
     "profile": {
       "title": "Profilim",
@@ -745,7 +806,9 @@
       "noActivePlanDesc": "Şu anda aktif bir aboneliğiniz yok. Tüm premium özelliklerin kilidini açmak için aşağıdan abone olun.",
       "trialCompleted": "Ücretsiz deneme tamamlandı",
       "trialAvailable": "Ücretsiz deneme mevcut - başlamak için aşağıdan bir plan seçin",
-      "usedFreeTrial": "Bu aboneliği başlatmak için ücretsiz denemenizi kullandınız"
+      "usedFreeTrial": "Bu aboneliği başlatmak için ücretsiz denemenizi kullandınız",
+      "continueToCheckout": "Continue to Checkout",
+      "gotIt": "Got It"
     },
     "downloads": {
       "title": "İndirmeler",
@@ -772,7 +835,13 @@
       "resources": "Kaynaklar",
       "quickStart": "Hızlı Başlangıç Kılavuzu",
       "quickStartDesc": "Cymasphere ile dakikalar içinde başlayın",
-      "downloadPdf": "PDF İndir"
+      "downloadPdf": "PDF İndir",
+      "ipadTitle": "Cymasphere for iPad",
+      "ipadDesc": "Native iPad app with full feature set, optimized for iPad. Available now on the App Store.",
+      "comingSoon": "Coming Soon",
+      "availableNow": "Available Now",
+      "viewOnAppStore": "View on App Store",
+      "loading": "Loading..."
     },
     "settings": {
       "title": "Ayarlar",
@@ -928,7 +997,11 @@
     "questions": [
       {
         "question": "Cymasphere nedir?",
-        "answer": "Cymasphere, hem bağımsız uygulama hem de DAW için eklenti (AU & VST3) olarak mevcut olan kapsamlı bir şarkı yaratım paketidir. Akıllı akor seslendirme, melodi desen yapısı ve müzik teorisini her seviyedeki beceri için erişilebilir ve sezgisel hale getiren etkileşimli görselleştirme sunan, armoni ve melodi besteleme için entegre araçlar sağlar."
+        "answer": "Cymasphere; bağımsız uygulama ve DAW için eklenti (AU ve VST3) olarak kullanılabilen tam bir müzik üretim paketidir. Armoni ve melodi, akıllı voicing’ler, desen oluşturma ve teoriyi her seviyede erişilebilir kılan etkileşimli görselleştirme sunar. Her abonelik ve ömür boyu lisans, profesyonel wavetable sentezleyici CymaSynth’i (VST3 ve AU) ek ücret olmadan içerir."
+      },
+      {
+        "question": "CymaSynth nedir ve gerçekten Cymasphere ile mi geliyor?",
+        "answer": "CymaSynth, NNAudio’nun profesyonel wavetable sentezleyicisidir: çoklu osilatörler, derin modülasyon, iki filtre, efektler ve 32 ses polifoni. Tek başına 149 $; Cymasphere ile her abonelik ve ömür boyu lisansa ek ücret olmadan dahildir. Abonelikle ayrıca satın almanız gerekmez—kompozisyon paketi ve amiral gemisi enstrüman tek çatı altında."
       },
       {
         "question": "Cymasphere müzisyenler için hangi sorunları çözer?",
@@ -1047,12 +1120,15 @@
       "userNotFound": "Bu e-posta adresiyle kullanıcı bulunamadı",
       "invalidEmail": "Geçersiz e-posta adresi",
       "rateLimit": "Çok fazla şifre sıfırlama denemesi. Lütfen tekrar denemeden önce birkaç dakika bekleyin.",
-      "generic": "Şifre sıfırlama e-postası gönderme başarısız. Lütfen tekrar deneyin."
+      "generic": "Şifre sıfırlama e-postası gönderme başarısız. Lütfen tekrar deneyin.",
+      "linkExpired": "Şifre sıfırlama bağlantısının süresi doldu. Lütfen yenisini isteyin.",
+      "accessDenied": "Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş. Lütfen yenisini isteyin.",
+      "invalidLink": "Şifre sıfırlama bağlantısı geçersiz. Lütfen yenisini isteyin."
     }
   },
   "freeTrial": {
-    "startTrial": "Ücretsiz Denemenizi Başlatın",
-    "enterEmail": "{{days}} günlük ücretsiz denemenizi başlatmak için e-posta adresinizi girin {{requirement}}.",
+    "startTrial": "Ücretsiz denemeyi başlat",
+    "enterEmail": "{{days}} günlük ücretsiz denemenizi başlatmak için e-postanızı girin {{requirement}}.",
     "cardRequired": "(kredi kartı gerekli)",
     "noCardRequired": "(kredi kartı gerekmez)"
   },
@@ -1185,7 +1261,9 @@
         "title": "10. Bizimle İletişime Geçin",
         "content": "Bu Gizlilik Politikası hakkında sorularınız varsa, lütfen support@cymasphere.com adresinden bizimle iletişime geçin."
       }
-    }
+    },
+    "contactInformation": "İletişim bilgileri",
+    "email": "E-posta"
   },
   "aboutUs": {
     "mission": {
@@ -1254,7 +1332,7 @@
   },
   "chat": {
     "language": "tr",
-    "greeting": "Merhaba! Cymasphere asistanınıyım. Müzik prodüksiyonu araçları, fiyatlandırma, özellikleri ve daha fazlası hakkında sorularınızda size yardımcı olabilirim. Ne bilmek istersiniz?",
+    "greeting": "Merhaba! Ben Cymasphere asistanıyım. Armoni ve melodi, CymaSynth (her planda dahil wavetable sentezleyici), fiyatlar veya ilk adımlar hakkında sorabilirsiniz. Ne öğrenmek istersiniz?",
     "error_process": "Üzgünüm, şu anda mesajınızı işleyemedim. Lütfen tekrar deneyin.",
     "error_connecting": "Şu anda bağlanmakta zorluk yaşıyorum. Lütfen bir anlık içinde tekrar deneyin.",
     "view_pricing": "Fiyatlandırmayı Görüntüle",
@@ -1262,6 +1340,114 @@
     "placeholder": "Cymasphere hakkında bana her şeyi sorun...",
     "typing": "Asistan yazıyor",
     "open_label": "Sohbeti Aç",
-    "close_label": "Sohbeti Kapat"
+    "close_label": "Sohbeti Kapat",
+    "tooltip_hint": "Yardıma mı ihtiyacınız var? Sohbet edin!"
+  },
+  "createPassword": {
+    "title": "Yeni şifre belirle",
+    "description": "Hesabınız için yeni bir şifre oluşturun. Güvenlik için başka yerde kullanmadığınız güçlü bir şifre seçin.",
+    "backToLogin": "Girişe dön",
+    "newPasswordLabel": "Yeni şifre",
+    "newPasswordPlaceholder": "Yeni şifrenizi girin",
+    "confirmPasswordLabel": "Şifreyi onayla",
+    "confirmPasswordPlaceholder": "Yeni şifrenizi onaylayın",
+    "setPassword": "Yeni şifreyi belirle",
+    "updating": "Güncelleniyor…",
+    "success": "Şifreniz sıfırlandı! Şu anda oturum açtınız.",
+    "proceedToLogin": "Girişe git",
+    "proceedToDashboard": "Panele git",
+    "rememberPassword": "Şifrenizi hatırladınız mı?",
+    "login": "Giriş yap",
+    "requestNewLink": "Lütfen yeni bir şifre sıfırlama bağlantısı isteyin.",
+    "requestHere": "İstemek için buraya tıklayın.",
+    "errors": {
+      "passwordMismatch": "Şifreler eşleşmiyor",
+      "passwordTooShort": "Şifre en az 6 karakter olmalıdır",
+      "invalidSession": "Geçersiz veya süresi dolmuş oturum. Yeni şifre sıfırlama isteyin.",
+      "generic": "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.",
+      "linkExpired": "Sıfırlama bağlantısının süresi doldu. Yenisini isteyin.",
+      "accessDenied": "Sıfırlama bağlantısı geçersiz veya süresi dolmuş. Yenisini isteyin.",
+      "invalidLink": "Sıfırlama bağlantısı geçersiz. Yenisini isteyin."
+    }
+  },
+  "admin": {
+    "title": "Yönetici konsolu",
+    "dashboard": "Yönetici paneli",
+    "crm": "CRM",
+    "supportTickets": {
+      "title": "Destek talepleri",
+      "subtitle": "Müşteri destek taleplerini ve sorunları yönetin",
+      "totalTickets": "Toplam talep",
+      "openTickets": "Açık talepler",
+      "avgResponseTime": "Ort. yanıt süresi",
+      "createTicket": "Talep oluştur",
+      "searchPlaceholder": "Konu, kullanıcı veya talep ID’sine göre ara…",
+      "filters": {
+        "all": "Tüm talepler",
+        "open": "Açık",
+        "inProgress": "İşlemde",
+        "resolved": "Çözüldü",
+        "closed": "Kapatıldı"
+      },
+      "priority": {
+        "low": "Düşük",
+        "medium": "Orta",
+        "high": "Yüksek",
+        "urgent": "Acil"
+      },
+      "ticketTable": {
+        "id": "Talep ID",
+        "subject": "Konu",
+        "user": "Kullanıcı",
+        "status": "Durum",
+        "priority": "Öncelik",
+        "created": "Oluşturuldu",
+        "lastUpdate": "Son güncelleme",
+        "assignedTo": "Atanan",
+        "actions": "İşlemler"
+      },
+      "ticketActions": {
+        "view": "Talebi görüntüle",
+        "reply": "Yanıtla",
+        "assign": "Ata",
+        "changeStatus": "Durumu değiştir",
+        "changePriority": "Önceliği değiştir",
+        "close": "Talebi kapat"
+      }
+    },
+    "users": "Kullanıcılar",
+    "analytics": "Analitik",
+    "settings": "Yönetici ayarları",
+    "crmPage": {
+      "title": "Müşteri ilişkileri yönetimi",
+      "subtitle": "Müşteri ilişkilerini ve etkileşimleri yönetin",
+      "totalUsers": "Toplam kullanıcı",
+      "activeSubscriptions": "Aktif abonelikler",
+      "revenue": "Aylık gelir",
+      "searchPlaceholder": "Ad, e-posta veya ID ile kullanıcı ara…",
+      "filters": {
+        "all": "Tüm kullanıcılar",
+        "free": "Ücretsiz kullanıcılar",
+        "monthly": "Aylık aboneler",
+        "annual": "Yıllık aboneler",
+        "lifetime": "Ömür boyu kullanıcılar",
+        "admin": "Yöneticiler"
+      },
+      "userTable": {
+        "name": "Ad",
+        "email": "E-posta",
+        "subscription": "Abonelik",
+        "joinDate": "Kayıt tarihi",
+        "lastLogin": "Son giriş",
+        "actions": "İşlemler"
+      },
+      "userActions": {
+        "viewProfile": "Profili görüntüle",
+        "editUser": "Kullanıcıyı düzenle",
+        "sendEmail": "E-posta gönder",
+        "changeSubscription": "Aboneliği değiştir",
+        "deleteUser": "Kullanıcıyı sil"
+      }
+    }
   }
 }

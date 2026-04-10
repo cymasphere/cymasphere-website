@@ -1,0 +1,170 @@
+{
+  "common": {
+    "adminConsole": "Yönetici konsolu",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "view": "Görüntüle",
+    "search": "Ara",
+    "filter": "Filtrele",
+    "export": "Dışa aktar",
+    "back": "Geri",
+    "next": "İleri",
+    "previous": "Önceki",
+    "error": "Hata",
+    "success": "Başarılı",
+    "warning": "Uyarı",
+    "info": "Bilgi"
+  },
+  "hero": {
+    "platforms": {
+      "macos": "macOS",
+      "windows": "Windows",
+      "ipad": "iPad"
+    }
+  },
+  "resetPassword": {
+    "errors": {
+      "linkExpired": "Şifre sıfırlama bağlantısının süresi doldu. Lütfen yenisini isteyin.",
+      "accessDenied": "Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş. Lütfen yenisini isteyin.",
+      "invalidLink": "Şifre sıfırlama bağlantısı geçersiz. Lütfen yenisini isteyin."
+    }
+  },
+  "dashboard": {
+    "layout": {
+      "adminConsole": "Yönetici konsolu"
+    },
+    "main": {
+      "downloadIntro": "Yazılım indirmelerinize ve kurulum dosyalarınıza erişin.",
+      "downloadRequiresSubscription": "Yazılım indirmek ve premium özellikleri kullanmak için abone olun.",
+      "goToDownloads": "İndirmelere git",
+      "viewDownloads": "İndirmeleri görüntüle",
+      "available": "Kullanılabilir",
+      "restricted": "Kısıtlı",
+      "downloadReady": "Yazılım indirmeleri hazır",
+      "subscribeForDownloads": "İndirmelere erişmek için abone olun",
+      "product": "Ürün",
+      "standaloneAndPlugins": "Bağımsız uygulama ve eklentiler",
+      "subscribeForAccess": "Erişim için abone olun"
+    }
+  },
+  "legal": {
+    "contactInformation": "İletişim bilgileri",
+    "email": "E-posta"
+  },
+  "chat": {
+    "tooltip_hint": "Yardıma mı ihtiyacınız var? Sohbet edin!"
+  },
+  "createPassword": {
+    "title": "Yeni şifre belirle",
+    "description": "Hesabınız için yeni bir şifre oluşturun. Güvenlik için başka yerde kullanmadığınız güçlü bir şifre seçin.",
+    "backToLogin": "Girişe dön",
+    "newPasswordLabel": "Yeni şifre",
+    "newPasswordPlaceholder": "Yeni şifrenizi girin",
+    "confirmPasswordLabel": "Şifreyi onayla",
+    "confirmPasswordPlaceholder": "Yeni şifrenizi onaylayın",
+    "setPassword": "Yeni şifreyi belirle",
+    "updating": "Güncelleniyor…",
+    "success": "Şifreniz sıfırlandı! Şu anda oturum açtınız.",
+    "proceedToLogin": "Girişe git",
+    "proceedToDashboard": "Panele git",
+    "rememberPassword": "Şifrenizi hatırladınız mı?",
+    "login": "Giriş yap",
+    "requestNewLink": "Lütfen yeni bir şifre sıfırlama bağlantısı isteyin.",
+    "requestHere": "İstemek için buraya tıklayın.",
+    "errors": {
+      "passwordMismatch": "Şifreler eşleşmiyor",
+      "passwordTooShort": "Şifre en az 6 karakter olmalıdır",
+      "invalidSession": "Geçersiz veya süresi dolmuş oturum. Yeni şifre sıfırlama isteyin.",
+      "generic": "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.",
+      "linkExpired": "Sıfırlama bağlantısının süresi doldu. Yenisini isteyin.",
+      "accessDenied": "Sıfırlama bağlantısı geçersiz veya süresi dolmuş. Yenisini isteyin.",
+      "invalidLink": "Sıfırlama bağlantısı geçersiz. Yenisini isteyin."
+    }
+  },
+  "freeTrial": {
+    "startTrial": "Ücretsiz denemeyi başlat",
+    "enterEmail": "{{days}} günlük ücretsiz denemenizi başlatmak için e-postanızı girin {{requirement}}.",
+    "cardRequired": "(kredi kartı gerekli)",
+    "noCardRequired": "(kredi kartı gerekmez)"
+  },
+  "admin": {
+    "title": "Yönetici konsolu",
+    "dashboard": "Yönetici paneli",
+    "crm": "CRM",
+    "users": "Kullanıcılar",
+    "analytics": "Analitik",
+    "settings": "Yönetici ayarları",
+    "supportTickets": {
+      "title": "Destek talepleri",
+      "subtitle": "Müşteri destek taleplerini ve sorunları yönetin",
+      "totalTickets": "Toplam talep",
+      "openTickets": "Açık talepler",
+      "avgResponseTime": "Ort. yanıt süresi",
+      "createTicket": "Talep oluştur",
+      "searchPlaceholder": "Konu, kullanıcı veya talep ID’sine göre ara…",
+      "filters": {
+        "all": "Tüm talepler",
+        "open": "Açık",
+        "inProgress": "İşlemde",
+        "resolved": "Çözüldü",
+        "closed": "Kapatıldı"
+      },
+      "priority": {
+        "low": "Düşük",
+        "medium": "Orta",
+        "high": "Yüksek",
+        "urgent": "Acil"
+      },
+      "ticketTable": {
+        "id": "Talep ID",
+        "subject": "Konu",
+        "user": "Kullanıcı",
+        "status": "Durum",
+        "priority": "Öncelik",
+        "created": "Oluşturuldu",
+        "lastUpdate": "Son güncelleme",
+        "assignedTo": "Atanan",
+        "actions": "İşlemler"
+      },
+      "ticketActions": {
+        "view": "Talebi görüntüle",
+        "reply": "Yanıtla",
+        "assign": "Ata",
+        "changeStatus": "Durumu değiştir",
+        "changePriority": "Önceliği değiştir",
+        "close": "Talebi kapat"
+      }
+    },
+    "crmPage": {
+      "title": "Müşteri ilişkileri yönetimi",
+      "subtitle": "Müşteri ilişkilerini ve etkileşimleri yönetin",
+      "totalUsers": "Toplam kullanıcı",
+      "activeSubscriptions": "Aktif abonelikler",
+      "revenue": "Aylık gelir",
+      "searchPlaceholder": "Ad, e-posta veya ID ile kullanıcı ara…",
+      "filters": {
+        "all": "Tüm kullanıcılar",
+        "free": "Ücretsiz kullanıcılar",
+        "monthly": "Aylık aboneler",
+        "annual": "Yıllık aboneler",
+        "lifetime": "Ömür boyu kullanıcılar",
+        "admin": "Yöneticiler"
+      },
+      "userTable": {
+        "name": "Ad",
+        "email": "E-posta",
+        "subscription": "Abonelik",
+        "joinDate": "Kayıt tarihi",
+        "lastLogin": "Son giriş",
+        "actions": "İşlemler"
+      },
+      "userActions": {
+        "viewProfile": "Profili görüntüle",
+        "editUser": "Kullanıcıyı düzenle",
+        "sendEmail": "E-posta gönder",
+        "changeSubscription": "Aboneliği değiştir",
+        "deleteUser": "Kullanıcıyı sil"
+      }
+    }
+  }
+}

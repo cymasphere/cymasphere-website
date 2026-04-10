@@ -1,0 +1,170 @@
+{
+  "common": {
+    "adminConsole": "Console d’administration",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "view": "Afficher",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "export": "Exporter",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "error": "Erreur",
+    "success": "Succès",
+    "warning": "Avertissement",
+    "info": "Information"
+  },
+  "hero": {
+    "platforms": {
+      "macos": "macOS",
+      "windows": "Windows",
+      "ipad": "iPad"
+    }
+  },
+  "resetPassword": {
+    "errors": {
+      "linkExpired": "Le lien de réinitialisation du mot de passe a expiré. Veuillez en demander un nouveau.",
+      "accessDenied": "Le lien de réinitialisation est invalide ou a expiré. Veuillez en demander un nouveau.",
+      "invalidLink": "Le lien de réinitialisation est invalide. Veuillez en demander un nouveau."
+    }
+  },
+  "dashboard": {
+    "layout": {
+      "adminConsole": "Console d’administration"
+    },
+    "main": {
+      "downloadIntro": "Accédez à vos téléchargements logiciels et installateurs.",
+      "downloadRequiresSubscription": "Abonnez-vous pour télécharger les logiciels et utiliser les fonctionnalités premium.",
+      "goToDownloads": "Aller aux téléchargements",
+      "viewDownloads": "Voir les téléchargements",
+      "available": "Disponible",
+      "restricted": "Restreint",
+      "downloadReady": "Téléchargements logiciels prêts",
+      "subscribeForDownloads": "Abonnez-vous pour accéder aux téléchargements",
+      "product": "Produit",
+      "standaloneAndPlugins": "Application autonome et plugins",
+      "subscribeForAccess": "Abonnez-vous pour obtenir l’accès"
+    }
+  },
+  "legal": {
+    "contactInformation": "Coordonnées",
+    "email": "E-mail"
+  },
+  "chat": {
+    "tooltip_hint": "Besoin d’aide ? Discutez avec nous !"
+  },
+  "createPassword": {
+    "title": "Définir un nouveau mot de passe",
+    "description": "Créez un nouveau mot de passe pour votre compte. Pour des raisons de sécurité, choisissez un mot de passe fort que vous n’utilisez pas ailleurs.",
+    "backToLogin": "Retour à la connexion",
+    "newPasswordLabel": "Nouveau mot de passe",
+    "newPasswordPlaceholder": "Saisissez votre nouveau mot de passe",
+    "confirmPasswordLabel": "Confirmer le mot de passe",
+    "confirmPasswordPlaceholder": "Confirmez votre nouveau mot de passe",
+    "setPassword": "Définir le nouveau mot de passe",
+    "updating": "Mise à jour…",
+    "success": "Votre mot de passe a été réinitialisé ! Vous êtes connecté.",
+    "proceedToLogin": "Aller à la connexion",
+    "proceedToDashboard": "Aller au tableau de bord",
+    "rememberPassword": "Vous vous souvenez de votre mot de passe ?",
+    "login": "Connexion",
+    "requestNewLink": "Veuillez demander un nouveau lien de réinitialisation.",
+    "requestHere": "Cliquez ici pour en demander un.",
+    "errors": {
+      "passwordMismatch": "Les mots de passe ne correspondent pas",
+      "passwordTooShort": "Le mot de passe doit contenir au moins 6 caractères",
+      "invalidSession": "Session invalide ou expirée. Demandez une nouvelle réinitialisation.",
+      "generic": "Une erreur inattendue s’est produite. Réessayez.",
+      "linkExpired": "Le lien de réinitialisation a expiré. Demandez-en un nouveau.",
+      "accessDenied": "Le lien de réinitialisation est invalide ou a expiré. Demandez-en un nouveau.",
+      "invalidLink": "Le lien de réinitialisation est invalide. Demandez-en un nouveau."
+    }
+  },
+  "freeTrial": {
+    "startTrial": "Commencer l’essai gratuit",
+    "enterEmail": "Saisissez votre e-mail pour commencer votre essai gratuit de {{days}} jours {{requirement}}.",
+    "cardRequired": "(carte bancaire requise)",
+    "noCardRequired": "(sans carte bancaire)"
+  },
+  "admin": {
+    "title": "Console d’administration",
+    "dashboard": "Tableau de bord admin",
+    "crm": "CRM",
+    "users": "Utilisateurs",
+    "analytics": "Analytique",
+    "settings": "Paramètres admin",
+    "supportTickets": {
+      "title": "Tickets d’assistance",
+      "subtitle": "Gérer les demandes et incidents clients",
+      "totalTickets": "Tickets totaux",
+      "openTickets": "Tickets ouverts",
+      "avgResponseTime": "Temps de réponse moyen",
+      "createTicket": "Créer un ticket",
+      "searchPlaceholder": "Rechercher par sujet, utilisateur ou ID de ticket…",
+      "filters": {
+        "all": "Tous les tickets",
+        "open": "Ouverts",
+        "inProgress": "En cours",
+        "resolved": "Résolus",
+        "closed": "Fermés"
+      },
+      "priority": {
+        "low": "Basse",
+        "medium": "Moyenne",
+        "high": "Haute",
+        "urgent": "Urgente"
+      },
+      "ticketTable": {
+        "id": "ID du ticket",
+        "subject": "Sujet",
+        "user": "Utilisateur",
+        "status": "Statut",
+        "priority": "Priorité",
+        "created": "Créé",
+        "lastUpdate": "Dernière mise à jour",
+        "assignedTo": "Assigné à",
+        "actions": "Actions"
+      },
+      "ticketActions": {
+        "view": "Voir le ticket",
+        "reply": "Répondre",
+        "assign": "Assigner",
+        "changeStatus": "Changer le statut",
+        "changePriority": "Changer la priorité",
+        "close": "Fermer le ticket"
+      }
+    },
+    "crmPage": {
+      "title": "Gestion de la relation client",
+      "subtitle": "Gérer les relations et interactions clients",
+      "totalUsers": "Utilisateurs totaux",
+      "activeSubscriptions": "Abonnements actifs",
+      "revenue": "Revenu mensuel",
+      "searchPlaceholder": "Rechercher par nom, e-mail ou ID…",
+      "filters": {
+        "all": "Tous les utilisateurs",
+        "free": "Utilisateurs gratuits",
+        "monthly": "Abonnés mensuels",
+        "annual": "Abonnés annuels",
+        "lifetime": "Utilisateurs à vie",
+        "admin": "Administrateurs"
+      },
+      "userTable": {
+        "name": "Nom",
+        "email": "E-mail",
+        "subscription": "Abonnement",
+        "joinDate": "Date d’inscription",
+        "lastLogin": "Dernière connexion",
+        "actions": "Actions"
+      },
+      "userActions": {
+        "viewProfile": "Voir le profil",
+        "editUser": "Modifier l’utilisateur",
+        "sendEmail": "Envoyer un e-mail",
+        "changeSubscription": "Changer l’abonnement",
+        "deleteUser": "Supprimer l’utilisateur"
+      }
+    }
+  }
+}

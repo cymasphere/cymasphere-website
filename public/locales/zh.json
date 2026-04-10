@@ -20,7 +20,21 @@
     "locale": "zh-CN",
     "none": "无",
     "notAvailable": "不可用",
-    "unknownError": "未知错误"
+    "unknownError": "未知错误",
+    "adminConsole": "管理控制台",
+    "delete": "删除",
+    "edit": "编辑",
+    "view": "查看",
+    "search": "搜索",
+    "filter": "筛选",
+    "export": "导出",
+    "back": "返回",
+    "next": "下一步",
+    "previous": "上一步",
+    "error": "错误",
+    "success": "成功",
+    "warning": "警告",
+    "info": "信息"
   },
   "header": {
     "home": "首页",
@@ -59,13 +73,27 @@
       "gMajor": "G大调"
     },
     "tooltips": {
-      "playNote": "点击播放此音符",
+      "playNote": "点击播放此音",
       "playChord": "点击播放和弦"
+    },
+    "includedSynth": "包含 CymaSynth—专业波表合成器（VST3 与 AU）—随每次订阅与终身许可捆绑。完整作曲套件与旗舰乐器合一。",
+    "bundleEyebrow": "一次订阅 · 两款产品",
+    "bundleCymasphereTitle": "Cymasphere",
+    "bundleCymasphereDesc": "作曲与理论套件",
+    "bundleCymaSynthTitle": "CymaSynth",
+    "bundleCymaSynthDesc": "波表合成器 · 价值 149 美元已包含",
+    "bundleFootnote": "CymaSynth 单独售价 149 美元—已包含在所有 Cymasphere 方案中，无额外费用 · 独立版、AU 与 VST3",
+    "bundleCymasphereImageAlt": "Cymasphere — 目录方形主图",
+    "bundleCymaSynthImageAlt": "波表合成器 CymaSynth 产品界面",
+    "platforms": {
+      "macos": "macOS",
+      "windows": "Windows",
+      "ipad": "iPad"
     }
   },
   "features": {
     "title": "功能特色",
-    "subtitle": "探索Cymasphere能为您做些什么",
+    "subtitle": "和声、旋律、编曲—另有价值 149 美元的波表乐器 CymaSynth 已纳入您的方案。一套产品，两款工具。",
     "aiComposition": "AI作曲",
     "aiCompositionDesc": "使用我们先进的AI，一键生成音乐",
     "livePerformance": "现场演奏",
@@ -206,6 +234,21 @@
         "基于风格的生成 - 为不同音乐流派和情绪提供选项",
         "实时适应 - 当您修改作品时，生成的内容自动更新"
       ]
+    },
+    "cymaSynth": {
+      "title": "包含 CymaSynth",
+      "description": "价值 149 美元的专业波表合成器—三振荡器、深度调制、录音室级效果—随 Cymasphere 免费提供。",
+      "modalTitle": "集成的旗舰乐器",
+      "modalDescription": "单独购买 CymaSynth 为 149 美元。搭配 Cymasphere，每次订阅与终身许可均无需加价—从和声草稿到成品音色，无需第二次购买。专业波表合成、灵活调制与精致效果—可在 Cymasphere 工作流中使用，也可在 DAW 中作为 VST3 与 AU 插件。",
+      "keyFeatures": "主要特性：",
+      "features": [
+        "单独售价 149 美元—所有 Cymasphere 方案（订阅与终身）均免费包含；无需另购 CymaSynth",
+        "三振荡器架构，波表变形（256 帧）及经典波形",
+        "64 路调制矩阵，5 个 LFO 与 4 个 ADSR+Hold 包络",
+        "双滤波器、最多 32 复音、齐奏与内置效果链",
+        "VST3 与 AU 格式—与 Cymasphere 并用或直接在 DAW 中使用",
+        "与 Cymasphere 和声与 pattern 搭配：在此写进行，在 CymaSynth 塑音色"
+      ]
     }
   },
   "howItWorks": {
@@ -279,7 +322,7 @@
     "subtitle": "灵活选择满足您的需求",
     "simpleTransparent": "简单透明的价格",
     "chooseOption": "选择最适合您的计费选项。",
-    "allFeatures": "所有选项都包含完整功能访问。",
+    "allFeatures": "每个方案均包含完整 Cymasphere 套件以及价值 149 美元的波表合成器 CymaSynth（免费包含），以及下方全部功能。",
     "monthly": "月付",
     "yearly": "年付",
     "lifetime": "终身",
@@ -305,21 +348,22 @@
     "lifetimeOwner": "终身拥有者",
     "noTrialAvailable": "您已经使用过免费试用。开始订阅以继续享受所有高级功能。",
     "features": [
-      "歌曲构建器与多轨管理",
-      "智能模式编辑器和和弦适应",
-      "手势和声调色板界面",
-      "高级声部进行和和弦声部",
+      "含多轨管理的歌曲构建器",
+      "智能 pattern 编辑器与和弦适配",
+      "手势式 Harmony Palette 界面",
+      "进阶声部进行与和弦 voicing",
       "交互式和弦进行时间轴",
-      "完整声部和音域控制",
-      "独立应用和DAW插件支持",
-      "实时和弦重新和声工具",
-      "全面编排视图",
-      "自定义声部生成引擎",
-      "高级支持和所有未来更新"
+      "声部与延伸音的完整控制",
+      "独立应用与 DAW 插件支持",
+      "实时重配和声工具",
+      "完整编曲视图",
+      "自定义 voicing 生成引擎",
+      "高级支持与未来全部更新",
+      "波表合成器 CymaSynth（VST3 与 AU）—价值 149 美元，免费包含"
     ],
     "freeTrial": {
       "title": "免费试用最多14天",
-      "description": "通过两种试用选项体验所有高级功能。",
+      "description": "通过两种试用方式体验完整套件（含 CymaSynth）。",
       "options": "选择7天无卡或14天有卡存档。",
       "chooseFree": "选择您的免费试用选项：",
       "withCard": "14天试用 - 添加存卡",
@@ -330,7 +374,6 @@
       "or": "或"
     },
     "processing": "处理中",
-    "upgradeNow": "立即升级",
     "buyNow": "立即购买"
   },
   "promotion": {
@@ -342,7 +385,11 @@
     "questions": [
       {
         "question": "什么是Cymasphere？",
-        "answer": "Cymasphere是一个完整的歌曲创作套件，既可作为独立应用程序，也可作为DAW的插件（AU和VST3）。它提供集成工具来作曲和声和旋律，具有智能和弦声部、旋律模式构建和交互式可视化，让所有技能水平的用户都能理解和直观使用音乐理论。"
+        "answer": "Cymasphere 是完整的音乐创作套件，可作为独立应用，也可作为 DAW 插件（AU 与 VST3）。提供和声与旋律、智能 voicing、pattern 构建与交互式可视化，让各水平用户都能运用理论。每次订阅与终身许可还包含专业波表合成器 CymaSynth（VST3 与 AU），无额外费用。"
+      },
+      {
+        "question": "什么是 CymaSynth？真的包含在 Cymasphere 中吗？",
+        "answer": "CymaSynth 是 NNAudio 的专业波表合成器：多振荡器、深度调制、双滤波器、效果与 32 复音。单独售价 149 美元；搭配 Cymasphere，每次订阅与终身许可均无需加价。订阅时无需另购—作曲套件与旗舰乐器合二为一。"
       },
       {
         "question": "Cymasphere为音乐家解决什么问题？",
@@ -420,7 +467,7 @@
     "copyright": "© {{year}} Cymasphere。保留所有权利。",
     "privacyPolicy": "隐私政策",
     "termsOfService": "服务条款",
-    "description": "Cymasphere是为制作人、作曲家、演奏音乐家、教育工作者和学生设计的交互式音乐作曲工具。",
+    "description": "Cymasphere 是面向制作人、作曲家、演奏者、教育工作者与学生的互动作曲工具—每个方案均免费包含价值 149 美元的波表合成器 CymaSynth。",
     "navigation": "导航",
     "account": "账户",
     "accountDashboard": "账户仪表板",
@@ -502,7 +549,10 @@
       "userNotFound": "未找到此邮箱地址的用户",
       "invalidEmail": "邮箱地址无效",
       "rateLimit": "密码重置尝试次数过多。请等待几分钟后重试。",
-      "generic": "发送密码重置邮件失败。请重试。"
+      "generic": "发送密码重置邮件失败。请重试。",
+      "linkExpired": "密码重置链接已过期。请重新申请。",
+      "accessDenied": "密码重置链接无效或已过期。请重新申请。",
+      "invalidLink": "密码重置链接无效。请重新申请。"
     }
   },
   "dashboard": {
@@ -518,7 +568,8 @@
       "loading": "加载仪表板中...",
       "account": "账户",
       "welcomeUser": "{{name}}",
-      "emailLabel": "{{email}}"
+      "emailLabel": "{{email}}",
+      "adminConsole": "管理控制台"
     },
     "main": {
       "welcome": "欢迎回来，{{name}}！",
@@ -555,7 +606,7 @@
       "membership": "会员",
       "free": "免费",
       "upgradeToPro": "升级到专业版获得完整访问权限",
-      "fullAccess": "您目前可以完全访问所有高级功能：",
+      "fullAccess": "您可完整使用所有高级功能，包括 CymaSynth：",
       "upgradeToLifetime": "升级到终身访问权限",
       "upgradeNow": "立即升级",
       "lifetimeAccess": "包含终身免费更新",
@@ -572,9 +623,9 @@
       "trialStatus": "试用状态",
       "daysRemaining": "剩余{{days}}天",
       "renewalDate": "续费日期",
-      "trialMessage": "您目前正在{{trialDays}}天免费试用期内，可完全访问所有高级功能。试用结束前无需付款。",
-      "lifetimeMessage": "您拥有终身会员资格，享有终身免费更新。永久享受所有高级功能和福利。",
-      "activeSubscriptionMessage": "您的{{plan}}订阅处于活跃状态。享受所有高级功能和福利。",
+      "trialMessage": "您正处于 {{trialDays}} 天免费试用中，可完整使用所有高级功能（含 CymaSynth）。试用结束前不扣款。",
+      "lifetimeMessage": "您拥有终身订阅与终身更新。永久享受所有高级功能，包括 CymaSynth。",
+      "activeSubscriptionMessage": "您的 {{plan}} 订阅已生效。享受所有高级功能，包括 CymaSynth。",
       "upgradeMessage": "升级以解锁高级功能和先进的音频处理能力。",
       "featureAdvancedChords": "高级和弦进行",
       "featureUnlimitedSaves": "无限保存进行",
@@ -601,8 +652,17 @@
       "sending": "发送中...",
       "product": "产品",
       "downloads": "下载",
-      "standaloneAndPlugins": "独立应用和插件",
-      "subscribeForAccess": "订阅以获取访问权限"
+      "standaloneAndPlugins": "独立应用与插件",
+      "subscribeForAccess": "订阅以获取访问权限",
+      "downloadAvailable": "下载最新 Cymasphere 与 CymaSynth 安装包—您的订阅包含两者。",
+      "downloadIntro": "访问您的软件下载与安装文件。",
+      "downloadRequiresSubscription": "订阅后即可下载软件并使用高级功能。",
+      "goToDownloads": "前往下载",
+      "viewDownloads": "查看下载",
+      "available": "可用",
+      "restricted": "受限",
+      "downloadReady": "软件下载已就绪",
+      "subscribeForDownloads": "订阅以访问下载"
     },
     "profile": {
       "title": "我的资料",
@@ -716,7 +776,13 @@
       "resources": "资源",
       "quickStart": "快速入门指南",
       "quickStartDesc": "几分钟内快速上手Cymasphere",
-      "downloadPdf": "下载PDF"
+      "downloadPdf": "下载PDF",
+      "ipadTitle": "Cymasphere for iPad",
+      "ipadDesc": "Native iPad app with full feature set, optimized for iPad. Available now on the App Store.",
+      "comingSoon": "Coming Soon",
+      "availableNow": "Available Now",
+      "viewOnAppStore": "View on App Store",
+      "loading": "Loading..."
     },
     "settings": {
       "title": "设置",
@@ -905,7 +971,9 @@
         "title": "10. 联系我们",
         "content": "如果您对本隐私政策有疑问，请联系我们：support@cymasphere.com。"
       }
-    }
+    },
+    "contactInformation": "联系信息",
+    "email": "邮箱"
   },
   "aboutUs": {
     "mission": {
@@ -974,7 +1042,7 @@
   },
   "chat": {
     "language": "zh",
-    "greeting": "你好!我是Cymasphere助手。我可以帮助您解答关于我们的音乐制作工具、价格、功能等问题。您想了解什么?",
+    "greeting": "您好！我是 Cymasphere 助手。可询问和声与旋律、CymaSynth（每个方案均含的波表合成器）、价格或入门步骤。您想了解什么？",
     "error_process": "抱歉，我现在无法处理您的消息。请重试。",
     "error_connecting": "我现在遇到连接问题。请稍后重试。",
     "view_pricing": "查看价格",
@@ -982,6 +1050,120 @@
     "placeholder": "问我关于Cymasphere的任何事情...",
     "typing": "助手正在输入",
     "open_label": "打开聊天",
-    "close_label": "关闭聊天"
+    "close_label": "关闭聊天",
+    "tooltip_hint": "需要帮助？与我们在线聊天！"
+  },
+  "createPassword": {
+    "title": "设置新密码",
+    "description": "为您的账户创建新密码。为保障安全，请选择强度足够且未在其他地方使用的密码。",
+    "backToLogin": "返回登录",
+    "newPasswordLabel": "新密码",
+    "newPasswordPlaceholder": "输入新密码",
+    "confirmPasswordLabel": "确认密码",
+    "confirmPasswordPlaceholder": "再次输入新密码",
+    "setPassword": "设置新密码",
+    "updating": "更新中…",
+    "success": "密码已成功重置！您已登录。",
+    "proceedToLogin": "前往登录",
+    "proceedToDashboard": "前往控制台",
+    "rememberPassword": "记起密码了？",
+    "login": "登录",
+    "requestNewLink": "请重新申请密码重置链接。",
+    "requestHere": "点击此处重新申请。",
+    "errors": {
+      "passwordMismatch": "两次输入的密码不一致",
+      "passwordTooShort": "密码至少需要 6 个字符",
+      "invalidSession": "会话无效或已过期。请重新申请密码重置。",
+      "generic": "发生意外错误，请重试。",
+      "linkExpired": "密码重置链接已过期。请重新申请。",
+      "accessDenied": "密码重置链接无效或已过期。请重新申请。",
+      "invalidLink": "密码重置链接无效。请重新申请。"
+    }
+  },
+  "freeTrial": {
+    "startTrial": "开始免费试用",
+    "enterEmail": "输入邮箱以开始 {{days}} 天免费试用{{requirement}}。",
+    "cardRequired": "（需要信用卡）",
+    "noCardRequired": "（无需信用卡）"
+  },
+  "admin": {
+    "title": "管理控制台",
+    "dashboard": "管理仪表板",
+    "crm": "客户关系管理",
+    "supportTickets": {
+      "title": "支持工单",
+      "subtitle": "管理客户支持与问题请求",
+      "totalTickets": "工单总数",
+      "openTickets": "待处理工单",
+      "avgResponseTime": "平均响应时间",
+      "createTicket": "新建工单",
+      "searchPlaceholder": "按主题、用户或工单编号搜索…",
+      "filters": {
+        "all": "全部工单",
+        "open": "待处理",
+        "inProgress": "处理中",
+        "resolved": "已解决",
+        "closed": "已关闭"
+      },
+      "priority": {
+        "low": "低",
+        "medium": "中",
+        "high": "高",
+        "urgent": "紧急"
+      },
+      "ticketTable": {
+        "id": "工单编号",
+        "subject": "主题",
+        "user": "用户",
+        "status": "状态",
+        "priority": "优先级",
+        "created": "创建时间",
+        "lastUpdate": "最后更新",
+        "assignedTo": "指派给",
+        "actions": "操作"
+      },
+      "ticketActions": {
+        "view": "查看工单",
+        "reply": "回复",
+        "assign": "指派",
+        "changeStatus": "更改状态",
+        "changePriority": "更改优先级",
+        "close": "关闭工单"
+      }
+    },
+    "users": "用户",
+    "analytics": "分析",
+    "settings": "管理设置",
+    "crmPage": {
+      "title": "客户关系管理",
+      "subtitle": "管理客户关系与互动",
+      "totalUsers": "用户总数",
+      "activeSubscriptions": "有效订阅",
+      "revenue": "月度收入",
+      "searchPlaceholder": "按姓名、邮箱或 ID 搜索用户…",
+      "filters": {
+        "all": "全部用户",
+        "free": "免费用户",
+        "monthly": "月付订阅",
+        "annual": "年付订阅",
+        "lifetime": "终身用户",
+        "admin": "管理员"
+      },
+      "userTable": {
+        "name": "姓名",
+        "email": "邮箱",
+        "subscription": "订阅",
+        "joinDate": "注册日期",
+        "lastLogin": "上次登录",
+        "actions": "操作"
+      },
+      "userActions": {
+        "viewProfile": "查看资料",
+        "editUser": "编辑用户",
+        "sendEmail": "发送邮件",
+        "changeSubscription": "更改订阅",
+        "deleteUser": "删除用户"
+      }
+    }
   }
 }
