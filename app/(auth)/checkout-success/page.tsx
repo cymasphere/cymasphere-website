@@ -743,8 +743,8 @@ function CheckoutSuccessContent() {
             <Subtitle>Welcome to Cymasphere Pro - No Charge Today</Subtitle>
             <Message>
               {isLoggedIn || isSignedUp
-                ? "Your free trial has been successfully started. Explore all premium features with no payment required during your trial period."
-                : "Your free trial has been successfully started. Check your email to create your account and start exploring all premium features - no payment required during your trial period."}
+                ? "Your free trial has been successfully started. Explore all premium features—including CymaSynth—with no payment required during your trial period."
+                : "Your free trial has been successfully started. Check your email to create your account and start exploring all premium features (including CymaSynth)—no payment required during your trial period."}
             </Message>
             <TrialInfoBox>
               <TrialInfoTitle>✨ Zero Cost Trial</TrialInfoTitle>
@@ -761,8 +761,8 @@ function CheckoutSuccessContent() {
             <Subtitle>Thank you for your purchase</Subtitle>
             <Message>
               {isLoggedIn || isSignedUp
-                ? "Your payment has been processed successfully. You now have full access to Cymasphere Pro."
-                : "Your payment has been processed successfully. Check your email to create your account and access Cymasphere Pro."}
+                ? "Your payment has been processed successfully. You now have full access to Cymasphere Pro and CymaSynth."
+                : "Your payment has been processed successfully. Check your email to create your account and access Cymasphere Pro and CymaSynth."}
             </Message>
           </>
         )}

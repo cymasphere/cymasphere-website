@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Loading skeleton for the landing-page features grid.
+ * @module components/skeletons/FeaturesSectionSkeleton
+ * @note Card count matches FeaturesSection (10 cards including CymaSynth).
+ */
+
 import React from "react";
 import styled from "styled-components";
 import { TextSkeleton, CardSkeleton } from "@/components/common/LoadingSkeleton";
@@ -61,8 +67,8 @@ const FeaturesSectionSkeleton = () => {
         </TitleContainer>
 
         <FeaturesGrid>
-          {/* Generate 6 feature card skeletons */}
-          {Array(6).fill(0).map((_, index) => (
+          {/* Match FeaturesSection grid (10 feature cards including CymaSynth) */}
+          {Array(10).fill(0).map((_, index) => (
             <FeatureCard key={index}>
               <FeatureIconSkeleton />
               <TextSkeleton lines={1} width="60%" style={{ marginBottom: "1rem" }} />

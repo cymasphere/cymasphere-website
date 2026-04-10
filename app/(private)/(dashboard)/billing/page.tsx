@@ -1613,7 +1613,7 @@ export default function BillingPage() {
           <p>
             {t(
               "dashboard.billing.trialBanner",
-              "You're currently on a {{trialDays}}-day free trial with full access to all premium features. {{daysLeft}} days remaining. Your first payment of ${{amount}} will be on {{date}}.",
+              "You're currently on a {{trialDays}}-day free trial with full access to all premium features, including CymaSynth. {{daysLeft}} days remaining. Your first payment of ${{amount}} will be on {{date}}.",
               {
                 trialDays: 7,
                 daysLeft: daysLeftInTrial,
@@ -1672,7 +1672,7 @@ export default function BillingPage() {
                   <PlanDescription>
                     {t(
                       "dashboard.billing.noActivePlanDesc",
-                      "You currently don't have an active subscription. Subscribe below to unlock all premium features."
+                      "You currently don't have an active subscription. Subscribe below to unlock Cymasphere, CymaSynth, and all premium features."
                     )}
                   </PlanDescription>
                 </div>
@@ -1835,7 +1835,7 @@ export default function BillingPage() {
                 </PlanName>
                 <PlanDescription>
                   {hasNfr
-                    ? "Elite Access - Full access to all premium features"
+                    ? "Elite Access - Full access to all premium features including CymaSynth"
                     : isSubscriptionNone(userSubscription.subscription)
                     ? t(
                         "dashboard.billing.noPlanDesc",
@@ -1849,12 +1849,12 @@ export default function BillingPage() {
                     : isInTrialPeriod
                     ? t(
                         "dashboard.billing.trialPlanDesc",
-                        "Free trial active - Full access to all premium features. {{days}} days remaining.",
+                        "Free trial active - Full access to all premium features, including CymaSynth. {{days}} days remaining.",
                         { days: daysLeftInTrial }
                       )
                     : t(
                         "dashboard.billing.paidPlanDesc",
-                        "Full access to all premium features and content"
+                        "Full access to all premium features and content, including CymaSynth"
                       )}
                   {userSubscription.subscription_source === "ios" && (
                     <div
@@ -2406,6 +2406,7 @@ export default function BillingPage() {
                 "Comprehensive Arrangement View",
                 "Custom Voicing Generation Engine",
                 "Premium Support & All Future Updates",
+                "CymaSynth wavetable synth (VST3 & AU)—$149 value, included free",
               ];
             })()}
             monthlyDiscount={prices.monthlyDiscount || undefined}

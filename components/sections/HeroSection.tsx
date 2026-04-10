@@ -22,46 +22,124 @@ import React, {
   useMemo,
 } from "react";
 import { useTranslation } from "react-i18next";
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
 import { FaApple, FaWindows, FaTabletAlt, FaPlug } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Tone from "tone";
 import { getPresetById } from "@/utils/presets";
 import { createSynth, disposeSynth, DisposableSynth } from "@/utils/synthUtils";
 import useEffectsChain from "@/hooks/useEffectsChain";
+import dynamic from "next/dynamic";
+import Image from "next/image";
+
+/**
+ * @brief CDN base for feature/product WebP assets (matches FeaturesSection).
+ * @note Uses NEXT_PUBLIC_SUPABASE_URL when set so previews track the linked project.
+ */
+const HERO_PRODUCT_IMAGE_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://jibirpbauzqhdiwjlrmf.supabase.co"}/storage/v1/object/public/feature-images/optimized`;
+
+/**
+ * @brief Hero bundle: Cymasphere square (NNAudio catalog art, synced to this Supabase) + CymaSynth packshot.
+ * @note Run `npm run sync:cymasynth-assets` to refresh `cymasphere-square` from NNAudio.
+ */
+const HERO_PRODUCT_IMAGES = {
+  cymasphere: `${HERO_PRODUCT_IMAGE_BASE}/cymasphere-square.webp`,
+  cymaSynth: `${HERO_PRODUCT_IMAGE_BASE}/cymasynth-product.webp`,
+} as const;
+
+/** @brief Slow drift + hue shift for iridescent hero overlay (oil-slick / prism feel). */
+const heroIridescentDrift = keyframes`
+  0% {
+    background-position: 0% 45%, 50% 50%;
+    filter: hue-rotate(-12deg) saturate(1.05);
+  }
+  50% {
+    background-position: 100% 55%, 50% 50%;
+    filter: hue-rotate(18deg) saturate(1.12);
+  }
+  100% {
+    background-position: 0% 45%, 50% 50%;
+    filter: hue-rotate(-12deg) saturate(1.05);
+  }
+`;
 
 const HeroContainer = styled.section`
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 120px 20px 80px;
+  padding: 88px 20px 44px;
   position: relative;
   overflow: hidden;
   background-color: var(--background);
+  isolation: isolate;
 
-  &:before {
+  /** Soft color wash: airy, not a heavy black scrim */
+  &::before {
     content: "";
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(
-        circle at 30% 50%,
-        rgba(108, 99, 255, 0.1),
-        transparent 50%
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        ellipse 85% 65% at 18% 25%,
+        rgba(147, 197, 253, 0.45),
+        transparent 58%
       ),
       radial-gradient(
-        circle at 70% 30%,
-        rgba(147, 51, 234, 0.1),
+        ellipse 75% 55% at 88% 18%,
+        rgba(196, 181, 253, 0.4),
+        transparent 55%
+      ),
+      radial-gradient(
+        ellipse 70% 80% at 48% 95%,
+        rgba(45, 212, 191, 0.28),
+        transparent 60%
+      ),
+      radial-gradient(
+        ellipse 55% 45% at 72% 48%,
+        rgba(244, 114, 182, 0.22),
         transparent 50%
+      ),
+      linear-gradient(
+        160deg,
+        rgba(15, 23, 42, 0.12) 0%,
+        rgba(30, 27, 60, 0.06) 42%,
+        rgba(15, 23, 42, 0.1) 100%
       );
-    z-index: 0;
+    mix-blend-mode: soft-light;
   }
 
-
+  /** Animated iridescent sheen (large gradient moves; hue-rotate adds prism shift) */
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.82;
+    background: linear-gradient(
+        125deg,
+        rgba(99, 102, 241, 0.22) 0%,
+        rgba(34, 211, 238, 0.2) 22%,
+        rgba(192, 132, 252, 0.26) 45%,
+        rgba(52, 211, 153, 0.16) 68%,
+        rgba(244, 114, 182, 0.2) 88%,
+        rgba(129, 140, 248, 0.22) 100%
+      ),
+      radial-gradient(
+        ellipse 90% 70% at 50% 50%,
+        rgba(255, 255, 255, 0.08) 0%,
+        transparent 55%
+      );
+    background-size: 260% 260%, 100% 100%;
+    background-position: 0% 45%, 50% 50%;
+    mix-blend-mode: overlay;
+    animation: ${heroIridescentDrift} 24s ease-in-out infinite;
+  }
 `;
 
 const BackgroundVideo = styled.video<{ $loaded?: boolean }>`
@@ -70,7 +148,7 @@ const BackgroundVideo = styled.video<{ $loaded?: boolean }>`
   left: 0;
   width: 100%;
   height: calc(100% - 60px);
-  opacity: ${props => props.$loaded ? 0.15 : 0};
+  opacity: ${(props) => (props.$loaded ? 0.28 : 0)};
   z-index: 0;
   pointer-events: none;
   object-fit: contain;
@@ -83,35 +161,201 @@ const HeroContent = styled.div`
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
 `;
 
 const HeroTitle = styled(motion.h1)`
-  font-size: 4rem;
-  margin-bottom: 1.5rem;
+  font-size: 3.5rem;
+  margin-bottom: 0.85rem;
   text-align: center;
-  line-height: 1.1;
+  line-height: 1.08;
 
   @media (max-width: 768px) {
-    font-size: 3rem;
+    font-size: 2.65rem;
+    margin-bottom: 0.65rem;
   }
 `;
 
-const HeroSubtitle = styled.p`
-  font-size: 1.25rem;
+const HeroSubtitle = styled(motion.p)`
+  font-size: 1.1rem;
+  line-height: 1.45;
   color: var(--text-secondary);
-  margin-bottom: 3rem;
+  margin-bottom: 0.55rem;
   max-width: 900px;
   text-align: center;
 `;
 
+/**
+ * @brief Wraps the two-product bundle lockup (Cymasphere + CymaSynth).
+ */
+const HeroBundleLockup = styled(motion.div)`
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto 0.85rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+`;
+
+const HeroBundleEyebrow = styled.span`
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 0.45rem;
+  opacity: 0.95;
+`;
+
+const HeroProductPair = styled.div`
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0.45rem 0.45rem;
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+
+  @media (max-width: 680px) {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    justify-items: center;
+    max-width: min(280px, 100%);
+    gap: 0.55rem;
+  }
+`;
+
+interface HeroProductChipProps {
+  $variant: "cymasphere" | "cymaSynth";
+}
+
+const HeroProductChip = styled.div<HeroProductChipProps>`
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 14px;
+  text-align: left;
+  border: 1px solid
+    ${(p) =>
+      p.$variant === "cymasphere"
+        ? "rgba(108, 99, 255, 0.45)"
+        : "rgba(78, 205, 196, 0.45)"};
+  background: ${(p) =>
+    p.$variant === "cymasphere"
+      ? "linear-gradient(145deg, rgba(108, 99, 255, 0.14), rgba(108, 99, 255, 0.04))"
+      : "linear-gradient(145deg, rgba(78, 205, 196, 0.12), rgba(78, 205, 196, 0.03))"};
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  transition: transform 0.28s ease, box-shadow 0.28s ease,
+    border-color 0.28s ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 44px rgba(0, 0, 0, 0.28);
+    border-color: ${(p) =>
+      p.$variant === "cymasphere"
+        ? "rgba(108, 99, 255, 0.65)"
+        : "rgba(78, 205, 196, 0.6)"};
+  }
+
+  @media (max-width: 680px) {
+    text-align: center;
+  }
+`;
+
+/**
+ * @brief Identical square media area for both products so cards share width, height, and baseline.
+ */
+const HeroProductImageFrame = styled.div`
+  position: relative;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  margin: 0;
+  background: linear-gradient(
+    165deg,
+    rgba(12, 11, 22, 0.98) 0%,
+    rgba(22, 20, 38, 0.95) 45%,
+    rgba(8, 8, 14, 1) 100%
+  );
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+`;
+
+const HeroProductTextBlock = styled.div`
+  flex: 0 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.55rem 0.75rem 0.65rem;
+  min-height: 4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+
+  @media (max-width: 520px) {
+    padding: 0.5rem 0.65rem 0.6rem;
+    min-height: 3.85rem;
+  }
+`;
+
+const HeroProductName = styled.span`
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1.2;
+  margin-bottom: 0.25rem;
+`;
+
+const HeroProductDesc = styled.span`
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.35;
+`;
+
+const HeroBundlePlus = styled.span`
+  flex: 0 0 auto;
+  align-self: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  box-shadow: 0 4px 16px rgba(108, 99, 255, 0.35);
+  line-height: 1;
+`;
+
+const HeroBundleFootnote = styled.span`
+  display: block;
+  margin-top: 0.45rem;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  max-width: 520px;
+  line-height: 1.4;
+`;
+
 const ButtonGroup = styled(motion.div)`
   display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
+  gap: 0.75rem;
+  margin-top: 0.45rem;
+  margin-bottom: 0.65rem;
 
   @media (max-width: 768px) {
     flex-direction: column;
@@ -122,27 +366,28 @@ const ButtonGroup = styled(motion.div)`
 const PrimaryButton = styled(motion.a)`
   background: linear-gradient(90deg, var(--primary), var(--accent));
   color: white;
-  padding: 12px 32px;
+  padding: 10px 28px;
   border-radius: 50px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.3s ease;
-  box-shadow: 0 6px 18px rgba(108, 99, 255, 0.35);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);
 
   &:hover {
     transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(108, 99, 255, 0.4);
   }
 `;
 
 const SecondaryButton = styled(motion.a)`
   background: transparent;
   color: var(--text);
-  padding: 12px 32px;
+  padding: 10px 28px;
   border-radius: 50px;
   font-weight: 600;
   cursor: pointer;
   border: 2px solid var(--primary);
-  transition: transform 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+  transition: all 0.3s ease;
 
   &:hover {
     background: rgba(108, 99, 255, 0.1);
@@ -155,14 +400,14 @@ const PlatformAvailability = styled(motion.div)`
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 2.5rem;
-  padding: 1rem 0;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+  padding: 0.35rem 0;
 
   @media (max-width: 768px) {
-    gap: 0.75rem;
-    margin-bottom: 2rem;
-    padding: 0.75rem 0;
+    gap: 0.55rem;
+    margin-bottom: 0.85rem;
+    padding: 0.25rem 0;
   }
 `;
 
@@ -233,13 +478,14 @@ const NoteShadow = styled(motion.div)`
   width: 60px;
   height: 8px;
   border-radius: 50%;
-  background-color: rgba(0, 0, 0, 0.22);
+  background-color: rgba(0, 0, 0, 0.2);
   filter: blur(4px);
   z-index: 1;
   will-change: transform, opacity;
   transform: translateZ(0);
   backface-visibility: hidden;
   pointer-events: none;
+  filter: blur(4px) drop-shadow(0 0 1px rgba(0, 0, 0, 0.1)); /* Force GPU rendering */
 `;
 
 // Color mapping for all 12 chromatic pitches
@@ -286,6 +532,29 @@ const useWindowSize = () => {
 
   return windowSize;
 };
+
+// Client-only component to ensure proper measurement
+const ClientOnlyHeroTitle: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    // Return a simple placeholder during SSR
+    return <div style={{ minHeight: "200px" }}></div>;
+  }
+
+  return <>{children}</>;
+};
+
+// Use dynamic import with ssr: false to completely prevent server-side rendering
+const ClientOnly = dynamic(() => Promise.resolve(ClientOnlyHeroTitle), {
+  ssr: false,
+});
 
 /**
  * @brief HeroSection component
@@ -351,38 +620,45 @@ const HeroSection = () => {
   const isMobile = windowWidth <= 768;
 
   // Measure all word widths once on first render and when language changes
+  // Defer this to avoid blocking FCP
   useEffect(() => {
+    // Skip SSR execution
     if (typeof window === "undefined") return;
 
-    const timeoutId = window.setTimeout(() => {
-      requestAnimationFrame(() => {
-        const tempDiv = wordMeasureRef.current;
-        if (!tempDiv) return;
-
+    // Use a longer timeout to ensure DOM is fully rendered and FCP is done
+    const timeoutId = setTimeout(() => {
+      if (wordMeasureRef.current) {
         const widths: Record<number, number> = {};
+
+        const tempDiv = wordMeasureRef.current;
         const baseStyle = {
           visibility: "hidden",
           position: "absolute",
-          left: "0",
-          top: "0",
-          fontSize: !isMobile ? "4rem" : "3rem",
+          fontSize: !isMobile ? "3.5rem" : "2.65rem", // Match HeroTitle font sizes
           whiteSpace: "nowrap",
           padding: "0 10px",
-          fontWeight: "bold",
+          fontWeight: "bold", // Match the actual font weight
         };
 
+        // Apply base style to the measurement div
         Object.assign(tempDiv.style, baseStyle);
+        document.body.appendChild(tempDiv);
 
+        // Measure each word
         titleWords.forEach((word, index) => {
           tempDiv.textContent = word;
           widths[index] = tempDiv.offsetWidth;
         });
 
-        tempDiv.textContent = "";
+        // Clean up
+        document.body.removeChild(tempDiv);
         setWordWidths(widths);
-      });
-    }, 100);
-
+        
+        // Also update the current center word width
+        setCenterWordWidth(widths[currentWordIndex] || 120);
+      }
+    }, 800); // Increased timeout to 800ms to ensure FCP is complete before measurement
+    
     return () => clearTimeout(timeoutId);
   }, [titleWords, isMobile]);
 
@@ -494,8 +770,7 @@ const HeroSection = () => {
     | "masterVolume";
 
   const [audioContextStarted, setAudioContextStarted] = useState(false);
-  const [shouldLoadHeroVideo, setShouldLoadHeroVideo] = useState(false);
-  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(true); // Start as true for immediate fade-in
   const [videoError, setVideoError] = useState(false);
   const [textContentLoaded, setTextContentLoaded] = useState(false); // Track when text content is ready
   const effectsChain = useEffectsChain();
@@ -508,39 +783,35 @@ const HeroSection = () => {
     { x: 0, y: 0, delay: 1.5 }, // Third position offset - delay by 1.5s
   ]);
 
-  /**
-   * @brief Defer hero background video until idle so first paint does not compete with ~1.6 MiB media.
-   * @note Skips entirely when the user prefers reduced motion.
-   * @note Falls back to `setTimeout` when `requestIdleCallback` is unavailable (older WebKit).
-   */
+  // Add a specific effect to force re-measurement after client-side mounting
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
-    const load = () => {
-      setShouldLoadHeroVideo(true);
-    };
-    let cancelSchedule: (() => void) | undefined;
+    // This effect will run after the component has mounted on the client side
+    if (typeof window !== "undefined" && wordMeasureRef.current) {
+      // Force re-measurement by triggering a measurement cycle
+      const widths: Record<number, number> = {};
 
-    if (typeof window.requestIdleCallback === "function") {
-      const id = window.requestIdleCallback(load, { timeout: 3500 });
-      cancelSchedule = () => {
-        if (typeof window.cancelIdleCallback === "function") {
-          window.cancelIdleCallback(id);
-        }
+      const tempDiv = wordMeasureRef.current;
+      const baseStyle = {
+        visibility: "hidden",
+        position: "absolute",
+        fontSize: !isMobile ? "3.5rem" : "2.65rem",
+        whiteSpace: "nowrap",
+        padding: "0 10px",
+        fontWeight: "bold",
       };
-    } else {
-      const id = window.setTimeout(load, 300);
-      cancelSchedule = () => {
-        window.clearTimeout(id);
-      };
-    }
 
-    return () => {
-      cancelSchedule?.();
-    };
-  }, []);
+      Object.assign(tempDiv.style, baseStyle);
+      document.body.appendChild(tempDiv);
+
+      titleWords.forEach((word, index) => {
+        tempDiv.textContent = word;
+        widths[index] = tempDiv.offsetWidth;
+      });
+
+      document.body.removeChild(tempDiv);
+      setWordWidths(widths);
+    }
+  }, [titleWords, isMobile]);
 
   // Use the synth in a way consistent with the Try Me section
   // Defer initialization to avoid blocking FCP
@@ -958,7 +1229,52 @@ const HeroSection = () => {
     };
   }, [transitioning]);
 
-  // Move handlePlay inside useCallback to fix dependency issue
+  // Chord pill: stable size + no key remount per chord (was causing AnimatePresence jump); text only updates in place.
+  const renderChordName = useCallback(() => (
+    <motion.div
+      layout={false}
+      style={{
+        position: "relative",
+        boxSizing: "border-box",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "min(240px, 100%)",
+        minHeight: "42px",
+        padding: "8px 12px",
+        margin: "0 auto 0",
+        textAlign: "center",
+        color: "var(--text-secondary)",
+        fontSize: "1.2rem",
+        lineHeight: 1.2,
+        background: "rgba(15, 14, 23, 0.7)",
+        borderRadius: "8px",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+        cursor: "pointer",
+        zIndex: 2,
+      }}
+      title={t("hero.tooltips.playChord", "Click to play the chord")}
+      initial={false}
+      animate={{ opacity: textContentLoaded ? 1 : 0 }}
+      transition={{
+        opacity: { duration: 0.45, delay: textContentLoaded ? 0.35 : 0 },
+      }}
+      onClick={playChord}
+      whileHover={{
+        boxShadow: "0 6px 16px rgba(0, 0, 0, 0.3)",
+      }}
+      whileTap={{ scale: 0.99 }}
+    >
+      {chordProgression[currentChordIndex].name}
+    </motion.div>
+  ), [
+    currentChordIndex,
+    chordProgression,
+    t,
+    playChord,
+    textContentLoaded,
+  ]);
+
   const renderContent = useCallback(() => {
     // Get the current word from titleWords array
     const currentWord = titleWords[currentWordIndex];
@@ -975,15 +1291,16 @@ const HeroSection = () => {
           }}
         />
 
-        <HeroTitle
-          style={{
-            position: "relative",
-            minHeight: isMobile ? "260px" : "100px",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
+        <ClientOnly>
+          <HeroTitle
+            style={{
+              position: "relative",
+              minHeight: isMobile ? "200px" : "88px",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
             {/* Title container */}
             <div
               style={{
@@ -1010,10 +1327,10 @@ const HeroSection = () => {
                   right: !isMobile ? "50%" : "auto",
                   color: "white",
                   whiteSpace: "nowrap",
-                  fontSize: !isMobile ? "4rem" : "3rem",
+                  fontSize: !isMobile ? "3.5rem" : "2.65rem",
                   display: !isMobile ? "inline-block" : "block",
                   textAlign: !isMobile ? "right" : "center",
-                  marginBottom: !isMobile ? "0" : "1.5rem",
+                  marginBottom: !isMobile ? "0" : "1.1rem",
                   lineHeight: isMobile ? "1.2" : "inherit",
                   fontWeight: "bold",
                 }}
@@ -1029,7 +1346,7 @@ const HeroSection = () => {
                   minWidth: "120px",
                   padding: "0 10px",
                   textAlign: "center",
-                  marginBottom: !isMobile ? "0" : "1.5rem",
+                  marginBottom: !isMobile ? "0" : "1.1rem",
                   width: !isMobile ? "auto" : "100%",
                 }}
               >
@@ -1046,7 +1363,7 @@ const HeroSection = () => {
                     style={{
                       display: "inline-block",
                       color: getWordColor(currentWordIndex),
-                      fontSize: !isMobile ? "4rem" : "3rem",
+                      fontSize: !isMobile ? "3.5rem" : "2.65rem",
                       lineHeight: isMobile ? "1.2" : "inherit",
                       fontWeight: "bold",
                     }}
@@ -1073,7 +1390,7 @@ const HeroSection = () => {
                   left: !isMobile ? "50%" : "auto",
                   color: "white",
                   whiteSpace: "nowrap",
-                  fontSize: !isMobile ? "4rem" : "3rem",
+                  fontSize: !isMobile ? "3.5rem" : "2.65rem",
                   display: !isMobile ? "inline-block" : "block",
                   textAlign: !isMobile ? "left" : "center",
                   lineHeight: isMobile ? "1.2" : "inherit",
@@ -1084,15 +1401,100 @@ const HeroSection = () => {
               </motion.span>
             </div>
           </HeroTitle>
+        </ClientOnly>
 
-        <HeroSubtitle>
+        <HeroBundleLockup
+          role="region"
+          aria-labelledby="hero-bundle-label"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.15 }}
+        >
+          <HeroBundleEyebrow id="hero-bundle-label">
+            {t("hero.bundleEyebrow", "One subscription · two products")}
+          </HeroBundleEyebrow>
+          <HeroProductPair>
+            <HeroProductChip $variant="cymasphere">
+              <HeroProductImageFrame>
+                <Image
+                  src={HERO_PRODUCT_IMAGES.cymasphere}
+                  alt={t(
+                    "hero.bundleCymasphereImageAlt",
+                    "Cymasphere song builder and arrangement workspace",
+                  )}
+                  fill
+                  sizes="(max-width: 680px) 90vw, 340px"
+                  priority
+                  quality={88}
+                  style={{
+                    objectFit: "contain",
+                    objectPosition: "center center",
+                  }}
+                />
+              </HeroProductImageFrame>
+              <HeroProductTextBlock>
+                <HeroProductName>
+                  {t("hero.bundleCymasphereTitle", "Cymasphere")}
+                </HeroProductName>
+                <HeroProductDesc>
+                  {t(
+                    "hero.bundleCymasphereDesc",
+                    "Composition & theory suite",
+                  )}
+                </HeroProductDesc>
+              </HeroProductTextBlock>
+            </HeroProductChip>
+            <HeroBundlePlus aria-hidden>+</HeroBundlePlus>
+            <HeroProductChip $variant="cymaSynth">
+              <HeroProductImageFrame>
+                <Image
+                  src={HERO_PRODUCT_IMAGES.cymaSynth}
+                  alt={t(
+                    "hero.bundleCymaSynthImageAlt",
+                    "CymaSynth wavetable synthesizer product interface",
+                  )}
+                  fill
+                  sizes="(max-width: 680px) 90vw, 340px"
+                  quality={88}
+                  style={{
+                    objectFit: "cover",
+                    objectPosition: "center center",
+                  }}
+                />
+              </HeroProductImageFrame>
+              <HeroProductTextBlock>
+                <HeroProductName>
+                  {t("hero.bundleCymaSynthTitle", "CymaSynth")}
+                </HeroProductName>
+                <HeroProductDesc>
+                  {t(
+                    "hero.bundleCymaSynthDesc",
+                    "Wavetable synthesizer",
+                  )}
+                </HeroProductDesc>
+              </HeroProductTextBlock>
+            </HeroProductChip>
+          </HeroProductPair>
+          <HeroBundleFootnote>
+            {t(
+              "hero.bundleFootnote",
+              "Both included — standalone, AU & VST3 · Every plan",
+            )}
+          </HeroBundleFootnote>
+        </HeroBundleLockup>
+
+        <HeroSubtitle
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.2, delay: 0.2 }}
+        >
           {t("hero.subtitle", "Enter the next evolution of music creation, where theoretical foundations invisibly guide your workflow. Chords and melodies connect with purpose, empowering your unique musical vision.")}
         </HeroSubtitle>
 
         <PlatformAvailability
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
         >
           <PlatformBadge>
             <FaApple />
@@ -1136,6 +1538,8 @@ const HeroSection = () => {
             {t("common.learnMore", "Learn More")}
           </SecondaryButton>
         </ButtonGroup>
+
+        {renderChordName()}
       </HeroContent>
     );
   }, [
@@ -1154,7 +1558,8 @@ const HeroSection = () => {
     transitioning,
     positionAnimationOffsets,
     textContentLoaded,
-    setTextContentLoaded
+    setTextContentLoaded,
+    renderChordName,
   ]);
 
   // Render the voice leading lines during transitions
@@ -1222,7 +1627,7 @@ const HeroSection = () => {
             top: startY,
             left: startX,
             width: length,
-            zIndex: 1,
+            zIndex: 2,
             transform: `rotate(${angle}deg)`,
             transformOrigin: "0 0",
             background: `linear-gradient(90deg, ${sourceColor}88, ${targetColor}88)`,
@@ -1298,37 +1703,37 @@ const HeroSection = () => {
               width: isMobile ? "45px" : "60px",
               height: "8px",
               borderRadius: "50%",
-              backgroundColor: "rgba(0, 0, 0, 0.22)",
+              backgroundColor: "rgba(0, 0, 0, 0.2)",
               filter: "blur(4px)",
-              zIndex: 1,
+              zIndex: 2,
               top: shadowTop,
               bottom: shadowBottom,
               left: shadowLeft,
               right: shadowRight,
             }}
             initial={{ opacity: 0 }}
-            animate={
-              textContentLoaded
-                ? { opacity: [0.28, 0.45, 0.28] }
-                : { opacity: 0 }
-            }
-            transition={
-              textContentLoaded
-                ? {
-                    opacity: {
-                      repeat: Infinity,
-                      duration: 2.8,
-                      ease: "easeInOut",
-                      delay: animationOffset.delay + 0.5,
-                    },
-                  }
-                : {
-                    opacity: {
-                      duration: 0.8,
-                      delay: 0.3 + animationOffset.delay,
-                    },
-                  }
-            }
+            animate={textContentLoaded ? {
+              scale: [0.9, 1, 0.9],
+              opacity: [0.3, 0.4, 0.3],
+            } : { opacity: 0 }}
+            transition={textContentLoaded ? {
+              scale: {
+                repeatType: "mirror",
+                repeat: Infinity,
+                duration: 2.5,
+                ease: "easeInOut",
+                delay: animationOffset.delay + 0.5, // Add extra delay after text loads
+              },
+              opacity: {
+                repeatType: "mirror",
+                repeat: Infinity,
+                duration: 2.5,
+                ease: "easeInOut",
+                delay: animationOffset.delay + 0.5, // Add extra delay after text loads
+              },
+            } : {
+              opacity: { duration: 0.8, delay: 0.3 + animationOffset.delay }
+            }}
           />
 
           {/* Note circle */}
@@ -1348,7 +1753,7 @@ const HeroSection = () => {
               fontSize: isMobile ? "1.2rem" : "1.5rem",
               textShadow:
                 "0px 2px 3px rgba(0,0,0,0.5), 0px 1px 5px rgba(0,0,0,0.5)",
-              zIndex: 2,
+              zIndex: 3,
               cursor: "pointer",
               boxShadow:
                 "0 10px 20px rgba(0, 0, 0, 0.2), inset 0 4px 10px rgba(255, 255, 255, 0.3), inset 0 -4px 10px rgba(0, 0, 0, 0.2)",
@@ -1463,52 +1868,6 @@ const HeroSection = () => {
     textContentLoaded
   ]);
 
-  // Render the chord name display
-  const renderChordName = useCallback(() => (
-    <AnimatePresence mode="sync">
-      <motion.div
-        key={`chord-name-${currentChordIndex}`}
-        style={{
-          position: "absolute",
-          bottom: "5%",
-          left: "0",
-          right: "0",
-          textAlign: "center",
-          color: "var(--text-secondary)",
-          fontSize: "1.2rem",
-          background: "rgba(15, 14, 23, 0.7)",
-          padding: "10px",
-          borderRadius: "8px",
-          maxWidth: "200px",
-          margin: "0 auto",
-          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
-          cursor: "pointer",
-        }}
-        title={t("hero.tooltips.playChord", "Click to play the chord")}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: textContentLoaded ? 1 : 0 }}
-        exit={{ opacity: 0 }}
-        transition={{
-          opacity: { duration: 0.7, delay: textContentLoaded ? 1.0 : 0 },
-        }}
-        onClick={playChord}
-        whileHover={{
-          scale: 1.05,
-          boxShadow: "0 6px 16px rgba(0, 0, 0, 0.3)",
-        }}
-        whileTap={{ scale: 0.98 }}
-      >
-        {chordProgression[currentChordIndex].name}
-      </motion.div>
-    </AnimatePresence>
-  ), [
-    currentChordIndex,
-    chordProgression,
-    t,
-    playChord,
-    textContentLoaded
-  ]);
-
   // Effect for transitioning between chords
   useEffect(() => {
     if (!previousChord || !displayedChord) return;
@@ -1542,16 +1901,17 @@ const HeroSection = () => {
 
   return (
     <HeroContainer id="home">
-      {shouldLoadHeroVideo && !videoError && (
+      {!videoError && (
         <BackgroundVideo
           autoPlay
           loop
           muted
           playsInline
-          preload="none"
+          preload="metadata"
           $loaded={videoLoaded}
           disablePictureInPicture
           disableRemotePlayback
+          x-webkit-airplay="deny"
           onError={() => {
             setVideoError(true);
           }}
@@ -1572,7 +1932,6 @@ const HeroSection = () => {
       {renderContent()}
       {renderVoiceLeadingLines()}
       {renderNotes()}
-      {renderChordName()}
     </HeroContainer>
   );
 };

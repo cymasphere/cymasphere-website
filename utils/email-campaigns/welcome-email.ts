@@ -112,14 +112,14 @@ export function generateWelcomeEmailHtml(data: WelcomeEmailData): string {
                   </p>
                   <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #666;">
                     ${data.trialNoCharge
-                      ? `Your ${data.trialDays || 'free'} day trial gives you full access to all premium features. No payment information is required - just explore and enjoy!`
-                      : `Your ${data.trialDays || 'free'} day trial gives you full access to all premium features. You won&apos;t be charged until ${trialEndDateFormatted}. You can cancel anytime during your trial with no charges.`}
+                      ? `Your ${data.trialDays || 'free'} day trial gives you full access to all premium features, including CymaSynth (bundled wavetable synthesizer). No payment information is required - just explore and enjoy!`
+                      : `Your ${data.trialDays || 'free'} day trial gives you full access to all premium features, including CymaSynth. You won&apos;t be charged until ${trialEndDateFormatted}. You can cancel anytime during your trial with no charges.`}
                   </p>
                 </div>
               ` : ''}
               
               <p style="color: #666; line-height: 1.6; margin: 20px 0;">
-                You now have full access to all premium features of Cymasphere. Whether you&apos;re composing, learning music theory, or exploring new harmonic possibilities, we&apos;re here to support your creative journey.
+                You now have full access to all premium features of Cymasphere, including CymaSynth. Whether you&apos;re composing, learning music theory, designing sounds, or exploring new harmonic possibilities, we&apos;re here to support your creative journey.
               </p>
               
               <!-- CTA Button -->
@@ -201,7 +201,7 @@ Thank you for joining Cymasphere! We're thrilled to have you as part of our comm
 
 ${data.trialNoCharge ? `
 ⏰ Trial Information:
-Your ${trialDays || 'free'} day trial gives you full access to all premium features. No payment information is required - just explore and enjoy!
+Your ${trialDays || 'free'} day trial gives you full access to all premium features, including CymaSynth (bundled wavetable synthesizer). No payment information is required - just explore and enjoy!
 ` : `${isTrial ? 'Your Free Trial' : purchaseType === 'elite' ? 'Your Elite Access' : 'Your Purchase'}: ${planDisplayName}
 ${purchaseType === 'elite' ? `
 ✨ You've been granted Elite Access! Enjoy lifetime premium features.
@@ -209,11 +209,11 @@ ${purchaseType === 'elite' ? `
 🎉 You're starting a free trial! No charges will be made until ${trialEndDateFormatted}.
 
 ⏰ Trial Information:
-Your ${trialDays || 'free'} day trial gives you full access to all premium features. You won't be charged until ${trialEndDateFormatted}. You can cancel anytime during your trial with no charges.
+Your ${trialDays || 'free'} day trial gives you full access to all premium features, including CymaSynth. You won't be charged until ${trialEndDateFormatted}. You can cancel anytime during your trial with no charges.
 ` : ''}
 `}
 
-You now have full access to all premium features of Cymasphere. Whether you're composing, learning music theory, or exploring new harmonic possibilities, we're here to support your creative journey.
+You now have full access to all premium features of Cymasphere, including CymaSynth. Whether you're composing, learning music theory, designing sounds, or exploring new harmonic possibilities, we're here to support your creative journey.
 
 Get started: ${siteUrl}/getting-started
 

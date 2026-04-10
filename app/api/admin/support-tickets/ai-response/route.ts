@@ -31,7 +31,7 @@ const CYMASPHERE_KNOWLEDGE_BASE = `
 # Cymasphere Platform Information
 
 ## What is Cymasphere?
-Cymasphere is a complete song creation suite available both as a standalone application and as a plugin (AU & VST3) for your DAW. It provides integrated tools for composing both harmony and melody, featuring intelligent chord voicing, melody pattern construction, and interactive visualization that makes music theory accessible and intuitive for all skill levels.
+Cymasphere is a complete song creation suite available both as a standalone application and as a plugin (AU & VST3) for your DAW. It provides integrated tools for composing both harmony and melody, featuring intelligent chord voicing, melody pattern construction, and interactive visualization that makes music theory accessible and intuitive for all skill levels. Every subscription and lifetime license includes CymaSynth (NNAudio’s professional wavetable synthesizer, VST3 & AU)—a $149 value when sold separately, included at no extra cost—composition workflow plus flagship instrument in one package.
 
 ## Hero Section Marketing
 - Main Title: "Generate Music With AI" / "Intelligent Creation"
@@ -51,6 +51,10 @@ Cymasphere is a complete song creation suite available both as a standalone appl
 - Comprehensive Arrangement View
 - Custom Voicing Generation Engine
 - Premium Support & All Future Updates
+- CymaSynth wavetable synthesizer (VST3 & AU)—$149 value when sold separately; included free with every Cymasphere plan
+
+## CymaSynth (Included Instrument)
+CymaSynth is a $149-value instrument when purchased alone; it is included at no extra cost with every Cymasphere subscription and lifetime license. Professional wavetable synthesizer as standalone VST3/AU plugins: triple oscillators, wavetable morphing, modulation matrix, dual filters, effects, high polyphony.
 
 ## Detailed Feature Descriptions
 
@@ -109,13 +113,13 @@ Cymasphere offers flexible pricing options:
 - **Yearly billing**: $59.00/year - Save 25% with yearly billing (best value)
 - **Lifetime**: $149.00 one-time payment - Lifetime access (best value)
 
-All plans include full access to all features. Pricing is simple and transparent.
+All plans include full access to all Cymasphere features plus CymaSynth ($149 value when sold separately; included free). Pricing is simple and transparent.
 
 ## Free Trial Options
 Cymasphere offers two free trial options:
 - **7-day free trial** without requiring a credit card
 - **14-day free trial** with a card on file (won't be charged until trial ends)
-Both options give you full access to all premium features.
+Both options give you full access to all premium features, including CymaSynth.
 
 ## Technical Requirements
 - Available as standalone application
@@ -568,7 +572,7 @@ Cymasphere offers two trial options:
 - **7-day free trial** - No credit card required
 - **14-day free trial** - With a card on file (you won't be charged until the trial ends)
 
-Both options give you full access to all premium features. After your trial ends, you can choose from our subscription plans:
+Both options give you full access to all premium features, including CymaSynth. After your trial ends, you can choose from our subscription plans:
 - Monthly: $6/month
 - Annual: $59/year (save 25%)
 - Lifetime: $149 one-time payment
@@ -583,13 +587,13 @@ Is there anything specific about the trial or features you'd like to know more a
 - **Annual**: $59/year - Save 25% with yearly billing
 - **Lifetime**: $149 one-time payment - Best value, all future updates included
 
-All plans include full access to all features. We also offer free trials so you can try before you buy.
+All plans include Cymasphere plus CymaSynth (wavetable synthesizer, VST3 & AU—a $149 value when sold separately, included free). We also offer free trials so you can try before you buy.
 
 Which plan interests you most?`;
   }
   
   if (lowerPrompt.includes("feature") || lowerPrompt.includes("what can") || lowerPrompt.includes("capabilities")) {
-    return `Cymasphere is a complete song creation suite with powerful features:
+    return `Cymasphere is a complete song creation suite with powerful features. Every plan includes CymaSynth, a professional wavetable synthesizer (VST3 & AU)—a $149 value when sold separately, included at no extra cost.
 
 **Key Features:**
 - Song Builder with multi-track management
@@ -600,6 +604,7 @@ Which plan interests you most?`;
 - Complete Voice and Range Control
 - Standalone App & DAW Plugin Support (AU/VST3)
 - Real-Time Chord Reharmonization Tools
+- CymaSynth wavetable synthesizer ($149 value when sold separately—included free with every plan)
 
 It works as both a standalone application and as a plugin in your DAW. Would you like more details about any specific feature?`;
   }

@@ -27,6 +27,7 @@ import {
   FaPlug,
   FaList,
 } from "react-icons/fa";
+import { BsSoundwave } from "react-icons/bs";
 import { GiBrain } from "react-icons/gi";
 import dynamic from "next/dynamic";
 import { useTranslation } from "react-i18next";
@@ -417,15 +418,16 @@ const FeaturesSection = () => {
   const cardRotations = React.useMemo(() => {
     // Use much more varied rotations across the full 360 degree spectrum
     return [
-      45,   // Top-left to bottom-right
-      135,  // Top-right to bottom-left  
-      225,  // Bottom-right to top-left
-      315,  // Bottom-left to top-right
-      90,   // Top to bottom
-      270,  // Bottom to top
-      60,   // Additional rotation for 7th card
-      150,  // Additional rotation for 8th card
-      240,  // Additional rotation for 9th card
+      45,   // songBuilder
+      135,  // harmonyPalettes
+      225,  // patternEditor
+      315,  // voicingGenerator
+      90,   // intelligentGeneration
+      270,  // voiceHandling
+      60,   // dawIntegration
+      150,  // specializedTrackTypes
+      240,  // progressionTimeline
+      30,   // cymaSynth (bundled instrument — listed last)
     ];
   }, []);
 
@@ -545,6 +547,19 @@ const FeaturesSection = () => {
         image: {
           webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/voicing-track-view.webp",
           png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/voicing-track-view-thumb.webp"
+        },
+      },
+      {
+        icon: <BsSoundwave />,
+        title: t("features.cymaSynth.title"),
+        description: t("features.cymaSynth.description"),
+        detailedDescription: formatDetailedDescription("cymaSynth"),
+        color: "#00E5FF",
+        rotation: cardRotations[9],
+        image: {
+          webp:
+            "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/cymasynth-feature-1.webp",
+          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/cymasynth-feature-1-thumb.webp",
         },
       },
     ];

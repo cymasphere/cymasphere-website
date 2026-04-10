@@ -84,7 +84,7 @@ export function generateTrialEndingReminderHtml(data: TrialEndingReminderData): 
               </h1>
               
               <p style="color: #666; line-height: 1.6; margin: 0 0 20px 0;">
-                Hi ${firstName}! We hope you&apos;ve been enjoying Cymasphere Pro. Your free trial ends on <strong>${trialEndDateFormatted}</strong>, and we&apos;d love to keep you creating with all the premium features you&apos;ve been using.
+                Hi ${firstName}! We hope you&apos;ve been enjoying Cymasphere Pro (including CymaSynth). Your free trial ends on <strong>${trialEndDateFormatted}</strong>, and we&apos;d love to keep you creating with all the premium features you&apos;ve been using.
               </p>
               
               <div style="margin: 30px 0; padding: 20px; background-color: #f9f9f9; border-radius: 8px; border-left: 4px solid #6c63ff;">
@@ -121,7 +121,7 @@ export function generateTrialEndingReminderHtml(data: TrialEndingReminderData): 
                   💡 Why continue?
                 </p>
                 <ul style="margin: 0; padding-left: 20px; color: #666; line-height: 1.8; font-size: 14px;">
-                  <li>Keep all the premium features you&apos;ve been using</li>
+                  <li>Keep Cymasphere and CymaSynth—and every premium feature you&apos;ve been using</li>
                   <li>No interruption to your creative workflow</li>
                   <li>Cancel anytime - no long-term commitment</li>
                   <li>Join thousands of musicians creating with Cymasphere</li>
@@ -199,7 +199,7 @@ export function generateTrialEndingReminderText(data: TrialEndingReminderData): 
   return `
 Don't lose access to your creative tools
 
-Hi ${firstName}! We hope you've been enjoying Cymasphere Pro. Your free trial ends on ${trialEndDateFormatted}, and we'd love to keep you creating with all the premium features you've been using.
+Hi ${firstName}! We hope you've been enjoying Cymasphere Pro (including CymaSynth). Your free trial ends on ${trialEndDateFormatted}, and we'd love to keep you creating with all the premium features you've been using.
 
 Your Subscription
 ${planName}
@@ -211,7 +211,7 @@ Continue your journey: ${updatePaymentUrl}
 Takes less than 2 minutes | Secure payment | Cancel anytime
 
 💡 Why continue?
-- Keep all the premium features you've been using
+- Keep Cymasphere and CymaSynth—and every premium feature you've been using
 - No interruption to your creative workflow
 - Cancel anytime - no long-term commitment
 - Join thousands of musicians creating with Cymasphere

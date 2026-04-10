@@ -66,6 +66,10 @@ const FAQ_RESPONSES: Record<string, Record<string, { keywords: string[], respons
       keywords: ['feature', 'tool', 'synthesizer', 'drum', 'instrument', 'effect', 'what can', 'capabilities'],
       response: "Cymasphere helps with chords, melody patterns, voice-led progressions, and DAW integration (AU/VST3/Standalone). What are you creating—progressions, melodies, or arranging a full song?"
     },
+    cymaSynth: {
+      keywords: ['cymasynth', 'cyma synth', 'wavetable', 'bundled synth', 'included synth', 'bundled instrument'],
+      response: "CymaSynth is our professional wavetable synthesizer (VST3 & AU)—a $149 value when sold separately, included free with every Cymasphere subscription and lifetime license. Use it alongside Cymasphere or load it as a plugin in your DAW for sound design."
+    },
     getting_started: {
       keywords: ['start', 'begin', 'how to', 'tutorial', 'learn', 'new user', 'first time'],
       response: "Quick start: build a chord progression with the Harmony Palette, enable Voicing Generator for smooth transitions, then add a melody in the Dynamic Pattern Editor. Would you like a 3-step guide for your DAW?"
@@ -575,7 +579,7 @@ function generateFallbackResponse(message: string, language: string = 'en'): str
       struggles: "I totally get that feeling - every musician has been there! The good news is that Cymasphere is designed to help you create musically satisfying results even when you're feeling stuck. It guides you toward chord progressions and melodies that work together harmonically. What's the main thing that's frustrating you right now - getting started, or feeling like your ideas don't sound right?",
       stuck: "Creative blocks are so common! Cymasphere can help break you out of that rut by suggesting new harmonic possibilities and chord progressions you might not have considered. The Harmony Palette lets you explore different musical directions visually. What type of music are you trying to create - are you working on chord progressions, melodies, or full arrangements?",
       theory: "You don't need to know music theory to use Cymasphere! That's actually one of its biggest strengths - it handles all the complex theory behind the scenes while you focus on creating. The visual interfaces help you understand musical relationships intuitively as you work. What would you like to create - chord progressions, melodies, or full songs?",
-      general: "I don't know that information. Cymasphere helps producers, composers, songwriters, students, and educators with chords, melody patterns, and voice-led progressions. What feels most challenging right now—chord progressions, melodies, or arranging your song?"
+      general: "I don't know that information. Cymasphere helps producers, composers, songwriters, students, and educators with chords, melody patterns, and voice-led progressions—and every plan includes CymaSynth, a $149 wavetable synth value (VST3 & AU), included free. What feels most challenging right now—chord progressions, melodies, sound design, or arranging your song?"
     },
     es: {
       hello: "¡Hola! Estoy aquí para ayudarte a explorar Cymasphere—herramientas para armonía, melodía y arreglo que se integran con tu DAW. ¿Cuál es el resultado principal que esperas crear en este momento?",

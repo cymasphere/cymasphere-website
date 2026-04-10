@@ -202,7 +202,7 @@ export default function SubscriptionExpiredModal({
                 <FaExclamationCircle />
               </IconContainer>
               <Message>
-                Your subscription has expired. To continue enjoying all the premium features, 
+                Your subscription has expired. To continue enjoying Cymasphere, CymaSynth, and all premium features, 
                 please renew your subscription or select a new plan.
               </Message>
             </ModalBody>

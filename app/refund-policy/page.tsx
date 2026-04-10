@@ -104,16 +104,16 @@ const fadeIn = {
           <Section>
             <SectionTitle>2. Free Trial Period</SectionTitle>
             <SectionContent>
-              To ensure that Cymasphere is the right fit for your needs, we offer a comprehensive free trial period. This trial allows you to explore all features of our platform, test its capabilities with your own projects, and experience the full range of tools available before making any financial commitment.
+              To ensure that Cymasphere is the right fit for your needs, we offer a comprehensive free trial period. This trial allows you to explore all features of our platform—including CymaSynth, the bundled wavetable synthesizer—test its capabilities with your own projects, and experience the full range of tools available before making any financial commitment.
             </SectionContent>
             <SectionContent>
-              During your free trial, you have full access to all premium features, giving you a complete understanding of how Cymasphere can enhance your music composition process. We encourage you to take full advantage of this period to evaluate whether our software meets your requirements and expectations.
+              During your free trial, you have full access to all premium features (including CymaSynth), giving you a complete understanding of how Cymasphere can enhance your music composition process. We encourage you to take full advantage of this period to evaluate whether our software meets your requirements and expectations.
             </SectionContent>
           </Section>
 
           <HighlightBox>
             <p>
-              <strong>Our Free Trial Policy:</strong> We offer up to 14 days of free access to all premium features, with no credit card required for the initial 7 days. This generous trial period is designed to give you ample time to thoroughly evaluate Cymasphere and ensure it aligns with your creative needs.
+              <strong>Our Free Trial Policy:</strong> We offer up to 14 days of free access to all premium features (including CymaSynth), with no credit card required for the initial 7 days. This generous trial period is designed to give you ample time to thoroughly evaluate Cymasphere and ensure it aligns with your creative needs.
             </p>
           </HighlightBox>
 

@@ -822,18 +822,18 @@ function DashboardPage() {
               {shouldShowTrialContent()
                 ? t(
                     "dashboard.main.trialMessage",
-                    "You're currently on a {{trialDays}}-day free trial with full access to all premium features. No payment until your trial ends.",
+                    "You're currently on a {{trialDays}}-day free trial with full access to all premium features, including CymaSynth. No payment until your trial ends.",
                     { trialDays }
                   )
                 : user.profile.subscription === "lifetime"
                 ? t(
                     "dashboard.main.lifetimeMessage",
-                    "You have a lifetime membership with free updates for life. Enjoy all premium features and benefits permanently."
+                    "You have a lifetime membership with free updates for life. Enjoy all premium features and benefits permanently, including CymaSynth."
                   )
                 : user.profile.subscription !== "none"
                 ? t(
                     "dashboard.main.activeSubscriptionMessage",
-                    "Your {{plan}} subscription is active. Enjoy all premium features and benefits.",
+                    "Your {{plan}} subscription is active. Enjoy all premium features and benefits, including CymaSynth.",
                     {
                       plan: user.profile.subscription,
                     }
