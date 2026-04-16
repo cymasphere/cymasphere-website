@@ -320,11 +320,6 @@ function Settings() {
   const { user, signOut, refreshUser, requestEmailChange } = useAuth();
   const { devices, isLoadingDevices, refreshDevices } = useDashboard();
 
-  // Refresh pro status on mount (same as login)
-  useEffect(() => {
-    refreshUser();
-  }, [refreshUser]); // Run on mount and when refreshUser changes
-
   // Modal states
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
@@ -337,6 +332,10 @@ function Settings() {
   const [newEmailInput, setNewEmailInput] = useState("");
   const [emailChangeError, setEmailChangeError] = useState<string | null>(null);
   const [isEmailChangeSubmitting, setIsEmailChangeSubmitting] = useState(false);
+
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
 
   // Use devices from DashboardContext instead of fetching separately
   const activeDevices = devices;
