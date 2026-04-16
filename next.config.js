@@ -1,6 +1,15 @@
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/profile",
+        destination: "/settings",
+        permanent: true,
+      },
+    ];
+  },
   typescript: {
     ignoreBuildErrors: false,
   },

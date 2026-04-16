@@ -338,16 +338,6 @@ const NextFooter = () => {
           </FooterLink>
           <FooterLink
             as="a"
-            href="/profile"
-            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-              e.preventDefault();
-              window.location.href = "/profile";
-            }}
-          >
-            Profile
-          </FooterLink>
-          <FooterLink
-            as="a"
             href="/settings"
             onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
               e.preventDefault();

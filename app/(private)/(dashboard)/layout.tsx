@@ -16,7 +16,6 @@ import {
   FaCreditCard,
   FaTimes,
   FaTachometerAlt,
-  FaUser,
   FaDownload,
   FaCog,
   FaSignOutAlt,
@@ -681,14 +680,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 {t("dashboard.layout.dashboard", "Dashboard")}
               </NavItem>
             </Link>
-            <Link href="/profile">
-              <NavItem
-                $active={pathname === "/profile" ? "true" : "false"}
-                onClick={(e) => handleNavigation(e, "/profile")}
-              >
-                <FaUser /> {t("dashboard.layout.profile", "Profile")}
-              </NavItem>
-            </Link>
             <Link href="/billing">
               <NavItem
                 $active={pathname === "/billing" ? "true" : "false"}
@@ -824,24 +815,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </MobileNavItem>
             </Link>
 
-            <Link href="/profile">
-              <MobileNavItem
-                $active={pathname === "/profile" ? "true" : "false"}
-                variants={menuItemVariants}
-                custom={user.is_admin ? 2 : 1}
-                initial="hidden"
-                animate="visible"
-                onClick={(e) => handleNavigation(e, "/profile")}
-              >
-                <FaUser /> {t("dashboard.layout.profile", "Profile")}
-              </MobileNavItem>
-            </Link>
-
             <Link href="/billing">
               <MobileNavItem
                 $active={pathname === "/billing" ? "true" : "false"}
                 variants={menuItemVariants}
-                custom={user.is_admin ? 3 : 2}
+                custom={user.is_admin ? 2 : 1}
                 initial="hidden"
                 animate="visible"
                 onClick={(e) => handleNavigation(e, "/billing")}
@@ -854,7 +832,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <MobileNavItem
                 $active={pathname === "/downloads" ? "true" : "false"}
                 variants={menuItemVariants}
-                custom={user.is_admin ? 4 : 3}
+                custom={user.is_admin ? 3 : 2}
                 initial="hidden"
                 animate="visible"
                 onClick={(e) => handleNavigation(e, "/downloads")}
@@ -867,7 +845,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <MobileNavItem
                 $active={pathname === "/getting-started" ? "true" : "false"}
                 variants={menuItemVariants}
-                custom={user.is_admin ? 5 : 4}
+                custom={user.is_admin ? 4 : 3}
                 initial="hidden"
                 animate="visible"
                 onClick={(e) => handleNavigation(e, "/getting-started")}
@@ -881,7 +859,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <MobileNavItem
                 $active={pathname === "/support" ? "true" : "false"}
                 variants={menuItemVariants}
-                custom={user.is_admin ? 6 : 5}
+                custom={user.is_admin ? 5 : 4}
                 initial="hidden"
                 animate="visible"
                 onClick={(e) => handleNavigation(e, "/support")}
@@ -894,7 +872,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <MobileNavItem
                 $active={pathname === "/settings" ? "true" : "false"}
                 variants={menuItemVariants}
-                custom={user.is_admin ? 7 : 6}
+                custom={user.is_admin ? 6 : 5}
                 initial="hidden"
                 animate="visible"
                 onClick={(e) => handleNavigation(e, "/settings")}
@@ -907,7 +885,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <MobileNavItem
                 $active="false"
                 variants={menuItemVariants}
-                custom={user.is_admin ? 8 : 7}
+                custom={user.is_admin ? 7 : 6}
                 initial="hidden"
                 animate="visible"
                 onClick={(e) => handleNavigation(e, "/")}
