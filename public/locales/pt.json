@@ -936,7 +936,9 @@
       "invalidEmail": "Formato de email inválido.",
       "rateLimit": "Muitas tentativas de login falharam. Tente novamente mais tarde ou redefina sua senha.",
       "generic": "Falha ao fazer login: {{message}}",
-      "unknown": "Falha ao fazer login: {{message}}"
+      "unknown": "Falha ao fazer login: {{message}}",
+      "verificationFailed": "O link de verificação é inválido ou expirou. Tente novamente.",
+      "emailChangeFailed": "O link de confirmação da alteração de e-mail é inválido ou expirou. Faça login e tente novamente em Configurações."
     }
   },
   "signup": {

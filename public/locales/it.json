@@ -537,7 +537,9 @@
       "invalidEmail": "Formato email non valido.",
       "rateLimit": "Troppi tentativi di accesso falliti. Riprova più tardi o reimposta la password.",
       "generic": "Accesso fallito: {{message}}",
-      "unknown": "Accesso fallito: {{message}}"
+      "unknown": "Accesso fallito: {{message}}",
+      "verificationFailed": "Il link di verifica non è valido o è scaduto. Riprova.",
+      "emailChangeFailed": "Il link di conferma per il cambio email non è valido o è scaduto. Accedi e riprova da Impostazioni."
     }
   },
   "signup": {

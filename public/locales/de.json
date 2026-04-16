@@ -536,7 +536,9 @@
       "invalidEmail": "Ungültiges E-Mail-Format.",
       "rateLimit": "Zu viele fehlgeschlagene Anmeldeversuche. Bitte versuche es später erneut oder setze dein Passwort zurück.",
       "generic": "Anmeldung fehlgeschlagen: {{message}}",
-      "unknown": "Anmeldung fehlgeschlagen: {{message}}"
+      "unknown": "Anmeldung fehlgeschlagen: {{message}}",
+      "verificationFailed": "Der Bestätigungslink ist ungültig oder abgelaufen. Bitte versuche es erneut.",
+      "emailChangeFailed": "Der Bestätigungslink für die E-Mail-Änderung ist ungültig oder abgelaufen. Bitte melde dich an und versuche es erneut unter Einstellungen."
     }
   },
   "signup": {

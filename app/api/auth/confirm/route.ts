@@ -33,7 +33,8 @@ import { redirect } from "next/navigation";
  * Responses (redirects):
  * - 302 `recovery` success → `/reset-password`
  * - 302 other success → `/dashboard` (including after confirming a new email address)
- * - 302 missing/invalid token or verification error → `/error`
+ * - 302 `email_change` failure → `/login?auth_error=email_change_failed`
+ * - 302 other failure or missing params → `/login?auth_error=verification_failed`
  *
  * @note 100ms delay after verification so the session is established before the client runs.
  * @note Prevents race conditions where the client receives SIGNED_IN before session is ready.
@@ -48,6 +49,9 @@ import { redirect } from "next/navigation";
  *
  * GET /api/auth/confirm?token_hash=def456&type=email_change
  * → 302 /dashboard
+ *
+ * GET /api/auth/confirm?token_hash=bad&type=email_change (expired/invalid)
+ * → 302 /login?auth_error=email_change_failed
  * ```
  */
 export async function GET(request: NextRequest) {
@@ -66,24 +70,20 @@ export async function GET(request: NextRequest) {
       token_hash,
     });
 
-    // If verification succeeded, redirect to appropriate page
     if (!error) {
-      // Add a small delay to ensure the session is fully established
-      // This prevents race conditions where the client gets SIGNED_IN event
-      // before the session is completely ready in the database
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      // Redirect based on the type of OTP verification
       if (type === "recovery") {
-        // Password recovery OTP - redirect to password reset page
         redirect("/reset-password");
       } else {
-        // Email confirmation or other verification types - redirect to dashboard
         redirect("/dashboard");
       }
     }
+
+    if (type === "email_change") {
+      redirect("/login?auth_error=email_change_failed");
+    }
   }
 
-  // Redirect to error page if verification failed or parameters are missing
-  redirect("/error");
+  redirect("/login?auth_error=verification_failed");
 }

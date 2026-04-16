@@ -997,7 +997,9 @@
       "invalidEmail": "Geçersiz e-posta formatı.",
       "rateLimit": "Çok fazla başarısız giriş denemesi. Lütfen daha sonra tekrar deneyin veya şifrenizi sıfırlayın.",
       "generic": "Giriş başarısız: {{message}}",
-      "unknown": "Giriş başarısız: {{message}}"
+      "unknown": "Giriş başarısız: {{message}}",
+      "verificationFailed": "Doğrulama bağlantısı geçersiz veya süresi dolmuş. Lütfen tekrar deneyin.",
+      "emailChangeFailed": "E-posta değişikliği onay bağlantısı geçersiz veya süresi dolmuş. Lütfen giriş yapın ve Ayarlar'dan tekrar deneyin."
     }
   },
   "signup": {

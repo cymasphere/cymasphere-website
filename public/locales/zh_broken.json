@@ -394,7 +394,9 @@
       "invalidEmail": "邮箱格式无效。",
       "rateLimit": "登录尝试失败次数过多。请稍后重试或重置您的密码。",
       "generic": "登录失败：{{message}}",
-      "unknown": "登录失败：{{message}}"
+      "unknown": "登录失败：{{message}}",
+      "verificationFailed": "验证链接无效或已过期，请重试。",
+      "emailChangeFailed": "邮箱更改确认链接无效或已过期。请登录后在设置中重试。"
     }
   },
   "signup": {

@@ -538,7 +538,9 @@
       "invalidEmail": "Format d'email invalide.",
       "rateLimit": "Trop de tentatives de connexion échouées. Veuillez réessayer plus tard ou réinitialiser votre mot de passe.",
       "generic": "Échec de la connexion : {{message}}",
-      "unknown": "Échec de la connexion : {{message}}"
+      "unknown": "Échec de la connexion : {{message}}",
+      "verificationFailed": "Le lien de vérification est invalide ou a expiré. Veuillez réessayer.",
+      "emailChangeFailed": "Le lien de confirmation du changement d'e-mail est invalide ou a expiré. Connectez-vous et réessayez depuis les paramètres."
     }
   },
   "signup": {

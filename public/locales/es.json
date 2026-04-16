@@ -537,7 +537,9 @@
       "invalidEmail": "Formato de correo electrónico inválido.",
       "rateLimit": "Demasiados intentos de inicio de sesión fallidos. Por favor, inténtalo más tarde o restablece tu contraseña.",
       "generic": "Error al iniciar sesión: {{message}}",
-      "unknown": "Error al iniciar sesión: {{message}}"
+      "unknown": "Error al iniciar sesión: {{message}}",
+      "verificationFailed": "El enlace de verificación no es válido o ha caducado. Inténtalo de nuevo.",
+      "emailChangeFailed": "El enlace de confirmación del cambio de correo no es válido o ha caducado. Inicia sesión e inténtalo de nuevo en Ajustes."
     }
   },
   "signup": {

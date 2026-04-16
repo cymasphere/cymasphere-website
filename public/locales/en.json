@@ -470,7 +470,9 @@
       "invalidEmail": "Invalid email format.",
       "rateLimit": "Too many failed login attempts. Please try again later or reset your password.",
       "generic": "Failed to log in: {{message}}",
-      "unknown": "Failed to log in: {{message}}"
+      "unknown": "Failed to log in: {{message}}",
+      "verificationFailed": "The verification link is invalid or has expired. Please try again.",
+      "emailChangeFailed": "The email change confirmation link is invalid or has expired. Please log in and try again from Settings."
     }
   },
   "signup": {
