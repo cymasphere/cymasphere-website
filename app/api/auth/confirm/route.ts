@@ -14,6 +14,7 @@ import { type EmailOtpType } from "@supabase/supabase-js";
 import { type NextRequest } from "next/server";
 
 import { createClient } from "@/utils/supabase/server";
+import { syncStripeCustomerEmailForUser } from "@/utils/stripe/sync-customer-email";
 import { redirect } from "next/navigation";
 
 /**
@@ -38,6 +39,8 @@ import { redirect } from "next/navigation";
  *
  * @note 100ms delay after verification so the session is established before the client runs.
  * @note Prevents race conditions where the client receives SIGNED_IN before session is ready.
+ * @note On successful `email_change`, updates Stripe Customer `email` when `profiles.customer_id` is set
+ *   so dashboard/billing and webhook fallbacks stay aligned (`utils/stripe/sync-customer-email.ts`).
  *
  * @example
  * ```text
@@ -65,13 +68,20 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
 
     // Verify the OTP token with Supabase
-    const { error } = await supabase.auth.verifyOtp({
+    const { data, error } = await supabase.auth.verifyOtp({
       type,
       token_hash,
     });
 
     if (!error) {
       await new Promise((resolve) => setTimeout(resolve, 100));
+
+      if (type === "email_change") {
+        const user = data?.user;
+        if (user?.id && user.email) {
+          await syncStripeCustomerEmailForUser(user.id, user.email);
+        }
+      }
 
       if (type === "recovery") {
         redirect("/reset-password");
