@@ -73,3 +73,11 @@ Both scripts must use the same lifetime metadata keys as runtime purchases so de
 - **New discounts/promos**: Apply at checkout via existing coupon/promotion code paths; do not bypass duplicate-subscription or lifetime checks.
 
 All subscription state that the app reads should flow from Stripe (and any other store) into `updateUserProStatus` and then to `profiles`. New endpoints that create or change subscriptions must enforce the same invariants (one active sub per customer, one lifetime per customer, backend-derived plan change).
+
+## Related: legacy tables
+
+See [`docs/DATABASE_LEGACY_TABLES.md`](DATABASE_LEGACY_TABLES.md) for tables such as `public.customers` that must not be used as the Stripe link (use `profiles.customer_id` instead).
+
+## Stripe Customer email (best-effort)
+
+Stripe Customer `email` is best-effort and updated only when the user completes the email-change confirmation link (`/api/auth/confirm` with `email_change`). Authoritative billing linkage is `profiles.customer_id`. If Stripe `customers.update` fails at confirm time, Stripe may show an old email until a later successful confirm or manual correction.
