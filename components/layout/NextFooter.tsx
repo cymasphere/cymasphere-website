@@ -22,10 +22,9 @@ import {
   FaDiscord,
 } from "react-icons/fa6";
 import LegalModal from "../modals/LegalModal";
-import AboutUsModal from "../modals/AboutUsModal";
 import EnergyBall from "../common/EnergyBall";
 import { playLydianMaj7Chord } from "../../utils/audioUtils";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 const FooterContainer = styled.footer`
   background-color: var(--surface);
@@ -101,6 +100,11 @@ const BrandCredit = styled.a`
   font-style: italic;
   text-decoration: none;
   transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 6px 0;
 
   &:hover {
     color: var(--primary);
@@ -129,11 +133,14 @@ const FooterLink = styled.a`
   text-decoration: none;
   margin-bottom: 1rem;
   transition: color 0.2s ease;
-  display: block;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 6px 0;
   cursor: pointer;
   background: none;
   border: none;
-  padding: 0;
   font-family: inherit;
   text-align: left;
   width: 100%;
@@ -197,7 +204,7 @@ const Copyright = styled.div`
  * 
  * @returns {JSX.Element} The rendered footer component
  * 
- * @note Uses Next.js useRouter and usePathname hooks for navigation
+ * @note Uses Next.js usePathname for logo scroll behavior on `/`
  * @note Logo click plays audio chord when on home page
  * @note Responsive design with mobile-optimized grid layout
  * @note Includes legal modals for terms and privacy policy
@@ -205,8 +212,6 @@ const Copyright = styled.div`
 const NextFooter = () => {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
-  const [showAboutModal, setShowAboutModal] = useState(false);
-  const router = useRouter();
   const pathname = usePathname();
 
   const handleLogoClick = (e: React.MouseEvent) => {
@@ -306,24 +311,10 @@ const NextFooter = () => {
 
         <FooterColumn>
           <FooterHeading>Account</FooterHeading>
-          <FooterLink
-            as="a"
-            href="/login"
-            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-              e.preventDefault();
-              router.push("/login");
-            }}
-          >
+          <FooterLink as="a" href="/login">
             Login
           </FooterLink>
-          <FooterLink
-            as="a"
-            href="/signup"
-            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-              e.preventDefault();
-              router.push("/signup");
-            }}
-          >
+          <FooterLink as="a" href="/signup">
             Sign Up
           </FooterLink>
           <FooterLink

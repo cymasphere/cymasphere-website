@@ -1,6 +1,15 @@
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "jibirpbauzqhdiwjlrmf.supabase.co",
+        pathname: "/storage/**",
+      },
+    ],
+  },
   async redirects() {
     return [
       {
