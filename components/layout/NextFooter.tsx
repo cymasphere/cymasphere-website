@@ -12,7 +12,7 @@
  */
 
 import React, { useState } from "react";
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 import Link from "next/link";
 import {
   FaXTwitter,
@@ -64,7 +64,10 @@ const FooterColumn = styled.div`
   }
 `;
 
-const FooterLogoLink = styled.a`
+/**
+ * @brief Brand logo target: one anchor via `next/link` (avoids nested `<a>` around the mark).
+ */
+const FooterLogoLink = styled(Link)`
   display: flex;
   align-items: center;
   text-decoration: none;
@@ -127,7 +130,7 @@ const FooterHeading = styled.h3`
   letter-spacing: 0.5px;
 `;
 
-const FooterLink = styled.a`
+const footerNavLinkStyles = css`
   font-size: 0.95rem;
   color: var(--text-secondary);
   text-decoration: none;
@@ -149,6 +152,18 @@ const FooterLink = styled.a`
     color: var(--primary);
     text-decoration: none;
   }
+`;
+
+/** @brief Same-page hash links and hard `location` redirects (Dashboard / Settings). */
+const FooterLink = styled.a`
+  ${footerNavLinkStyles}
+`;
+
+/**
+ * @brief In-app footer row using `next/link` for client-side navigation and a single real `<a>`.
+ */
+const FooterNavLink = styled(Link)`
+  ${footerNavLinkStyles}
 `;
 
 const SocialLinks = styled.div`
@@ -208,6 +223,7 @@ const Copyright = styled.div`
  * @note Logo click plays audio chord when on home page
  * @note Responsive design with mobile-optimized grid layout
  * @note Includes legal modals for terms and privacy policy
+ * @note Internal routes use `FooterNavLink` so markup is not `<a><a>…</a></a>`.
  */
 const NextFooter = () => {
   const [showTermsModal, setShowTermsModal] = useState(false);
@@ -230,17 +246,16 @@ const NextFooter = () => {
     <FooterContainer>
       <FooterContent>
         <FooterColumn>
-          <Link href="/">
-            <FooterLogoLink
-              onClick={handleLogoClick}
-              title="Click to hear a beautiful Lydian Maj7(9, #11, 13) chord"
-            >
-              <EnergyBall />
-              <LogoText>
-                <span>CYMA</span>SPHERE
-              </LogoText>
-            </FooterLogoLink>
-          </Link>
+          <FooterLogoLink
+            href="/"
+            onClick={handleLogoClick}
+            title="Click to hear a beautiful Lydian Maj7(9, #11, 13) chord"
+          >
+            <EnergyBall />
+            <LogoText>
+              <span>CYMA</span>SPHERE
+            </LogoText>
+          </FooterLogoLink>
           <BrandCredit href="https://nnaud.io">by NNAudio</BrandCredit>
           <FooterDescription>
             Cymasphere is an interactive music compositional tool for producers,
@@ -292,33 +307,18 @@ const NextFooter = () => {
 
         <FooterColumn>
           <FooterHeading>Navigation</FooterHeading>
-          <Link href="/">
-            <FooterLink>Home</FooterLink>
-          </Link>
-          <FooterLink as="a" href="#features">
-            Features
-          </FooterLink>
-          <FooterLink as="a" href="#how-it-works">
-            How It Works
-          </FooterLink>
-          <FooterLink as="a" href="#pricing">
-            Pricing
-          </FooterLink>
-          <FooterLink as="a" href="#faq">
-            FAQ
-          </FooterLink>
+          <FooterNavLink href="/">Home</FooterNavLink>
+          <FooterLink href="#features">Features</FooterLink>
+          <FooterLink href="#how-it-works">How It Works</FooterLink>
+          <FooterLink href="#pricing">Pricing</FooterLink>
+          <FooterLink href="#faq">FAQ</FooterLink>
         </FooterColumn>
 
         <FooterColumn>
           <FooterHeading>Account</FooterHeading>
-          <FooterLink as="a" href="/login">
-            Login
-          </FooterLink>
-          <FooterLink as="a" href="/signup">
-            Sign Up
-          </FooterLink>
+          <FooterNavLink href="/login">Login</FooterNavLink>
+          <FooterNavLink href="/signup">Sign Up</FooterNavLink>
           <FooterLink
-            as="a"
             href="/dashboard"
             onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
               e.preventDefault();
@@ -328,7 +328,6 @@ const NextFooter = () => {
             Dashboard
           </FooterLink>
           <FooterLink
-            as="a"
             href="/settings"
             onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
               e.preventDefault();
@@ -341,21 +340,13 @@ const NextFooter = () => {
 
         <FooterColumn>
           <FooterHeading>Information</FooterHeading>
-          <Link href="/about">
-            <FooterLink>About Us</FooterLink>
-          </Link>
-          <Link href="/contact">
-            <FooterLink>Contact</FooterLink>
-          </Link>
-          <Link href="/terms-of-service">
-            <FooterLink>Terms of Service</FooterLink>
-          </Link>
-          <Link href="/privacy-policy">
-            <FooterLink>Privacy Policy</FooterLink>
-          </Link>
-          <Link href="/refund-policy">
-            <FooterLink>Refund Policy</FooterLink>
-          </Link>
+          <FooterNavLink href="/about">About Us</FooterNavLink>
+          <FooterNavLink href="/contact">Contact</FooterNavLink>
+          <FooterNavLink href="/terms-of-service">
+            Terms of Service
+          </FooterNavLink>
+          <FooterNavLink href="/privacy-policy">Privacy Policy</FooterNavLink>
+          <FooterNavLink href="/refund-policy">Refund Policy</FooterNavLink>
         </FooterColumn>
       </FooterContent>
       <Copyright>

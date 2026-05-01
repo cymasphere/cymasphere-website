@@ -511,19 +511,35 @@ const HeroSection = () => {
   /**
    * @brief Defer hero background video until idle so first paint does not compete with ~1.6 MiB media.
    * @note Skips entirely when the user prefers reduced motion.
+   * @note Falls back to `setTimeout` when `requestIdleCallback` is unavailable (older WebKit).
    */
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       return;
     }
-    const id = window.requestIdleCallback(
-      () => {
-        setShouldLoadHeroVideo(true);
-      },
-      { timeout: 3500 }
-    );
-    return () => window.cancelIdleCallback(id);
+    const load = () => {
+      setShouldLoadHeroVideo(true);
+    };
+    let cancelSchedule: (() => void) | undefined;
+
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(load, { timeout: 3500 });
+      cancelSchedule = () => {
+        if (typeof window.cancelIdleCallback === "function") {
+          window.cancelIdleCallback(id);
+        }
+      };
+    } else {
+      const id = window.setTimeout(load, 300);
+      cancelSchedule = () => {
+        window.clearTimeout(id);
+      };
+    }
+
+    return () => {
+      cancelSchedule?.();
+    };
   }, []);
 
   // Use the synth in a way consistent with the Try Me section
