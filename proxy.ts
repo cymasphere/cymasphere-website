@@ -1,13 +1,39 @@
 /**
- * @fileoverview Next.js proxy for session refresh and security headers
+ * @fileoverview Next.js root proxy (replaces deprecated middleware convention)
  *
- * Runs Supabase session refresh and adds security headers to all matching responses.
+ * Responsibilities, in order:
+ * 1. Capture `?ref=AFFILIATE_CODE` from any landing URL and store it in a
+ *    long-lived `cymasphere_ref` cookie so the checkout route can auto-apply
+ *    the matching Stripe Promotion Code.
+ * 2. Refresh the Supabase auth session via `updateSession`.
+ * 3. Add security headers to matching responses.
+ *
+ * Skips static assets, Next internals, and API routes (API reads the cookie directly).
  *
  * @module proxy
  */
 
 import { type NextRequest } from "next/server";
 import { updateSession } from "@/utils/supabase/middleware";
+
+/**
+ * Cookie name used to remember the last-seen affiliate code for this
+ * browser. Read by the Stripe checkout route to auto-apply the
+ * corresponding promotion code.
+ */
+const REF_COOKIE = "cymasphere_ref";
+
+/**
+ * Affiliate cookie lifetime in seconds. Sixty days mirrors the standard
+ * affiliate "last-click attribution" industry default.
+ */
+const REF_COOKIE_MAX_AGE = 60 * 60 * 24 * 60;
+
+/**
+ * Pattern for valid affiliate codes: 3-32 uppercase alphanumeric.
+ * Anything else is ignored so we don't write garbage cookies.
+ */
+const CODE_PATTERN = /^[A-Z0-9]{3,32}$/;
 
 /**
  * Security headers to add to every response
@@ -23,7 +49,22 @@ const SECURITY_HEADERS: Record<string, string> = {
 };
 
 export async function proxy(request: NextRequest) {
-  const response = await updateSession(request);
+  const refParam = request.nextUrl.searchParams.get("ref");
+
+  let response = await updateSession(request);
+
+  if (refParam) {
+    const candidate = refParam.toUpperCase();
+    if (CODE_PATTERN.test(candidate)) {
+      response.cookies.set(REF_COOKIE, candidate, {
+        maxAge: REF_COOKIE_MAX_AGE,
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+      });
+    }
+  }
 
   for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
     response.headers.set(key, value);
@@ -34,13 +75,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public files (images, etc)
-     */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map)$).*)",
   ],
 };

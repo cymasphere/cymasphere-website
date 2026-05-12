@@ -29,7 +29,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * 
  * @example
  * ```typescript
- * // In middleware.ts
+ * // In proxy.ts
  * export async function middleware(request: NextRequest) {
  *   return await updateSession(request);
  * }
