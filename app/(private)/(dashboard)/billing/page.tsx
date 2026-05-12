@@ -525,6 +525,22 @@ const PaymentMethodMeta = styled.div`
   margin-top: 0.35rem;
 `;
 
+const ProgressBarTrack = styled.div`
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 0.75rem;
+`;
+
+const ProgressBarFill = styled.div<{ $value: number }>`
+  width: ${(props) => `${Math.max(0, Math.min(100, props.$value))}%`};
+  height: 100%;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  transition: width 0.25s ease;
+`;
+
 /** @brief Matches GET /api/stripe/customer-portal/default-payment-method JSON. */
 type BillingPaymentMethodSummary =
   | {
@@ -535,6 +551,14 @@ type BillingPaymentMethodSummary =
       expYear: number;
     }
   | { kind: "other"; label: string };
+
+type RentToOwnProgress = {
+  targetCents: number;
+  paidCents: number;
+  remainingCents: number;
+  completed: boolean;
+  currency: string;
+};
 
 /**
  * @brief Human-readable card brand from Stripe’s lowercase code.
@@ -626,6 +650,8 @@ function BillingResumeCheckoutLauncher({
         ? "Monthly"
         : parsed.planType === "annual"
           ? "Annual"
+          : parsed.planType === "rent_to_own"
+            ? "Rent to Own"
           : "Lifetime";
     onResumeApplied({ planLabel });
     router.replace("/billing");
@@ -683,6 +709,10 @@ export default function BillingPage() {
   const [stripeRecurringLoadError, setStripeRecurringLoadError] = useState<
     string | null
   >(null);
+  const [rentToOwnProgress, setRentToOwnProgress] =
+    useState<RentToOwnProgress | null>(null);
+  const [isLoadingRentToOwnProgress, setIsLoadingRentToOwnProgress] =
+    useState(false);
   const profileResyncForEndedSubRef = useRef(false);
 
   const {
@@ -735,7 +765,8 @@ export default function BillingPage() {
     if (userSubscription.subscription_source === "ios") return false;
     if (
       userSubscription.subscription !== "monthly" &&
-      userSubscription.subscription !== "annual"
+      userSubscription.subscription !== "annual" &&
+      userSubscription.subscription !== "rent_to_own"
     ) {
       return false;
     }
@@ -793,7 +824,8 @@ export default function BillingPage() {
   const recurringProfileExpirationPassed = useMemo(() => {
     if (
       userSubscription.subscription !== "monthly" &&
-      userSubscription.subscription !== "annual"
+      userSubscription.subscription !== "annual" &&
+      userSubscription.subscription !== "rent_to_own"
     ) {
       return false;
     }
@@ -863,7 +895,12 @@ export default function BillingPage() {
   // Add a variable to determine the subscription interval
   const subscriptionInterval = useMemo(() => {
     // Return "month" for monthly, "year" for annual, or null for other subscription types
-    if (userSubscription.subscription === "monthly") return "month";
+    if (
+      userSubscription.subscription === "monthly" ||
+      userSubscription.subscription === "rent_to_own"
+    ) {
+      return "month";
+    }
     if (userSubscription.subscription === "annual") return "year";
     return null;
   }, [userSubscription.subscription]);
@@ -1007,6 +1044,7 @@ export default function BillingPage() {
       refreshNfr(),
       refreshUpcomingInvoice(),
       refreshInvoices(),
+      fetchRentToOwnProgress(),
     ]);
     await fetchStripeRecurringStatus();
   };
@@ -1071,6 +1109,32 @@ export default function BillingPage() {
     void fetchDefaultPaymentMethod();
   }, [fetchDefaultPaymentMethod]);
 
+  const fetchRentToOwnProgress = useCallback(async () => {
+    setIsLoadingRentToOwnProgress(true);
+    try {
+      const res = await fetch("/api/rent-to-own/progress", {
+        cache: "no-store",
+      });
+      const data: {
+        success?: boolean;
+        progress?: RentToOwnProgress | null;
+      } = await res.json();
+      if (data.success) {
+        setRentToOwnProgress(data.progress ?? null);
+      } else {
+        setRentToOwnProgress(null);
+      }
+    } catch {
+      setRentToOwnProgress(null);
+    } finally {
+      setIsLoadingRentToOwnProgress(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchRentToOwnProgress();
+  }, [fetchRentToOwnProgress]);
+
   // Add a separate handler for when users click X or outside the modal
   const handleDismissConfirmation = () => {
     setShowConfirmationModal(false);
@@ -1111,12 +1175,14 @@ export default function BillingPage() {
       setIsPlanChangeLoading(false);
 
       // Convert SubscriptionType to PlanType, handling 'admin' and 'none' cases
-      let validPlanType: "monthly" | "annual" | "lifetime";
+      let validPlanType: "monthly" | "annual" | "lifetime" | "rent_to_own";
       const period = selectedBillingPeriod as string;
       if (period === "monthly") {
         validPlanType = "monthly";
       } else if (period === "annual") {
         validPlanType = "annual";
+      } else if (period === "rent_to_own") {
+        validPlanType = "rent_to_own";
       } else if (period === "lifetime") {
         validPlanType = "lifetime";
       } else {
@@ -1136,12 +1202,14 @@ export default function BillingPage() {
     // If not trialing, use checkout for plan change
     try {
       // Convert SubscriptionType to PlanType
-      let validPlanType: "monthly" | "annual" | "lifetime";
+      let validPlanType: "monthly" | "annual" | "lifetime" | "rent_to_own";
       const period = selectedBillingPeriod as string;
       if (period === "monthly") {
         validPlanType = "monthly";
       } else if (period === "annual") {
         validPlanType = "annual";
+      } else if (period === "rent_to_own") {
+        validPlanType = "rent_to_own";
       } else if (period === "lifetime") {
         validPlanType = "lifetime";
       } else {
@@ -1150,12 +1218,16 @@ export default function BillingPage() {
       }
 
       // If user is currently trialing, update subscription directly to preserve trial
-      if (isInTrialPeriod && userSubscription.customer_id && validPlanType !== "lifetime") {
+      if (
+        isInTrialPeriod &&
+        userSubscription.customer_id &&
+        (validPlanType === "monthly" || validPlanType === "annual")
+      ) {
         try {
           const { updateSubscription } = await import("@/utils/stripe/actions");
           const updateResult = await updateSubscription(
             userSubscription.customer_id,
-            validPlanType === "monthly" ? "monthly" : "annual"
+            validPlanType === "annual" ? "annual" : "monthly",
           );
 
           if (updateResult.success) {
@@ -1170,7 +1242,12 @@ export default function BillingPage() {
               t(
                 "dashboard.billing.planUpdatedMessage",
                 "Your plan has been updated. Your free trial continues with the {{plan}} plan.",
-                { plan: validPlanType === "monthly" ? t("dashboard.billing.monthly", "Monthly") : t("dashboard.billing.yearly", "Yearly") }
+                {
+                  plan:
+                    validPlanType === "annual"
+                      ? t("dashboard.billing.yearly", "Yearly")
+                      : t("dashboard.billing.monthly", "Monthly")
+                }
               )
             );
             setShowConfirmationModal(true);
@@ -1232,6 +1309,8 @@ export default function BillingPage() {
         ? prices.monthly
         : userSubscription.subscription === "annual"
         ? prices.yearly
+        : userSubscription.subscription === "rent_to_own"
+          ? prices.monthly
         : prices.lifetime;
 
     return price !== null ? price.toString() : "--";
@@ -1782,6 +1861,8 @@ export default function BillingPage() {
                         ? "Elite Access"
                         : isSubscriptionLifetime(userSubscription.subscription)
                         ? t("dashboard.billing.lifetimePlan", "Lifetime")
+                        : userSubscription.subscription === "rent_to_own"
+                        ? t("pricing.rentToOwn", "Rent to Own")
                         : subscriptionInterval === "month"
                         ? t("dashboard.billing.monthly", "Monthly")
                         : t("dashboard.billing.yearly", "Yearly")}
@@ -2273,6 +2354,73 @@ export default function BillingPage() {
                 </>
               )}
             </ButtonContainer>
+          </CardContent>
+        </BillingCard>
+      )}
+
+      {(isLoadingRentToOwnProgress || rentToOwnProgress) && (
+        <BillingCard
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <CardTitle>
+            <FaInfoCircle /> {t("dashboard.billing.rentToOwn", "Rent-to-Own Progress")}
+          </CardTitle>
+          <CardContent>
+            {isLoadingRentToOwnProgress ? (
+              <LoadingComponent
+                size="24px"
+                text={t("dashboard.billing.loadingRentToOwn", "Loading progress...")}
+              />
+            ) : rentToOwnProgress ? (
+              <>
+                <div style={{ fontSize: "1rem", color: "var(--text)" }}>
+                  {t(
+                    "dashboard.billing.rentToOwnPaid",
+                    "{{paid}} paid of {{target}} lifetime target",
+                    {
+                      paid: formatMajorCurrencyAmount(
+                        rentToOwnProgress.paidCents / 100,
+                        rentToOwnProgress.currency,
+                      ),
+                      target: formatMajorCurrencyAmount(
+                        rentToOwnProgress.targetCents / 100,
+                        rentToOwnProgress.currency,
+                      ),
+                    },
+                  )}
+                </div>
+                <ProgressBarTrack>
+                  <ProgressBarFill
+                    $value={
+                      rentToOwnProgress.targetCents > 0
+                        ? (rentToOwnProgress.paidCents /
+                            rentToOwnProgress.targetCents) *
+                          100
+                        : 0
+                    }
+                  />
+                </ProgressBarTrack>
+                <PaymentMethodMeta>
+                  {rentToOwnProgress.completed
+                    ? t(
+                        "dashboard.billing.rentToOwnComplete",
+                        "Completed. Your account is now lifetime.",
+                      )
+                    : t(
+                        "dashboard.billing.rentToOwnRemaining",
+                        "{{remaining}} remaining until automatic lifetime upgrade.",
+                        {
+                          remaining: formatMajorCurrencyAmount(
+                            rentToOwnProgress.remainingCents / 100,
+                            rentToOwnProgress.currency,
+                          ),
+                        },
+                      )}
+                </PaymentMethodMeta>
+              </>
+            ) : null}
           </CardContent>
         </BillingCard>
       )}

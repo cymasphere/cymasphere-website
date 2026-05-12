@@ -517,8 +517,12 @@ export async function POST(request: NextRequest) {
       .eq("id", resolvedUserId)
       .single();
 
-    let finalSubscriptionType: "none" | "monthly" | "annual" | "lifetime" =
-      "none";
+    let finalSubscriptionType:
+      | "none"
+      | "monthly"
+      | "annual"
+      | "lifetime"
+      | "rent_to_own" = "none";
     let finalExpiration: string | null = null;
 
     if (activeSubscription) {

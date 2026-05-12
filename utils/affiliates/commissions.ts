@@ -29,14 +29,20 @@ const REFUND_HOLD_DAYS = 30;
  * STRIPE_PRICE_ID_MONTHLY / _ANNUAL / _LIFETIME. Lets us tag commissions
  * with the right kind without making a Stripe `prices.retrieve` call.
  */
-function getPriceIdMap(): Record<string, "monthly" | "annual" | "lifetime"> {
-  const map: Record<string, "monthly" | "annual" | "lifetime"> = {};
+function getPriceIdMap(): Record<
+  string,
+  "monthly" | "annual" | "lifetime" | "rent_to_own"
+> {
+  const map: Record<string, "monthly" | "annual" | "lifetime" | "rent_to_own"> =
+    {};
   const m = process.env.STRIPE_PRICE_ID_MONTHLY?.trim();
   const a = process.env.STRIPE_PRICE_ID_ANNUAL?.trim();
   const l = process.env.STRIPE_PRICE_ID_LIFETIME?.trim();
+  const r = process.env.STRIPE_PRICE_ID_RENT_TO_OWN?.trim();
   if (m) map[m] = "monthly";
   if (a) map[a] = "annual";
   if (l) map[l] = "lifetime";
+  if (r) map[r] = "rent_to_own";
   return map;
 }
 
@@ -286,7 +292,8 @@ export async function ingestInvoicePaid(
   // Stripe v2 line items expose this via `pricing.price_details.price`,
   // which may be a string id or an expanded Price object.
   const priceMap = getPriceIdMap();
-  let productKind: "monthly" | "annual" | "lifetime" = "monthly";
+  let productKind: "monthly" | "annual" | "lifetime" | "rent_to_own" =
+    "monthly";
   const firstLine = invoice.lines?.data?.[0];
   const priceDetails = firstLine?.pricing?.price_details;
   let linePriceId: string | undefined;

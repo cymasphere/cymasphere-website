@@ -90,12 +90,15 @@ export async function GET(): Promise<NextResponse<PricesResponse>> {
     const monthlyPriceId = process.env.STRIPE_PRICE_ID_MONTHLY!;
     const annualPriceId = process.env.STRIPE_PRICE_ID_ANNUAL!;
     const lifetimePriceId = process.env.STRIPE_PRICE_ID_LIFETIME!;
+    const rentToOwnPriceId = process.env.STRIPE_PRICE_ID_RENT_TO_OWN!;
 
     // Fetch prices from Stripe
-    const [monthlyPrice, annualPrice, lifetimePrice] = await Promise.all([
+    const [monthlyPrice, annualPrice, lifetimePrice, rentToOwnPrice] =
+      await Promise.all([
       stripe.prices.retrieve(monthlyPriceId, { expand: ["product"] }),
       stripe.prices.retrieve(annualPriceId, { expand: ["product"] }),
       stripe.prices.retrieve(lifetimePriceId, { expand: ["product"] }),
+      stripe.prices.retrieve(rentToOwnPriceId, { expand: ["product"] }),
     ]);
 
     // Get product name
@@ -126,6 +129,14 @@ export async function GET(): Promise<NextResponse<PricesResponse>> {
         amount: lifetimePrice.unit_amount || 0,
         currency: lifetimePrice.currency,
         name: `${productName} (Lifetime)`,
+      },
+      rent_to_own: {
+        id: rentToOwnPrice.id,
+        type: "rent_to_own",
+        amount: rentToOwnPrice.unit_amount || 0,
+        currency: rentToOwnPrice.currency,
+        interval: rentToOwnPrice.recurring?.interval,
+        name: `${productName} (Rent to Own)`,
       },
     };
 
@@ -158,6 +169,13 @@ export async function GET(): Promise<NextResponse<PricesResponse>> {
         amount: 0,
         currency: "usd",
         name: "Lifetime Plan",
+      },
+      rent_to_own: {
+        id: "",
+        type: "rent_to_own",
+        amount: 0,
+        currency: "usd",
+        name: "Rent-to-Own Plan",
       },
     };
 

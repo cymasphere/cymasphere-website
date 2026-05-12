@@ -518,7 +518,7 @@ export default function PromotionBanner({
     } else if (singlePlan) {
       setLoading(true);
       try {
-        const planType = singlePlan as "monthly" | "annual" | "lifetime";
+        const planType = singlePlan as PlanType;
         await initiateCheckout(planType, {
           collectPaymentMethod: false,
           willProvideCard: false,

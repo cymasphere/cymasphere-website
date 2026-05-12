@@ -14,6 +14,7 @@ export const BILLING_RESUME_VALID_PLANS: readonly PlanType[] = [
   "monthly",
   "annual",
   "lifetime",
+  "rent_to_own",
 ];
 
 /**

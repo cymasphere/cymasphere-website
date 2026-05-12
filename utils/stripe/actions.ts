@@ -102,12 +102,15 @@ export async function getPrices(): Promise<{
     const monthlyPriceId = process.env.STRIPE_PRICE_ID_MONTHLY!;
     const annualPriceId = process.env.STRIPE_PRICE_ID_ANNUAL!;
     const lifetimePriceId = process.env.STRIPE_PRICE_ID_LIFETIME!;
+    const rentToOwnPriceId = process.env.STRIPE_PRICE_ID_RENT_TO_OWN!;
 
     // Fetch prices from Stripe
-    const [monthlyPrice, annualPrice, lifetimePrice] = await Promise.all([
+    const [monthlyPrice, annualPrice, lifetimePrice, rentToOwnPrice] =
+      await Promise.all([
       stripe.prices.retrieve(monthlyPriceId, { expand: ["product"] }),
       stripe.prices.retrieve(annualPriceId, { expand: ["product"] }),
       stripe.prices.retrieve(lifetimePriceId, { expand: ["product"] }),
+      stripe.prices.retrieve(rentToOwnPriceId, { expand: ["product"] }),
     ]);
 
     // Fetch active promotions/coupons
@@ -189,6 +192,14 @@ export async function getPrices(): Promise<{
         name: `${productName} (Lifetime)`,
         // discount: activePromotion,
       },
+      rent_to_own: {
+        id: rentToOwnPrice.id,
+        type: "rent_to_own",
+        amount: rentToOwnPrice.unit_amount || 0,
+        currency: rentToOwnPrice.currency,
+        interval: rentToOwnPrice.recurring?.interval,
+        name: `${productName} (Rent to Own)`,
+      },
     };
 
     return { prices };
@@ -216,6 +227,13 @@ export async function getPrices(): Promise<{
           amount: 0,
           currency: "usd",
           name: "Lifetime",
+        },
+        rent_to_own: {
+          id: "",
+          type: "rent_to_own",
+          amount: 0,
+          currency: "usd",
+          name: "Rent-to-Own",
         },
       },
       error: error instanceof Error ? error.message : "Failed to fetch prices",
@@ -260,6 +278,10 @@ export async function createCheckoutSession(
       case "lifetime":
         priceId = process.env.STRIPE_PRICE_ID_LIFETIME!;
         mode = "payment";
+        break;
+      case "rent_to_own":
+        priceId = process.env.STRIPE_PRICE_ID_RENT_TO_OWN!;
+        mode = "subscription";
         break;
       default:
         throw new Error("Invalid plan type");

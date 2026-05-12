@@ -20,6 +20,7 @@ import {
   ingestLifetimePaymentIntent,
   reverseCommissionsForCharge,
 } from "@/utils/affiliates/commissions";
+import { applyRentToOwnPayment } from "@/utils/rent-to-own/progress";
 
 /**
  * Stripe client instance initialized with secret key from environment variables
@@ -290,20 +291,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: "success", event: event.type });
     }
 
+    const resolvedUserId = await findUserIdByCustomerId(customerId);
+
     // payment_intent.succeeded with purchase_type lifetime: set profile subscription immediately
     // so success page and app see correct state without depending on stripe_payment_intents sync
     if (event.type === "payment_intent.succeeded") {
       const pi = event.data.object as Stripe.PaymentIntent;
       if (await isValidLifetimePaymentIntent(pi)) {
-        const userId = await findUserIdByCustomerId(customerId);
-        if (userId) {
+        if (resolvedUserId) {
           const supabase = await createSupabaseServiceRole();
           await supabase
             .from("profiles")
             .update({ subscription: "lifetime" })
-            .eq("id", userId);
+            .eq("id", resolvedUserId);
           console.log(
-            `[Webhook] Set profile subscription to lifetime for user ${userId} (payment_intent.succeeded)`,
+            `[Webhook] Set profile subscription to lifetime for user ${resolvedUserId} (payment_intent.succeeded)`,
           );
         }
         // Affiliate attribution for the lifetime purchase, if any. Safe to
@@ -328,6 +330,15 @@ export async function POST(request: NextRequest) {
       };
       try {
         await ingestInvoicePaid(invoice);
+        if (resolvedUserId) {
+          const rentToOwnResult = await applyRentToOwnPayment(
+            invoice,
+            resolvedUserId,
+          );
+          if (rentToOwnResult.completed) {
+            await updateUserProStatus(resolvedUserId, { skipEmail: false });
+          }
+        }
       } catch (e) {
         console.error("[Webhook] affiliate ingest (invoice) failed:", e);
       }
@@ -410,17 +421,26 @@ export async function POST(request: NextRequest) {
         .upsert(row, { onConflict: "id" });
     }
 
-    // Find user by customer ID
-    const userId = await findUserIdByCustomerId(customerId);
+    if (event.type === "customer.subscription.deleted") {
+      const sub = event.data.object as Stripe.Subscription;
+      const subscriptionId = sub.id;
+      const supabase = await createSupabaseServiceRole();
+      await supabase
+        .from("rent_to_own_progress")
+        .update({ active_subscription_id: null })
+        .eq("active_subscription_id", subscriptionId);
+    }
 
     // If user exists, refresh subscription status using centralized function.
     // skipEmail: the subscription-setup / payment-intent routes already send
     // welcome emails; the webhook only syncs DB state to avoid duplicates.
-    if (userId) {
+    if (resolvedUserId) {
       console.log(
-        `Refreshing subscription for user ${userId} (customer: ${customerId})`,
+        `Refreshing subscription for user ${resolvedUserId} (customer: ${customerId})`,
       );
-      const result = await updateUserProStatus(userId, { skipEmail: true });
+      const result = await updateUserProStatus(resolvedUserId, {
+        skipEmail: true,
+      });
       console.log(
         `Subscription updated: ${result.subscription} (${result.source})`,
       );

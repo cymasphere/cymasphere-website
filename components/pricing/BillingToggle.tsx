@@ -2,7 +2,7 @@
  * @fileoverview BillingToggle Component
  * @module components/pricing/BillingToggle
  * 
- * Toggle component for switching between billing periods (monthly, yearly, lifetime).
+ * Toggle component for switching between billing periods (monthly, yearly, rent-to-own, lifetime).
  * Displays savings information and disables options based on user's current subscription.
  * 
  * @example
@@ -118,7 +118,7 @@ interface BillingToggleProps {
 /**
  * @brief BillingToggle component
  * 
- * Three-button toggle for selecting billing period. In default variant, disables
+ * Four-button toggle for selecting billing period. In default variant, disables
  * options that don't match the user's current subscription. In change_plan variant,
  * allows selecting any plan including the current one.
  * 
@@ -185,6 +185,18 @@ export default function BillingToggle({
         >
           {t("pricing.lifetime", "Lifetime")}
         </BillingToggleButton>
+
+        <BillingToggleButton
+          $active={billingPeriod === "rent_to_own"}
+          $disabled={isDisabled("rent_to_own")}
+          onClick={() => {
+            if (!isDisabled("rent_to_own")) {
+              onBillingPeriodChange("rent_to_own");
+            }
+          }}
+        >
+          {t("pricing.rentToOwn", "Rent to Own")}
+        </BillingToggleButton>
       </BillingToggleContainer>
 
       {showSavingsInfo && (
@@ -205,6 +217,15 @@ export default function BillingToggle({
             <SavingsInfo>
               <span>{t("pricing.bestValue", "Best Value")}</span> -{" "}
               {t("pricing.oneTimePayment", "One-time payment, lifetime access")}
+            </SavingsInfo>
+          )}
+          {billingPeriod === "rent_to_own" && (
+            <SavingsInfo>
+              <span>{t("pricing.rentToOwn", "Rent to Own")}</span> -{" "}
+              {t(
+                "pricing.rentToOwnDescription",
+                "Pay monthly, then auto-upgrade to lifetime once paid in full",
+              )}
             </SavingsInfo>
           )}
         </div>

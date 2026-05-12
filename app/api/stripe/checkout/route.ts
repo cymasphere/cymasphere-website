@@ -18,6 +18,7 @@ import { createSupabaseServiceRole } from "@/utils/supabase/service";
 import { createClient } from "@/utils/supabase/server";
 import { checkRateLimit, getClientIp } from "@/utils/rate-limit";
 import { hasCustomerPurchasedLifetime } from "@/utils/stripe/actions";
+import { ensureRentToOwnProgress } from "@/utils/rent-to-own/progress";
 import { randomUUID } from "crypto";
 
 /**
@@ -363,7 +364,7 @@ export async function POST(request: NextRequest) {
     }
 
     // CRITICAL: Check if customer already has a lifetime purchase
-    if (resolved_customer_id && planType === "lifetime") {
+    if (resolved_customer_id && (planType === "lifetime" || planType === "rent_to_own")) {
       try {
         const hasLifetime =
           await hasCustomerPurchasedLifetime(resolved_customer_id);
@@ -377,7 +378,9 @@ export async function POST(request: NextRequest) {
               url: null,
               error: "LIFETIME_ALREADY_PURCHASED",
               message:
-                "You already have a lifetime license! To purchase another license (for example, as a gift), please create a new account using a different email address.",
+                planType === "lifetime"
+                  ? "You already have a lifetime license! To purchase another license (for example, as a gift), please create a new account using a different email address."
+                  : "You already have a lifetime license, so rent-to-own is not available for this account.",
               hasLifetime: true,
             },
             { status: 400 },
@@ -691,6 +694,7 @@ async function createCheckoutSession(
       monthly: process.env.STRIPE_PRICE_ID_MONTHLY!,
       annual: process.env.STRIPE_PRICE_ID_ANNUAL!,
       lifetime: process.env.STRIPE_PRICE_ID_LIFETIME!,
+      rent_to_own: process.env.STRIPE_PRICE_ID_RENT_TO_OWN!,
     };
 
     const priceId = priceIds[planType];
@@ -900,8 +904,7 @@ async function createCheckoutSession(
       "http://localhost:3000";
     console.log("🔧 Creating checkout session with base URL:", baseUrl);
 
-    const useEmbedded =
-      embedded && (planType === "monthly" || planType === "annual");
+    const useEmbedded = embedded && (planType === "monthly" || planType === "annual");
 
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
@@ -955,6 +958,12 @@ async function createCheckoutSession(
     // the Checkout Session.
     if (subscriptionData) {
       sessionParams.subscription_data = subscriptionData;
+      if (planType === "rent_to_own") {
+        sessionParams.subscription_data.metadata = {
+          ...(sessionParams.subscription_data.metadata ?? {}),
+          purchase_type: "rent_to_own",
+        };
+      }
       if (resolvedAffiliate) {
         sessionParams.subscription_data.metadata = {
           ...(sessionParams.subscription_data.metadata ?? {}),
@@ -967,10 +976,17 @@ async function createCheckoutSession(
     } else if (resolvedAffiliate && mode === "subscription") {
       sessionParams.subscription_data = {
         metadata: {
+          ...(planType === "rent_to_own" ? { purchase_type: "rent_to_own" } : {}),
           affiliate_id: resolvedAffiliate.id,
           affiliate_code: resolvedAffiliate.code,
           affiliate_promotion_code_id:
             resolvedAffiliate.stripe_promotion_code_id,
+        },
+      };
+    } else if (planType === "rent_to_own" && mode === "subscription") {
+      sessionParams.subscription_data = {
+        metadata: {
+          purchase_type: "rent_to_own",
         },
       };
     }
@@ -1162,6 +1178,10 @@ async function createCheckoutSession(
     // Stripe doesn't allow both allow_promotion_codes and discounts together
     if (!hasAutoDiscount) {
       sessionParams.allow_promotion_codes = true;
+    }
+
+    if (planType === "rent_to_own" && userId) {
+      await ensureRentToOwnProgress(userId);
     }
 
     // Create the checkout session

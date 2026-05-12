@@ -262,9 +262,14 @@ export async function customerPurchasedProFromSupabase(
     // Get subscription details from the subscriptions
     const monthlyPriceId = process.env.STRIPE_PRICE_ID_MONTHLY!;
     const annualPriceId = process.env.STRIPE_PRICE_ID_ANNUAL!;
+    const rentToOwnPriceId = process.env.STRIPE_PRICE_ID_RENT_TO_OWN!;
 
     let hasActiveSubscription = false;
-    let activeSubscriptionType: "monthly" | "annual" | undefined;
+    let activeSubscriptionType:
+      | "monthly"
+      | "annual"
+      | "rent_to_own"
+      | undefined;
 
     for (const subscription of safeSubscriptions) {
       // Skip canceled or incomplete subscriptions
@@ -284,12 +289,20 @@ export async function customerPurchasedProFromSupabase(
       const items = attrs?.items?.data || [];
       for (const item of items) {
         const priceId = item.price?.id;
-        if (priceId === monthlyPriceId || priceId === annualPriceId) {
+        if (
+          priceId === monthlyPriceId ||
+          priceId === annualPriceId ||
+          priceId === rentToOwnPriceId
+        ) {
           // Consider active subscriptions - those that are active, trialing, or past_due
           // These are statuses where the customer still has access to the service
           hasActiveSubscription = true;
           activeSubscriptionType =
-            priceId === monthlyPriceId ? "monthly" : "annual";
+            priceId === monthlyPriceId
+              ? "monthly"
+              : priceId === annualPriceId
+                ? "annual"
+                : "rent_to_own";
           activeSubscriptionId = (subscription as any).id || undefined;
 
           // Set expiration date
@@ -322,13 +335,13 @@ export async function customerPurchasedProFromSupabase(
     const resolveActiveSubscriptionFromStripeApi = async (
       stripeCustomerId: string,
     ): Promise<{
-      type: "monthly" | "annual";
+      type: "monthly" | "annual" | "rent_to_own";
       periodEnd: Date;
       trialEnd: Date | undefined;
       subscriptionId: string;
     } | null> => {
       const secret = process.env.STRIPE_SECRET_KEY?.trim();
-      if (!secret || !monthlyPriceId || !annualPriceId) {
+      if (!secret || !monthlyPriceId || !annualPriceId || !rentToOwnPriceId) {
         return null;
       }
       const stripe = new Stripe(secret);
@@ -346,14 +359,23 @@ export async function customerPurchasedProFromSupabase(
       for (const sub of activeLive) {
         for (const item of sub.items.data) {
           const priceId = item.price?.id;
-          if (priceId === monthlyPriceId || priceId === annualPriceId) {
+          if (
+            priceId === monthlyPriceId ||
+            priceId === annualPriceId ||
+            priceId === rentToOwnPriceId
+          ) {
             const attrs = sub as Stripe.Subscription & {
               current_period_end: number;
               trial_end: number | null;
             };
             const periodEndSec = attrs.current_period_end;
             return {
-              type: priceId === monthlyPriceId ? "monthly" : "annual",
+              type:
+                priceId === monthlyPriceId
+                  ? "monthly"
+                  : priceId === annualPriceId
+                    ? "annual"
+                    : "rent_to_own",
               periodEnd: new Date(
                 (typeof periodEndSec === "number" ? periodEndSec : 0) * 1000,
               ),

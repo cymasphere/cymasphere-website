@@ -1,4 +1,4 @@
-export type PlanType = "monthly" | "annual" | "lifetime";
+export type PlanType = "monthly" | "annual" | "lifetime" | "rent_to_own";
 
 export interface PriceData {
   id: string;

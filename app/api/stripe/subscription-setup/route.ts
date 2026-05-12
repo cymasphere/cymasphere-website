@@ -29,6 +29,7 @@ import {
   guestCheckoutEmailRequiresLogin,
 } from "@/utils/checkout/guest-checkout-account-guard";
 import { inviteUserByEmailAndRefreshProStatus } from "@/utils/checkout/post-purchase";
+import { ensureRentToOwnProgress } from "@/utils/rent-to-own/progress";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -53,7 +54,7 @@ async function getPlanName(
 const STRIPE_UNAVAILABLE_MSG =
   "Payment service is temporarily unavailable. Please try again later.";
 
-const VALID_SUB_PLANS: PlanType[] = ["monthly", "annual"];
+const VALID_SUB_PLANS: PlanType[] = ["monthly", "annual", "rent_to_own"];
 
 /**
  * @brief POST endpoint to create a subscription and return first invoice PaymentIntent
@@ -108,7 +109,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "planType must be monthly or annual for subscription setup.",
+          error:
+            "planType must be monthly, annual, or rent_to_own for subscription setup.",
         },
         { status: 400 },
       );
@@ -117,6 +119,7 @@ export async function POST(request: NextRequest) {
     const priceIds: Record<string, string | undefined> = {
       monthly: process.env.STRIPE_PRICE_ID_MONTHLY,
       annual: process.env.STRIPE_PRICE_ID_ANNUAL,
+      rent_to_own: process.env.STRIPE_PRICE_ID_RENT_TO_OWN,
     };
     const priceId = priceIds[planType];
     if (!priceId) {
@@ -318,6 +321,7 @@ export async function POST(request: NextRequest) {
           ],
       metadata: {
         plan_type: planType,
+        ...(planType === "rent_to_own" ? { purchase_type: "rent_to_own" } : {}),
         plan_name:
           trialDays != null ? `${planName}_trial${trialDays}` : planName,
         user_id: user?.id ?? "anonymous",
@@ -338,6 +342,10 @@ export async function POST(request: NextRequest) {
           missing_payment_method: "cancel",
         },
       };
+    }
+
+    if (planType === "rent_to_own" && user?.id) {
+      await ensureRentToOwnProgress(user.id);
     }
 
     const now = new Date();

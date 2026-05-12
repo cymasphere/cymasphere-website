@@ -1308,7 +1308,7 @@ const TrialText = styled.div`
  *
  * Main pricing section with:
  * - Interactive 3D canvas with clickable chord molecules (desktop only)
- * - Billing period toggle (monthly, yearly, lifetime)
+ * - Billing period toggle (monthly, yearly, rent-to-own, lifetime)
  * - Pricing card with dynamic pricing and promotions
  * - Trial information banner (hidden if user has used trial)
  * - Promotional sale banner (hidden for lifetime users)

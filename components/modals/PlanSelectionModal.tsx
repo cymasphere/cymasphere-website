@@ -4,7 +4,7 @@
  * 
  * Modal component for selecting and changing subscription plans. Displays billing
  * period toggle, pricing card, and confirmation button. Includes informational
- * messages about plan changes and subscription transitions.
+ * messages about plan changes and subscription transitions, including rent-to-own.
  * 
  * @example
  * // Basic usage

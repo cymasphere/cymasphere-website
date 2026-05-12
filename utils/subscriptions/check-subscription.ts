@@ -246,7 +246,7 @@ async function sendTrialWelcomeEmailAfterCheckoutInvite(
   if (!profile?.email) return;
 
   const sub = profile.subscription;
-  if (sub !== "monthly" && sub !== "annual") return;
+  if (sub !== "monthly" && sub !== "annual" && sub !== "rent_to_own") return;
 
   const trialExp = profile.trial_expiration
     ? new Date(profile.trial_expiration)
@@ -295,8 +295,13 @@ async function sendTrialWelcomeEmailAfterCheckoutInvite(
       ),
     );
     const trialNoCharge = trialDays > 0 && trialDays <= 7;
-    const subscriptionType = sub === "monthly" ? "monthly" : "annual";
-    const planName = sub === "monthly" ? "monthly_6" : "annual_59";
+  const subscriptionType = sub === "annual" ? "annual" : "monthly";
+  const planName =
+    sub === "monthly"
+      ? "monthly_6"
+      : sub === "annual"
+        ? "annual_59"
+        : "rent_to_own";
     const subject = "Welcome to Cymasphere - Free Trial Started";
 
     const welcomeEmailHtml = generateWelcomeEmailHtml({
@@ -592,7 +597,8 @@ async function updateUserProStatusInternal(
     none: 0,
     monthly: 1,
     annual: 2,
-    lifetime: 3,
+    rent_to_own: 3,
+    lifetime: 4,
   };
 
   const iosPriority = subscriptionPriority[iosSubscription];
@@ -662,7 +668,9 @@ async function updateUserProStatusInternal(
   const subscriptionTypeChanged = previousSubscription !== finalSubscription;
 
   const trialActive =
-    (finalSubscription === "monthly" || finalSubscription === "annual") &&
+    (finalSubscription === "monthly" ||
+      finalSubscription === "annual" ||
+      finalSubscription === "rent_to_own") &&
     finalTrialExpiration !== null &&
     finalTrialExpiration > new Date();
 
@@ -751,14 +759,20 @@ async function updateUserProStatusInternal(
           subject = "Your Cymasphere Subscription - Lifetime License";
           emailKind = "subscription_lifetime_other";
         }
-      } else if (finalSubscription === "monthly") {
+      } else if (
+        finalSubscription === "monthly" ||
+        finalSubscription === "rent_to_own"
+      ) {
         purchaseType = "subscription";
         subscriptionType = "monthly";
-        planName = "monthly_6";
+        planName =
+          finalSubscription === "rent_to_own" ? "rent_to_own" : "monthly_6";
         if (isNewActivation || trialWelcomeAfterWebhookSync) {
           subject = isTrial
             ? "Welcome to Cymasphere - Free Trial Started"
-            : "Welcome to Cymasphere - Monthly Subscription";
+            : finalSubscription === "rent_to_own"
+              ? "Welcome to Cymasphere - Rent-to-Own Subscription"
+              : "Welcome to Cymasphere - Monthly Subscription";
           emailKind = isTrial ? "free_trial_started" : "monthly_activated";
         } else if (previousSubscription === "annual") {
           subject =

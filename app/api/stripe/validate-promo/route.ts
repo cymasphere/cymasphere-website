@@ -105,12 +105,17 @@ export async function POST(request: NextRequest) {
       promotionCode,
     }: { planType?: string; promotionCode?: string } = body;
 
-    const validPlans: PlanType[] = ["monthly", "annual", "lifetime"];
+    const validPlans: PlanType[] = [
+      "monthly",
+      "annual",
+      "lifetime",
+      "rent_to_own",
+    ];
     if (!planType || !validPlans.includes(planType as PlanType)) {
       return NextResponse.json(
         {
           success: false,
-          error: "planType must be monthly, annual, or lifetime.",
+          error: "planType must be monthly, annual, lifetime, or rent_to_own.",
         },
         { status: 400 },
       );
@@ -120,6 +125,7 @@ export async function POST(request: NextRequest) {
       monthly: process.env.STRIPE_PRICE_ID_MONTHLY,
       annual: process.env.STRIPE_PRICE_ID_ANNUAL,
       lifetime: process.env.STRIPE_PRICE_ID_LIFETIME,
+      rent_to_own: process.env.STRIPE_PRICE_ID_RENT_TO_OWN,
     };
     const priceId = priceIds[planType as PlanType];
     if (!priceId) {

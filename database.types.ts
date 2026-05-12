@@ -2031,6 +2031,88 @@ export type Database = {
         }
         Relationships: []
       }
+      rent_to_own_payments: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          currency: string
+          id: string
+          stripe_invoice_id: string
+          stripe_subscription_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          currency: string
+          id?: string
+          stripe_invoice_id: string
+          stripe_subscription_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          stripe_invoice_id?: string
+          stripe_subscription_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rent_to_own_payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rent_to_own_progress: {
+        Row: {
+          active_subscription_id: string | null
+          completed_at: string | null
+          created_at: string
+          currency: string
+          paid_cents: number
+          started_at: string | null
+          target_cents: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_subscription_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          currency: string
+          paid_cents?: number
+          started_at?: string | null
+          target_cents: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_subscription_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          paid_cents?: number
+          started_at?: string | null
+          target_cents?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rent_to_own_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriber_imports: {
         Row: {
           created_at: string | null
@@ -2878,7 +2960,12 @@ export type Database = {
         | "pending"
         | "complained"
         | "INACTIVE"
-      subscription_type: "none" | "monthly" | "annual" | "lifetime"
+      subscription_type:
+        | "none"
+        | "monthly"
+        | "annual"
+        | "lifetime"
+        | "rent_to_own"
       template_status: "draft" | "active" | "archived"
       template_type:
         | "welcome"
@@ -3558,7 +3645,13 @@ export const Constants = {
         "complained",
         "INACTIVE",
       ],
-      subscription_type: ["none", "monthly", "annual", "lifetime"],
+      subscription_type: [
+        "none",
+        "monthly",
+        "annual",
+        "lifetime",
+        "rent_to_own",
+      ],
       template_status: ["draft", "active", "archived"],
       template_type: [
         "welcome",

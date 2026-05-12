@@ -72,12 +72,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const validPlans = ["monthly", "annual"];
+    const validPlans = ["monthly", "annual", "rent_to_own"];
     if (!validPlans.includes(planType)) {
       return NextResponse.json(
         {
           success: false,
-          error: "planType must be monthly or annual.",
+          error: "planType must be monthly, annual, or rent_to_own.",
         },
         { status: 400 },
       );

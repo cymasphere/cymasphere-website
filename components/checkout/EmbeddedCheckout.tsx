@@ -2342,6 +2342,7 @@ const planLabels: Record<PlanType, string> = {
   monthly: "Monthly",
   annual: "Annual",
   lifetime: "Lifetime",
+  rent_to_own: "Rent to Own",
 };
 
 /**

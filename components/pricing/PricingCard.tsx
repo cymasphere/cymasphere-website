@@ -4,7 +4,7 @@
  *
  * Comprehensive pricing card component that displays plan information, pricing,
  * features, trial options, and checkout functionality. Supports multiple billing
- * periods (monthly, annual, lifetime) with dynamic pricing, promotions, and
+ * periods (monthly, annual, rent_to_own, lifetime) with dynamic pricing, promotions, and
  * user-specific states (current plan, lifetime owner, trial eligibility).
  *
  * @example
@@ -475,7 +475,7 @@ interface PricingCardProps {
  * @note Fetches active promotions from /api/promotions/active
  * @note Checks Stripe trial status for logged-in users
  * @note Checkout is driven only by the parent `initiateCheckout` prop (inline modal on the homepage)
- * @note Supports lifetime, annual, and monthly billing periods
+ * @note Supports lifetime, annual, monthly, and rent-to-own billing periods
  * @note Displays discount tags and strikethrough prices for sales
  * @note Button text and action adapts based on user subscription state
  */
@@ -656,6 +656,8 @@ export default function PricingCard({
         originalPrice = `$79${t("pricing.perYear", "/year")}`; // $59 is 25% off $79
       } else if (billingPeriod === "monthly") {
         originalPrice = `$8${t("pricing.perMonth", "/month")}`; // $6 is 25% off $8
+      } else if (billingPeriod === "rent_to_own") {
+        originalPrice = undefined;
       }
     }
 
@@ -672,7 +674,9 @@ export default function PricingCard({
     if (billingPeriod === "lifetime") return "";
     return billingPeriod === "monthly"
       ? t("pricing.perMonth", "/month")
-      : t("pricing.perYear", "/year");
+      : billingPeriod === "annual"
+        ? t("pricing.perYear", "/year")
+        : t("pricing.perMonth", "/month");
   };
 
   // Get features
@@ -816,7 +820,8 @@ export default function PricingCard({
 
     if (
       user.profile.subscription === "monthly" ||
-      user.profile.subscription === "annual"
+      user.profile.subscription === "annual" ||
+      user.profile.subscription === "rent_to_own"
     ) {
       return {
         text: t("pricing.manageSubscription", "Manage Subscription"),
@@ -961,6 +966,21 @@ export default function PricingCard({
                   }}
                 >
                   {t("pricing.oneTimePurchase", "one-time purchase")}
+                </div>
+              )}
+              {billingPeriod === "rent_to_own" && (
+                <div
+                  style={{
+                    marginTop: "5px",
+                    fontSize: "0.9rem",
+                    textAlign: "center",
+                    color: "#b0b0b0",
+                  }}
+                >
+                  {t(
+                    "pricing.rentToOwnDescription",
+                    "Pay monthly, then auto-upgrade to lifetime once paid in full",
+                  )}
                 </div>
               )}
             </>
