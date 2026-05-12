@@ -25,6 +25,7 @@ import {
   FaShieldAlt,
   FaRocket,
   FaTicketAlt,
+  FaUserFriends,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardProvider } from "@/contexts/DashboardContext";
@@ -439,6 +440,28 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const sidebarRef = useRef<HTMLElement>(null);
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
+  const [isAffiliate, setIsAffiliate] = useState<boolean>(false);
+
+  // Light-weight affiliate check so we only surface the "Affiliate" sidebar
+  // link to users who actually have an affiliates row. We rely on RLS in the
+  // stats endpoint to do the heavy lifting and just need the existence bit.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/affiliate/stats");
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!cancelled) setIsAffiliate(Boolean(json?.affiliate));
+      } catch {
+        // ignore — sidebar link simply won't appear
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   // Initialize translations
   const { t } = useTranslation();
@@ -713,6 +736,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <FaTicketAlt /> {t("dashboard.layout.support", "Support")}
               </NavItem>
             </Link>
+            {isAffiliate && (
+              <Link href="/affiliate">
+                <NavItem
+                  $active={pathname === "/affiliate" ? "true" : "false"}
+                  onClick={(e) => handleNavigation(e, "/affiliate")}
+                >
+                  <FaUserFriends />{" "}
+                  {t("dashboard.layout.affiliate", "Affiliate")}
+                </NavItem>
+              </Link>
+            )}
             <Link href="/settings">
               <NavItem
                 $active={pathname === "/settings" ? "true" : "false"}
@@ -867,6 +901,22 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <FaTicketAlt /> {t("dashboard.layout.support", "Support")}
               </MobileNavItem>
             </Link>
+
+            {isAffiliate && (
+              <Link href="/affiliate">
+                <MobileNavItem
+                  $active={pathname === "/affiliate" ? "true" : "false"}
+                  variants={menuItemVariants}
+                  custom={user.is_admin ? 6 : 5}
+                  initial="hidden"
+                  animate="visible"
+                  onClick={(e) => handleNavigation(e, "/affiliate")}
+                >
+                  <FaUserFriends />{" "}
+                  {t("dashboard.layout.affiliate", "Affiliate")}
+                </MobileNavItem>
+              </Link>
+            )}
 
             <Link href="/settings">
               <MobileNavItem

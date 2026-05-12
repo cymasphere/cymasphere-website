@@ -9,6 +9,14 @@
     {
       "path": "/api/trial-ending-reminders/send",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/affiliates/approve-commissions",
+      "schedule": "15 3 * * *"
+    },
+    {
+      "path": "/api/affiliates/monthly-summary",
+      "schedule": "0 9 1 * *"
     }
   ],
   "functions": {
@@ -23,6 +31,12 @@
     },
     "app/api/trial-ending-reminders/send/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/affiliates/approve-commissions/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/affiliates/monthly-summary/route.ts": {
+      "maxDuration": 120
     }
   }
 }

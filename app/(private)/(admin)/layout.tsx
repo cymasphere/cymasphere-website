@@ -29,6 +29,7 @@ import {
   FaImage,
   FaBullseye,
   FaPlay,
+  FaUserFriends,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
@@ -698,6 +699,20 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 Promotions
               </NavItem>
             </Link>
+            <Link href="/admin/affiliates">
+              <NavItem
+                $active={
+                  pathname === "/admin/affiliates" ||
+                  pathname.startsWith("/admin/affiliates/")
+                    ? "true"
+                    : "false"
+                }
+                onClick={(e) => handleNavigation(e, "/admin/affiliates")}
+              >
+                <FaUserFriends />
+                Affiliates
+              </NavItem>
+            </Link>
             <Link href="/admin/support-tickets">
               <NavItem
                 $active={
@@ -1070,6 +1085,25 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             >
               <FaBullhorn />
               Promotions
+            </MobileNavItem>
+          </Link>
+
+          <Link href="/admin/affiliates">
+            <MobileNavItem
+              $active={
+                pathname === "/admin/affiliates" ||
+                pathname.startsWith("/admin/affiliates/")
+                  ? "true"
+                  : "false"
+              }
+              variants={menuItemVariants}
+              custom={4}
+              initial="hidden"
+              animate="visible"
+              onClick={(e) => handleNavigation(e, "/admin/affiliates")}
+            >
+              <FaUserFriends />
+              Affiliates
             </MobileNavItem>
           </Link>
 

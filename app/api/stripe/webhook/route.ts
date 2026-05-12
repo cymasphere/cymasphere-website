@@ -15,6 +15,11 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
 import { updateUserProStatus } from "@/utils/subscriptions/check-subscription";
+import {
+  ingestInvoicePaid,
+  ingestLifetimePaymentIntent,
+  reverseCommissionsForCharge,
+} from "@/utils/affiliates/commissions";
 
 /**
  * Stripe client instance initialized with secret key from environment variables
@@ -300,6 +305,55 @@ export async function POST(request: NextRequest) {
           console.log(
             `[Webhook] Set profile subscription to lifetime for user ${userId} (payment_intent.succeeded)`,
           );
+        }
+        // Affiliate attribution for the lifetime purchase, if any. Safe to
+        // re-run on webhook retries thanks to the (payment_intent_id, affiliate_id)
+        // unique constraint on affiliate_commissions.
+        try {
+          await ingestLifetimePaymentIntent(pi);
+        } catch (e) {
+          console.error("[Webhook] affiliate ingest (lifetime) failed:", e);
+        }
+      }
+    }
+
+    // Subscription invoice paid: attribute commission to the affiliate whose
+    // promotion code was applied (and stamp commission rows for up to
+    // recurring_months invoices). The helper is idempotent.
+    if (event.type === "invoice.payment_succeeded") {
+      const invoice = event.data.object as Stripe.Invoice & {
+        subscription?: string | Stripe.Subscription | null;
+        payment_intent?: string | Stripe.PaymentIntent | null;
+        charge?: string | Stripe.Charge | null;
+      };
+      try {
+        await ingestInvoicePaid(invoice);
+      } catch (e) {
+        console.error("[Webhook] affiliate ingest (invoice) failed:", e);
+      }
+    }
+
+    // Refund / dispute: reverse any commissions tied to the affected charge.
+    if (
+      event.type === "charge.refunded" ||
+      event.type === "charge.dispute.created"
+    ) {
+      const obj = event.data.object as Stripe.Charge | Stripe.Dispute;
+      let chargeId: string | null = null;
+      if (event.type === "charge.refunded") {
+        chargeId = (obj as Stripe.Charge).id;
+      } else {
+        const dispute = obj as Stripe.Dispute;
+        chargeId =
+          typeof dispute.charge === "string"
+            ? dispute.charge
+            : dispute.charge?.id ?? null;
+      }
+      if (chargeId) {
+        try {
+          await reverseCommissionsForCharge(chargeId);
+        } catch (e) {
+          console.error("[Webhook] affiliate reverse failed:", e);
         }
       }
     }

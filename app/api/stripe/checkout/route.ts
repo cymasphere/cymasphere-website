@@ -11,6 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import Stripe from "stripe";
 import { PlanType } from "@/types/stripe";
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
@@ -18,6 +19,13 @@ import { createClient } from "@/utils/supabase/server";
 import { checkRateLimit, getClientIp } from "@/utils/rate-limit";
 import { hasCustomerPurchasedLifetime } from "@/utils/stripe/actions";
 import { randomUUID } from "crypto";
+
+/**
+ * Cookie name written by `proxy.ts` when a visitor lands with `?ref=CODE`.
+ * Read here so the checkout route can auto-apply the matching Stripe
+ * Promotion Code without forcing the customer to retype the code.
+ */
+const AFFILIATE_REF_COOKIE = "cymasphere_ref";
 
 /**
  * Stripe client instance initialized with secret key from environment variables
@@ -170,6 +178,7 @@ export async function POST(request: NextRequest) {
       collectPaymentMethod = false,
       isPlanChange = false,
       embedded = false,
+      promoCode: bodyPromoCode,
     }: {
       planType: PlanType;
       email?: string;
@@ -177,7 +186,31 @@ export async function POST(request: NextRequest) {
       collectPaymentMethod?: boolean;
       isPlanChange?: boolean;
       embedded?: boolean;
+      promoCode?: string;
     } = body;
+
+    // Resolve any affiliate code: explicit body parameter wins, otherwise
+    // fall back to the cookie set by the root proxy on `?ref=CODE`.
+    let affiliateCodeCandidate: string | undefined;
+    if (typeof bodyPromoCode === "string" && bodyPromoCode.trim()) {
+      affiliateCodeCandidate = bodyPromoCode.trim().toUpperCase();
+    } else {
+      try {
+        const cookieStore = await cookies();
+        const fromCookie = cookieStore.get(AFFILIATE_REF_COOKIE)?.value;
+        if (fromCookie) {
+          affiliateCodeCandidate = fromCookie.toUpperCase();
+        }
+      } catch {
+        // cookies() may throw outside request scope; ignore.
+      }
+    }
+    if (
+      affiliateCodeCandidate &&
+      !/^[A-Z0-9]{3,32}$/.test(affiliateCodeCandidate)
+    ) {
+      affiliateCodeCandidate = undefined;
+    }
 
     if (customerId?.trim()) {
       const supabaseAuth = await createClient();
@@ -439,6 +472,7 @@ export async function POST(request: NextRequest) {
       isSignedUp,
       isPlanChange,
       embedded,
+      affiliateCodeCandidate,
     );
 
     return NextResponse.json(result);
@@ -640,6 +674,7 @@ async function createCheckoutSession(
   isSignedUp: boolean = false,
   isPlanChange: boolean = false,
   embedded: boolean = false,
+  affiliateCode?: string,
 ): Promise<{
   url: string | null;
   clientSecret?: string | null;
@@ -786,6 +821,78 @@ async function createCheckoutSession(
     // Generate event_id for deduplication
     const eventId = randomUUID();
 
+    // Affiliate attribution: if the request carried (or the cookie remembers)
+    // an affiliate code, resolve it now so we can apply the matching Stripe
+    // promotion code AND tag the session/PI/subscription metadata for the
+    // webhook. We skip the sitewide auto-promotion block below when this is
+    // set — Stripe allows only one discount per checkout.
+    let resolvedAffiliate:
+      | {
+          id: string;
+          code: string;
+          stripe_promotion_code_id: string;
+          stripe_coupon_id: string;
+        }
+      | null = null;
+    if (affiliateCode) {
+      try {
+        const supabaseSvc = await createSupabaseServiceRole();
+        const { data: aff } = await supabaseSvc
+          .from("affiliates")
+          .select(
+            "id, code, user_id, stripe_promotion_code_id, stripe_coupon_id, status",
+          )
+          .eq("code", affiliateCode)
+          .eq("status", "active")
+          .maybeSingle();
+        if (aff) {
+          // Self-referral check: reject the affiliate code when the
+          // purchaser is the affiliate themselves. We compare against
+          // both the authenticated userId (most reliable) and the email
+          // on the purchasing profile (catches guest checkouts that
+          // would later resolve to the same user).
+          let isSelfRef = false;
+          if (userId && aff.user_id === userId) {
+            isSelfRef = true;
+          } else if (userEmail) {
+            const { data: affProfile } = await supabaseSvc
+              .from("profiles")
+              .select("email")
+              .eq("id", aff.user_id)
+              .maybeSingle();
+            if (
+              affProfile?.email &&
+              affProfile.email.toLowerCase() === userEmail.toLowerCase()
+            ) {
+              isSelfRef = true;
+            }
+          }
+
+          if (isSelfRef) {
+            console.warn(
+              `[checkout] Blocking self-referral attempt: affiliate ${aff.code} == purchaser`,
+            );
+          } else {
+            resolvedAffiliate = {
+              id: aff.id,
+              code: aff.code,
+              stripe_promotion_code_id: aff.stripe_promotion_code_id,
+              stripe_coupon_id: aff.stripe_coupon_id,
+            };
+            console.log(
+              `[checkout] Resolved affiliate code ${aff.code} -> ${aff.id}`,
+            );
+          }
+        } else {
+          console.log(
+            `[checkout] Affiliate code ${affiliateCode} not found or inactive`,
+          );
+        }
+      } catch (err) {
+        console.error("[checkout] Affiliate lookup failed:", err);
+      }
+    }
+
     // Build session parameters with proper URL fallbacks
     const baseUrl =
       process.env.NEXT_PUBLIC_SITE_URL ||
@@ -818,6 +925,11 @@ async function createCheckoutSession(
         ...(userId && { user_id: userId }),
         ...(userEmail && { email: userEmail }), // Always include email if available for webhook fallback
         event_id: eventId,
+        ...(resolvedAffiliate && {
+          affiliate_id: resolvedAffiliate.id,
+          affiliate_code: resolvedAffiliate.code,
+          affiliate_promotion_code_id: resolvedAffiliate.stripe_promotion_code_id,
+        }),
         ...(!isPlanChange &&
           !hasHadTrial &&
           !collectPaymentMethod &&
@@ -837,9 +949,30 @@ async function createCheckoutSession(
       ];
     }
 
-    // Add subscription data if applicable
+    // Add subscription data if applicable. Stamp affiliate metadata onto
+    // the underlying Subscription so the invoice.payment_succeeded webhook
+    // can correlate every renewal back to the affiliate without re-reading
+    // the Checkout Session.
     if (subscriptionData) {
       sessionParams.subscription_data = subscriptionData;
+      if (resolvedAffiliate) {
+        sessionParams.subscription_data.metadata = {
+          ...(sessionParams.subscription_data.metadata ?? {}),
+          affiliate_id: resolvedAffiliate.id,
+          affiliate_code: resolvedAffiliate.code,
+          affiliate_promotion_code_id:
+            resolvedAffiliate.stripe_promotion_code_id,
+        };
+      }
+    } else if (resolvedAffiliate && mode === "subscription") {
+      sessionParams.subscription_data = {
+        metadata: {
+          affiliate_id: resolvedAffiliate.id,
+          affiliate_code: resolvedAffiliate.code,
+          affiliate_promotion_code_id:
+            resolvedAffiliate.stripe_promotion_code_id,
+        },
+      };
     }
 
     // Add payment_intent_data and invoice_creation for lifetime purchases to ensure metadata is set
@@ -860,6 +993,12 @@ async function createCheckoutSession(
         ...(userId && { user_id: userId }),
         ...(userEmail && { email: userEmail }),
         event_id: eventId,
+        ...(resolvedAffiliate && {
+          affiliate_id: resolvedAffiliate.id,
+          affiliate_code: resolvedAffiliate.code,
+          affiliate_promotion_code_id:
+            resolvedAffiliate.stripe_promotion_code_id,
+        }),
       };
 
       sessionParams.payment_intent_data = {
@@ -884,8 +1023,41 @@ async function createCheckoutSession(
         : "if_required";
     }
 
-    // Auto-apply sale discount code if there's an active promotion from database
+    // Affiliate promotion code takes precedence over sitewide promotions.
+    // Stripe only allows one discount per checkout, so when an affiliate code
+    // is in scope we apply it directly and skip the sitewide auto-apply
+    // below. The customer still sees the affiliate's discount; the affiliate
+    // gets credited via the matching promotion_code on the resulting invoice.
     let hasAutoDiscount = false;
+    if (resolvedAffiliate) {
+      try {
+        const promo = await stripe.promotionCodes.retrieve(
+          resolvedAffiliate.stripe_promotion_code_id,
+        );
+        if (promo.active) {
+          sessionParams.discounts = [
+            { promotion_code: resolvedAffiliate.stripe_promotion_code_id },
+          ];
+          hasAutoDiscount = true;
+          console.log(
+            `🎁 Auto-applying affiliate code ${resolvedAffiliate.code} (${resolvedAffiliate.stripe_promotion_code_id})`,
+          );
+        } else {
+          console.warn(
+            `[checkout] Affiliate promotion code ${resolvedAffiliate.stripe_promotion_code_id} is inactive in Stripe; falling back to sitewide promotion lookup.`,
+          );
+        }
+      } catch (err) {
+        console.error(
+          "[checkout] Failed to retrieve affiliate promotion code:",
+          err,
+        );
+      }
+    }
+
+    // Auto-apply sale discount code if there's an active promotion from database
+    // (skipped when an affiliate promotion code has already been applied above)
+    if (!hasAutoDiscount) {
     try {
       const supabase = await createSupabaseServiceRole();
 
@@ -983,6 +1155,7 @@ async function createCheckoutSession(
     } catch (error) {
       console.error("Error in promotion lookup:", error);
       // Continue without discount if promotion lookup fails
+    }
     }
 
     // Only enable manual promotion codes if we're NOT auto-applying a discount

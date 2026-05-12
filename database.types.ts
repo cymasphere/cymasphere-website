@@ -32,6 +32,225 @@ export type Database = {
         }
         Relationships: []
       }
+      affiliate_balance_adjustments: {
+        Row: {
+          id: string
+          created_at: string
+          created_by: string | null
+          affiliate_id: string
+          amount_cents: number
+          reason: string
+          related_commission_id: string | null
+          applied_to_payout_id: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          created_by?: string | null
+          affiliate_id: string
+          amount_cents: number
+          reason: string
+          related_commission_id?: string | null
+          applied_to_payout_id?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          created_by?: string | null
+          affiliate_id?: string
+          amount_cents?: number
+          reason?: string
+          related_commission_id?: string | null
+          applied_to_payout_id?: string | null
+        }
+        Relationships: []
+      }
+      affiliate_commissions: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          affiliate_id: string
+          referred_customer_id: string
+          referred_user_id: string | null
+          stripe_promotion_code_id: string
+          stripe_invoice_id: string | null
+          stripe_charge_id: string | null
+          stripe_payment_intent_id: string | null
+          stripe_subscription_id: string | null
+          product_kind: string
+          recurring_month_index: number | null
+          gross_amount_cents: number
+          commission_amount_cents: number
+          currency: string
+          status: string
+          approve_at: string
+          paid_at: string | null
+          refunded_at: string | null
+          payout_id: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          affiliate_id: string
+          referred_customer_id: string
+          referred_user_id?: string | null
+          stripe_promotion_code_id: string
+          stripe_invoice_id?: string | null
+          stripe_charge_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_subscription_id?: string | null
+          product_kind: string
+          recurring_month_index?: number | null
+          gross_amount_cents: number
+          commission_amount_cents: number
+          currency: string
+          status?: string
+          approve_at: string
+          paid_at?: string | null
+          refunded_at?: string | null
+          payout_id?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          affiliate_id?: string
+          referred_customer_id?: string
+          referred_user_id?: string | null
+          stripe_promotion_code_id?: string
+          stripe_invoice_id?: string | null
+          stripe_charge_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_subscription_id?: string | null
+          product_kind?: string
+          recurring_month_index?: number | null
+          gross_amount_cents?: number
+          commission_amount_cents?: number
+          currency?: string
+          status?: string
+          approve_at?: string
+          paid_at?: string | null
+          refunded_at?: string | null
+          payout_id?: string | null
+        }
+        Relationships: []
+      }
+      affiliate_payouts: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          affiliate_id: string
+          amount_cents: number
+          currency: string
+          stripe_transfer_id: string | null
+          stripe_transfer_group: string | null
+          commission_count: number
+          adjustment_total_cents: number
+          status: string
+          failure_reason: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          affiliate_id: string
+          amount_cents: number
+          currency: string
+          stripe_transfer_id?: string | null
+          stripe_transfer_group?: string | null
+          commission_count?: number
+          adjustment_total_cents?: number
+          status?: string
+          failure_reason?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          affiliate_id?: string
+          amount_cents?: number
+          currency?: string
+          stripe_transfer_id?: string | null
+          stripe_transfer_group?: string | null
+          commission_count?: number
+          adjustment_total_cents?: number
+          status?: string
+          failure_reason?: string | null
+        }
+        Relationships: []
+      }
+      affiliates: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          user_id: string
+          code: string
+          stripe_coupon_id: string
+          stripe_promotion_code_id: string
+          customer_discount_percent: number
+          commission_rate_subscription: number
+          commission_rate_lifetime: number
+          recurring_months: number
+          payout_minimum_cents: number
+          stripe_connect_account_id: string | null
+          connect_payouts_enabled: boolean
+          connect_onboarded_at: string | null
+          status: string
+          notes: string | null
+          tos_accepted_at: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          user_id: string
+          code: string
+          stripe_coupon_id: string
+          stripe_promotion_code_id: string
+          customer_discount_percent?: number
+          commission_rate_subscription?: number
+          commission_rate_lifetime?: number
+          recurring_months?: number
+          payout_minimum_cents?: number
+          stripe_connect_account_id?: string | null
+          connect_payouts_enabled?: boolean
+          connect_onboarded_at?: string | null
+          status?: string
+          notes?: string | null
+          tos_accepted_at?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          user_id?: string
+          code?: string
+          stripe_coupon_id?: string
+          stripe_promotion_code_id?: string
+          customer_discount_percent?: number
+          commission_rate_subscription?: number
+          commission_rate_lifetime?: number
+          recurring_months?: number
+          payout_minimum_cents?: number
+          stripe_connect_account_id?: string | null
+          connect_payouts_enabled?: boolean
+          connect_onboarded_at?: string | null
+          status?: string
+          notes?: string | null
+          tos_accepted_at?: string | null
+        }
+        Relationships: []
+      }
       automation_custom_fields: {
         Row: {
           created_at: string | null
