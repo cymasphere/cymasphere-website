@@ -2,7 +2,7 @@
  * @fileoverview AI chat assistant API endpoint
  * 
  * This endpoint provides an AI-powered chat assistant for Cymasphere using
- * OpenAI GPT with RAG (Retrieval Augmented Generation) for context-aware
+ * OpenAI GPT with full knowledge-base context for accurate
  * responses. Supports multiple languages and includes keyword-based fallback
  * responses when OpenAI is unavailable. Uses multilingual FAQ responses for
  * common questions.
@@ -12,7 +12,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { cymasphereRAG } from '@/lib/rag';
+import { cymasphereChatAssistant } from '@/lib/chat-assistant';
 import { checkRateLimit, getClientIp } from '@/utils/rate-limit';
 
 /**
@@ -477,21 +477,18 @@ function detectIntent(message: string, language: string = 'en'): string | null {
 }
 
 /**
- * @brief Generates AI response using RAG (Retrieval Augmented Generation)
+ * @brief Generates AI response using full knowledge base in the system prompt
  * 
- * Uses a three-layer RAG system to generate context-aware responses:
- * 1. Retrieves relevant context from knowledge base
- * 2. Generates response with retrieved context
- * 3. Verifies response accuracy against context
- * 
- * Falls back to keyword-based responses if OpenAI is unavailable or RAG fails.
+ * Uses the full Cymasphere knowledge base (OpenAI prompt caching on the static
+ * prefix) and verifies responses before returning. Falls back to keyword-based
+ * responses if OpenAI is unavailable or generation fails.
  * 
  * @param message User's message/query
  * @param conversationHistory Array of previous messages in the conversation
  * @param language Language code for response (default: 'en')
  * @returns AI-generated response string
- * @note Uses cymasphereRAG for context retrieval and response generation
- * @note Falls back to generateFallbackResponse if RAG fails
+ * @note Uses cymasphereChatAssistant with full KB + prompt caching
+ * @note Falls back to generateFallbackResponse if generation or verification fails
  * 
  * @example
  * ```typescript
@@ -507,24 +504,22 @@ async function generateAIResponse(message: string, conversationHistory: ChatMess
   }
 
   try {
-    // Layer 1: RAG - Retrieve relevant context from knowledge base
-    const context = await cymasphereRAG.retrieveRelevantContext(message);
-    
-    // Layer 2: Generate response with retrieved context
-    const response = await cymasphereRAG.generateResponse(message, conversationHistory);
-    
-    // Layer 3: Verification - Fact-check the response against context
-    const isVerified = await cymasphereRAG.verifyResponse(response, context);
-    
+    const response = await cymasphereChatAssistant.generateResponse(
+      message,
+      conversationHistory,
+      language
+    );
+
+    const isVerified = cymasphereChatAssistant.verifyResponse(response);
+
     if (!isVerified) {
       console.log('Response failed verification, using fallback');
       return generateFallbackResponse(message, language);
     }
-    
+
     return response;
   } catch (error) {
-    console.error('RAG system error:', error);
-    // Fallback to keyword-based responses if RAG fails
+    console.error('Chat assistant error:', error);
     return generateFallbackResponse(message, language);
   }
 }
@@ -673,8 +668,8 @@ function generateFallbackResponse(message: string, language: string = 'en'): str
  * 
  * @param request Next.js request object containing JSON body with message and context
  * @returns NextResponse with AI-generated response or error
- * @note Uses RAG system for context-aware responses
- * @note Falls back to keyword-based responses if RAG unavailable
+ * @note Uses full knowledge base in system prompt with prompt caching
+ * @note Falls back to keyword-based responses if OpenAI unavailable
  * @note Supports multiple languages with language-specific responses
  * 
  * @example
