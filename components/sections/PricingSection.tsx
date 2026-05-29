@@ -81,6 +81,192 @@ interface ChordCenter {
   scale: number;
 }
 
+interface SafeRect {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+const CHORD_SAFE_MARGIN = 200;
+const CHORD_EXCLUSION_MARGIN = 70;
+const CHORD_ORBIT_CORNER_RADIUS = 40;
+
+function getSafeRect(
+  canvas: HTMLCanvasElement,
+  contentEl: HTMLElement,
+  margin: number,
+): SafeRect {
+  const canvasRect = canvas.getBoundingClientRect();
+  const contentRect = contentEl.getBoundingClientRect();
+  return {
+    left: contentRect.left - canvasRect.left - margin,
+    top: contentRect.top - canvasRect.top - margin,
+    right: contentRect.right - canvasRect.left + margin,
+    bottom: contentRect.bottom - canvasRect.top + margin,
+  };
+}
+
+function getFallbackSafeRect(
+  displayWidth: number,
+  displayHeight: number,
+): SafeRect {
+  const centerX = displayWidth / 2;
+  const centerY = displayHeight / 2;
+  const halfW = Math.min(275 + CHORD_SAFE_MARGIN, displayWidth * 0.4);
+  const halfH = Math.min(350 + CHORD_SAFE_MARGIN, displayHeight * 0.4);
+  return {
+    left: centerX - halfW,
+    top: centerY - halfH,
+    right: centerX + halfW,
+    bottom: centerY + halfH,
+  };
+}
+
+function pointOnRoundedRectPerimeter(
+  rect: SafeRect,
+  t: number,
+  cornerRadius: number,
+): { x: number; y: number } {
+  const { left, top, right, bottom } = rect;
+  const width = right - left;
+  const height = bottom - top;
+  const r = Math.min(cornerRadius, width / 2, height / 2);
+
+  const topEdge = width - 2 * r;
+  const sideEdge = height - 2 * r;
+  const cornerArc = (Math.PI / 2) * r;
+  const perimeter = 2 * topEdge + 2 * sideEdge + 4 * cornerArc;
+
+  let distance = (((t % 1) + 1) % 1) * perimeter;
+  const cx = (left + right) / 2;
+
+  // Start at top center, go clockwise
+  let seg = width / 2 - r;
+  if (distance <= seg) {
+    return { x: cx + distance, y: top };
+  }
+  distance -= seg;
+
+  if (distance <= cornerArc) {
+    const angle = -Math.PI / 2 + (distance / cornerArc) * (Math.PI / 2);
+    return {
+      x: right - r + Math.cos(angle) * r,
+      y: top + r + Math.sin(angle) * r,
+    };
+  }
+  distance -= cornerArc;
+
+  if (distance <= sideEdge) {
+    return { x: right, y: top + r + distance };
+  }
+  distance -= sideEdge;
+
+  if (distance <= cornerArc) {
+    const angle = (distance / cornerArc) * (Math.PI / 2);
+    return {
+      x: right - r + Math.cos(angle) * r,
+      y: bottom - r + Math.sin(angle) * r,
+    };
+  }
+  distance -= cornerArc;
+
+  if (distance <= topEdge) {
+    return { x: right - r - distance, y: bottom };
+  }
+  distance -= topEdge;
+
+  if (distance <= cornerArc) {
+    const angle = Math.PI / 2 + (distance / cornerArc) * (Math.PI / 2);
+    return {
+      x: left + r + Math.cos(angle) * r,
+      y: bottom - r + Math.sin(angle) * r,
+    };
+  }
+  distance -= cornerArc;
+
+  if (distance <= sideEdge) {
+    return { x: left, y: bottom - r - distance };
+  }
+  distance -= sideEdge;
+
+  if (distance <= cornerArc) {
+    const angle = Math.PI + (distance / cornerArc) * (Math.PI / 2);
+    return {
+      x: left + r + Math.cos(angle) * r,
+      y: top + r + Math.sin(angle) * r,
+    };
+  }
+  distance -= cornerArc;
+
+  return { x: left + r + distance, y: top };
+}
+
+function getPerimeterPoints(
+  rect: SafeRect,
+  count: number,
+  cornerRadius: number,
+): { x: number; y: number }[] {
+  return Array.from({ length: count }, (_, index) =>
+    pointOnRoundedRectPerimeter(rect, index / count, cornerRadius),
+  );
+}
+
+function applySafeZoneRepulsion(
+  position: ChordPosition,
+  safeRect: SafeRect,
+  repulsionStrength = 0.8,
+): void {
+  const radius = position.displayRadius || 50;
+  const { left, top, right, bottom } = safeRect;
+  const closestX = Math.max(left, Math.min(position.x, right));
+  const closestY = Math.max(top, Math.min(position.y, bottom));
+  const dx = position.x - closestX;
+  const dy = position.y - closestY;
+  const distSq = dx * dx + dy * dy;
+
+  if (
+    position.x >= left &&
+    position.x <= right &&
+    position.y >= top &&
+    position.y <= bottom
+  ) {
+    const toLeft = position.x - left;
+    const toRight = right - position.x;
+    const toTop = position.y - top;
+    const toBottom = bottom - position.y;
+    const minDist = Math.min(toLeft, toRight, toTop, toBottom);
+
+    if (minDist === toLeft) {
+      position.x = left - radius;
+      position.vx -= repulsionStrength * 3;
+    } else if (minDist === toRight) {
+      position.x = right + radius;
+      position.vx += repulsionStrength * 3;
+    } else if (minDist === toTop) {
+      position.y = top - radius;
+      position.vy -= repulsionStrength * 3;
+    } else {
+      position.y = bottom + radius;
+      position.vy += repulsionStrength * 3;
+    }
+    return;
+  }
+
+  if (distSq < radius * radius) {
+    const dist = Math.sqrt(distSq) || 0.001;
+    const penetration = radius - dist;
+    position.vx += (dx / dist) * penetration * repulsionStrength;
+    position.vy += (dy / dist) * penetration * repulsionStrength;
+    position.x += (dx / dist) * penetration * 0.3;
+    position.y += (dy / dist) * penetration * 0.3;
+  }
+}
+
+interface ChordWebProps {
+  contentRef: React.RefObject<HTMLElement | null>;
+}
+
 // Type definitions for CymasphereLogo component
 interface CymasphereLogoProps {
   size?: string;
@@ -114,8 +300,10 @@ const ChordWebCanvas = styled.canvas`
 `;
 
 // Memoize the ChordWeb component to prevent re-renders when parent state changes
-const ChordWeb = React.memo(() => {
+const ChordWeb = React.memo(({ contentRef }: ChordWebProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const safeRectRef = useRef<SafeRect | null>(null);
+  const exclusionRectRef = useRef<SafeRect | null>(null);
   const animationFrameId = useRef<number | null>(null);
   const positionsInitialized = useRef<boolean>(false);
   const synth = useRef<Tone.PolySynth<Tone.AMSynth> | null>(null);
@@ -363,6 +551,48 @@ const ChordWeb = React.memo(() => {
     let time = 0;
     let lastFrameTime = 0;
     let resizeTimeout: NodeJS.Timeout;
+    let resizeObserver: ResizeObserver | null = null;
+
+    const updateSafeRect = () => {
+      const contentEl = contentRef.current;
+      if (contentEl) {
+        safeRectRef.current = getSafeRect(canvas, contentEl, CHORD_SAFE_MARGIN);
+        exclusionRectRef.current = getSafeRect(
+          canvas,
+          contentEl,
+          CHORD_EXCLUSION_MARGIN,
+        );
+      } else {
+        safeRectRef.current = getFallbackSafeRect(
+          canvas.clientWidth,
+          canvas.clientHeight,
+        );
+        exclusionRectRef.current = safeRectRef.current;
+      }
+    };
+
+    const scheduleReinit = () => {
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+      }
+      resizeTimeout = setTimeout(() => {
+        setupCanvasSize();
+        positionsInitialized.current = false;
+      }, 200);
+    };
+
+    const setupCanvasSize = () => {
+      const devicePixelRatio = window.devicePixelRatio || 1;
+      const displayWidth = canvas.clientWidth;
+      const displayHeight = canvas.clientHeight;
+
+      canvas.width = displayWidth * devicePixelRatio;
+      canvas.height = displayHeight * devicePixelRatio;
+      context.setTransform(1, 0, 0, 1, 0, 0);
+      context.scale(devicePixelRatio, devicePixelRatio);
+      canvas.style.width = displayWidth + "px";
+      canvas.style.height = displayHeight + "px";
+    };
 
     // Optimize canvas attributes for performance
     context.imageSmoothingQuality = "low";
@@ -417,112 +647,50 @@ const ChordWeb = React.memo(() => {
 
     // Debounced resize handler for better performance
     const resizeCanvas = () => {
-      if (resizeTimeout) {
-        clearTimeout(resizeTimeout);
-      }
-
-      resizeTimeout = setTimeout(() => {
-        // Get the device pixel ratio for sharp rendering
-        const devicePixelRatio = window.devicePixelRatio || 1;
-
-        // Get the display size
-        const displayWidth = canvas.clientWidth;
-        const displayHeight = canvas.clientHeight;
-
-        // Set the actual canvas size to match display size * device pixel ratio
-        canvas.width = displayWidth * devicePixelRatio;
-        canvas.height = displayHeight * devicePixelRatio;
-
-        // Scale the context back down to display size
-        context.scale(devicePixelRatio, devicePixelRatio);
-
-        // Set CSS size to display size
-        canvas.style.width = displayWidth + "px";
-        canvas.style.height = displayHeight + "px";
-
-        // Re-initialize positions after resize
-        positionsInitialized.current = false;
-      }, 200); // 200ms debounce
+      scheduleReinit();
+      setupCanvasSize();
     };
-
-    // Set initial canvas size with device pixel ratio
-    const devicePixelRatio = window.devicePixelRatio || 1;
-    const displayWidth = canvas.clientWidth;
-    const displayHeight = canvas.clientHeight;
-
-    canvas.width = displayWidth * devicePixelRatio;
-    canvas.height = displayHeight * devicePixelRatio;
-    context.scale(devicePixelRatio, devicePixelRatio);
-    canvas.style.width = displayWidth + "px";
-    canvas.style.height = displayHeight + "px";
 
     // Add event listeners
     canvas.addEventListener("mousemove", handleMouseMove, { passive: true });
     window.addEventListener("resize", resizeCanvas, { passive: true });
 
-    // Initialize positions - use display size, not canvas internal size
-    const initializePositions = (width: number, height: number) => {
-      // Use display dimensions for positioning, not internal canvas dimensions
-      const displayWidth = canvas.clientWidth;
-      const displayHeight = canvas.clientHeight;
-      // Define center safe zone - no molecules in this area
-      const centerX = displayWidth / 2;
-      const centerY = displayHeight / 2;
+    setupCanvasSize();
 
-      // Define a wider, more rectangular safe zone that better matches the content area
-      // These are intentionally unused since they're for documentation purposes
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const safeZoneWidth = displayWidth * 0.9; // Increased from 0.8 to 0.9
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const safeZoneHeight = displayHeight * 0.95; // Increased from 0.85 to 0.95
+    if (contentRef.current) {
+      resizeObserver = new ResizeObserver(scheduleReinit);
+      resizeObserver.observe(contentRef.current);
+    }
 
-      // Position chord molecules in an evenly distributed pattern
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const allPositions = [];
+    // Initialize positions around measured content perimeter
+    const initializePositions = () => {
+      updateSafeRect();
+      const safeRect = safeRectRef.current;
+      if (!safeRect) return;
 
-      // Place chords evenly around the edges of the safe zone with LESS randomness
-      const totalChords = chords.length;
-      const angleStep = (2 * Math.PI) / totalChords;
+      const perimeterPoints = getPerimeterPoints(
+        safeRect,
+        chords.length,
+        CHORD_ORBIT_CORNER_RADIUS,
+      );
 
       chords.forEach((chord, index) => {
-        // Consider chords with 5+ notes "complex"
         const isComplex = chord.notes.length >= 5;
+        const { x, y } = perimeterPoints[index];
 
-        // Calculate position along a rough ellipse around the content
-        // Reduce randomness for more consistent oval shape
-        const angle = index * angleStep + (Math.random() * 0.2 - 0.1); // Reduced randomness
-
-        // More pronounced elliptical distribution with less randomness and pushed further out
-        const radiusX =
-          displayWidth * 0.45 + (Math.random() * 0.04 - 0.02) * displayWidth; // Increased from 0.38 to 0.45
-        const radiusY =
-          displayHeight * 0.45 + (Math.random() * 0.04 - 0.02) * displayHeight; // Increased from 0.38 to 0.45
-
-        const x = centerX + Math.cos(angle) * radiusX;
-        const y = centerY + Math.sin(angle) * radiusY;
-
-        // Slower overall movement
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const movementSpeed = isComplex
-          ? 0.02 + Math.random() * 0.02 // Reduced from 0.03 for slower motion
-          : 0.025 + Math.random() * 0.025; // Reduced from 0.04 for slower motion
-
-        // Use smaller z-depth range for better visibility
         const zDepth = isComplex
-          ? 10 + Math.random() * 40 // More visible
+          ? 10 + Math.random() * 40
           : 20 + Math.random() * 60;
 
-        // Store Z-depth for z-sorting
         const position: ChordPosition = {
-          x: x,
-          y: y,
+          x,
+          y,
           z: zDepth,
           vx: 0,
           vy: 0,
-          rotationOffset: Math.random() * Math.PI * 2, // Random starting rotation
-          originalX: x, // Store original position for gentle reset force
+          rotationOffset: Math.random() * Math.PI * 2,
+          originalX: x,
           originalY: y,
-          // Add a playing flag to track state (optimized for fewer property checks)
           playingTime: null,
           collisionTime: null,
         };
@@ -530,7 +698,6 @@ const ChordWeb = React.memo(() => {
         chordPositions.current[index] = position;
       });
 
-      // Mark as initialized
       positionsInitialized.current = true;
     };
 
@@ -596,8 +763,8 @@ const ChordWeb = React.memo(() => {
       // Skip entirely for performance if needed
       if (window.innerWidth < 1000) return;
 
-      const width = canvas.width;
-      const height = canvas.height;
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
       const centerX = width / 2;
       const centerY = height / 2;
 
@@ -967,8 +1134,7 @@ const ChordWeb = React.memo(() => {
     const render = (timestamp: number) => {
       // Skip initialization frames to prevent animation stutter
       if (!positionsInitialized.current) {
-        // Initialize only when ready - use display dimensions
-        initializePositions(canvas.clientWidth, canvas.clientHeight);
+        initializePositions();
       }
 
       // Calculate time delta for smooth animation regardless of frame rate
@@ -1052,6 +1218,11 @@ const ChordWeb = React.memo(() => {
           // Reverse velocity to bounce back toward origin
           position.vx = -position.vx * 0.5;
           position.vy = -position.vy * 0.5;
+        }
+
+        const exclusionRect = exclusionRectRef.current;
+        if (exclusionRect) {
+          applySafeZoneRepulsion(position, exclusionRect);
         }
       });
 
@@ -1144,9 +1315,10 @@ const ChordWeb = React.memo(() => {
         cancelAnimationFrame(animationFrameId.current);
       }
       window.removeEventListener("resize", resizeCanvas);
+      resizeObserver?.disconnect();
       clearTimeout(resizeTimeout);
     };
-  }, []); // Empty dependency array means this effect runs once on mount
+  }, [contentRef, chords]); // contentRef is stable; chords is memoized
 
   return <ChordWebCanvas ref={canvasRef} />;
 });
@@ -1324,6 +1496,7 @@ const TrialText = styled.div`
  */
 const PricingSection = () => {
   const { t } = useTranslation();
+  const contentRef = useRef<HTMLDivElement>(null);
   // Get authentication context
   const { user } = useAuth();
 
@@ -1576,9 +1749,9 @@ const PricingSection = () => {
   return (
     <PricingContainer id="pricing">
       {/* Render ChordWeb only once on initial mount - won't be affected by state changes */}
-      <ChordWeb />
+      <ChordWeb contentRef={contentRef} />
       <Particle />
-      <ContentContainer>
+      <ContentContainer ref={contentRef}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
