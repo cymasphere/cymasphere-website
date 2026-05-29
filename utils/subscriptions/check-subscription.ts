@@ -5,6 +5,7 @@ import { customerPurchasedProFromSupabase } from "@/utils/stripe/supabase-stripe
 import { SubscriptionType } from "@/utils/supabase/types";
 import { checkUserManagementPro } from "@/utils/supabase/user-management";
 import Stripe from "stripe";
+import { CYMASPHERE_SALE_PRICES_USD } from "@/lib/pricing";
 
 // Export types for backward compatibility
 export type AuthorizationSource = "nfr" | "stripe" | "ios" | "none";
@@ -296,7 +297,10 @@ async function sendTrialWelcomeEmailAfterCheckoutInvite(
     );
     const trialNoCharge = trialDays > 0 && trialDays <= 7;
     const subscriptionType = sub === "monthly" ? "monthly" : "annual";
-    const planName = sub === "monthly" ? "monthly_6" : "annual_59";
+    const planName =
+      sub === "monthly"
+        ? `monthly_${CYMASPHERE_SALE_PRICES_USD.monthly}`
+        : `annual_${CYMASPHERE_SALE_PRICES_USD.annual}`;
     const subject = "Welcome to Cymasphere - Free Trial Started";
 
     const welcomeEmailHtml = generateWelcomeEmailHtml({
@@ -736,7 +740,7 @@ async function updateUserProStatusInternal(
 
       if (finalSubscription === "lifetime") {
         purchaseType = "lifetime";
-        planName = "lifetime_149";
+        planName = `lifetime_${CYMASPHERE_SALE_PRICES_USD.lifetime}`;
         if (isNewActivation) {
           subject = "Welcome to Cymasphere - Lifetime License";
           emailKind = "lifetime_activated";
@@ -754,7 +758,7 @@ async function updateUserProStatusInternal(
       } else if (finalSubscription === "monthly") {
         purchaseType = "subscription";
         subscriptionType = "monthly";
-        planName = "monthly_6";
+        planName = `monthly_${CYMASPHERE_SALE_PRICES_USD.monthly}`;
         if (isNewActivation || trialWelcomeAfterWebhookSync) {
           subject = isTrial
             ? "Welcome to Cymasphere - Free Trial Started"
@@ -773,7 +777,7 @@ async function updateUserProStatusInternal(
       } else if (finalSubscription === "annual") {
         purchaseType = "subscription";
         subscriptionType = "annual";
-        planName = "annual_59";
+        planName = `annual_${CYMASPHERE_SALE_PRICES_USD.annual}`;
         if (isNewActivation || trialWelcomeAfterWebhookSync) {
           subject = isTrial
             ? "Welcome to Cymasphere - Free Trial Started"

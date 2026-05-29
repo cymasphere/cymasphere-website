@@ -11,7 +11,7 @@
 
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { parseCompareAtFromMetadata } from "@/lib/pricing";
+import { parseCompareAtFromMetadata, getFallbackPriceData } from "@/lib/pricing";
 import { PlanType, PriceData, PricesResponse } from "@/types/stripe";
 
 /**
@@ -136,27 +136,9 @@ export async function GET(): Promise<NextResponse<PricesResponse>> {
 
     // Return fallback prices in case of error
     const fallbackPrices: Record<PlanType, PriceData> = {
-      monthly: {
-        id: "",
-        type: "monthly",
-        amount: 0,
-        currency: "usd",
-        name: "Monthly Plan",
-      },
-      annual: {
-        id: "",
-        type: "annual",
-        amount: 0,
-        currency: "usd",
-        name: "Annual Plan",
-      },
-      lifetime: {
-        id: "",
-        type: "lifetime",
-        amount: 0,
-        currency: "usd",
-        name: "Lifetime Plan",
-      },
+      monthly: getFallbackPriceData("monthly"),
+      annual: getFallbackPriceData("annual"),
+      lifetime: getFallbackPriceData("lifetime"),
     };
 
     return NextResponse.json(

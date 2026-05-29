@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { cymasphereRAG } from '@/lib/rag';
+import { CHAT_PRICING_RESPONSES } from '@/lib/pricing';
 import { checkRateLimit, getClientIp } from '@/utils/rate-limit';
 
 /**
@@ -60,7 +61,7 @@ const FAQ_RESPONSES: Record<string, Record<string, { keywords: string[], respons
     },
     pricing: {
       keywords: ['price', 'cost', 'pricing', 'subscription', 'plan', 'free', 'trial', 'money'],
-      response: "Cymasphere keeps pricing simple—Monthly $6, Yearly $59 (save 25%), Lifetime $149. Which option best fits how you plan to use Cymasphere?"
+      response: CHAT_PRICING_RESPONSES.en,
     },
     features: {
       keywords: ['feature', 'tool', 'synthesizer', 'drum', 'instrument', 'effect', 'what can', 'capabilities'],
@@ -94,7 +95,7 @@ const FAQ_RESPONSES: Record<string, Record<string, { keywords: string[], respons
     },
     pricing: {
       keywords: ['precio', 'costo', 'precios', 'suscripción', 'plan', 'gratis', 'prueba', 'dinero'],
-      response: "Cymasphere mantiene los precios simples: Mensual $6, Anual $59 (ahorra 25%), De por vida $149. ¿Cuál opción se ajusta mejor a tu forma de usar Cymasphere?"
+      response: CHAT_PRICING_RESPONSES.es,
     },
     features: {
       keywords: ['característica', 'herramienta', 'sintetizador', 'batería', 'instrumento', 'efecto', 'qué puedes', 'capacidades'],
@@ -124,7 +125,7 @@ const FAQ_RESPONSES: Record<string, Record<string, { keywords: string[], respons
     },
     pricing: {
       keywords: ['prix', 'coût', 'tarification', 'abonnement', 'plan', 'gratuit', 'essai', 'argent'],
-      response: "Cymasphere maintient les prix simples : Mensuel $6, Annuel $59 (économisez 25%), À vie $149. Quelle option correspond le mieux à votre utilisation de Cymasphere ?"
+      response: CHAT_PRICING_RESPONSES.fr,
     },
     features: {
       keywords: ['fonctionnalité', 'outil', 'synthétiseur', 'batterie', 'instrument', 'effet', 'que pouvez', 'capacités'],
@@ -154,7 +155,7 @@ const FAQ_RESPONSES: Record<string, Record<string, { keywords: string[], respons
     },
     pricing: {
       keywords: ['preis', 'kosten', 'preise', 'abonnement', 'plan', 'kostenlos', 'testversion', 'geld'],
-      response: "Cymasphere hält die Preise einfach: Monatlich $6, Jährlich $59 (sparen Sie 25%), Lebenslang $149. Welche Option passt am besten zu deiner Nutzung von Cymasphere ?"
+      response: CHAT_PRICING_RESPONSES.de,
     },
     features: {
       keywords: ['funktion', 'werkzeug', 'synthesizer', 'schlagzeug', 'instrument', 'effekt', 'was kann', 'funktionen'],
@@ -184,7 +185,7 @@ const FAQ_RESPONSES: Record<string, Record<string, { keywords: string[], respons
     },
     pricing: {
       keywords: ['preço', 'custo', 'preços', 'assinatura', 'plano', 'grátis', 'teste', 'dinheiro'],
-      response: "Cymasphere mantém os preços simples: Mensal $6, Anual $59 (economize 25%), Vitalício $149. Qual opção se ajusta melhor à sua forma de usar Cymasphere ?"
+      response: CHAT_PRICING_RESPONSES.pt,
     },
     features: {
       keywords: ['recurso', 'ferramenta', 'sintetizador', 'bateria', 'instrumento', 'efeito', 'o que pode', 'capacidades'],
@@ -214,7 +215,7 @@ const FAQ_RESPONSES: Record<string, Record<string, { keywords: string[], respons
     },
     pricing: {
       keywords: ['価格', 'コスト', '料金', 'サブスクリプション', 'プラン', '無料', 'トライアル', 'お金'],
-      response: "Cymasphereはシンプルな価格設定です: 月額 $6、年額 $59 (25% オフ)、生涯 $149。どのオプションがあなたのCymasphere使用方法に最適ですか ?"
+      response: CHAT_PRICING_RESPONSES.ja,
     },
     features: {
       keywords: ['機能', 'ツール', 'シンセサイザー', 'ドラム', '楽器', 'エフェクト', 'できる', '機能'],
@@ -244,7 +245,7 @@ const FAQ_RESPONSES: Record<string, Record<string, { keywords: string[], respons
     },
     pricing: {
       keywords: ['prezzo', 'costo', 'prezzi', 'abbonamento', 'piano', 'gratis', 'prova', 'denaro'],
-      response: "Cymasphere mantiene i prezzi semplici: Mensile $6, Annuale $59 (risparmia 25%), A vita $149. Quale opzione si adatta meglio al tuo utilizzo di Cymasphere ?"
+      response: CHAT_PRICING_RESPONSES.it,
     },
     features: {
       keywords: ['caratteristica', 'strumento', 'sintetizzatore', 'batteria', 'strumento', 'effetto', 'cosa puoi', 'capacità'],
@@ -274,7 +275,7 @@ const FAQ_RESPONSES: Record<string, Record<string, { keywords: string[], respons
     },
     pricing: {
       keywords: ['fiyat', 'maliyet', 'fiyatlandırma', 'abonelik', 'plan', 'ücretsiz', 'deneme', 'para'],
-      response: "Cymasphere fiyatlandırmayı basit tutar: Aylık $6, Yıllık $59 (%25 tasarruf), Ömür boyu $149. Hangi seçenek Cymasphere'i nasıl kullanmayı planladığınıza en uygun ?"
+      response: CHAT_PRICING_RESPONSES.tr,
     },
     features: {
       keywords: ['özellik', 'araç', 'sentezleyici', 'davul', 'enstrüman', 'efekt', 'yapabilir', 'yetenekler'],
@@ -304,7 +305,7 @@ const FAQ_RESPONSES: Record<string, Record<string, { keywords: string[], respons
     },
     pricing: {
       keywords: ['价格', '成本', '定价', '订阅', '计划', '免费', '试用', '钱'],
-      response: "Cymasphere 保持简单的定价:月度 $6、年度 $59(节省 25%)、终身 $149。哪个选项最适合您计划使用 Cymasphere 的方式 ?"
+      response: CHAT_PRICING_RESPONSES.zh,
     },
     features: {
       keywords: ['功能', '工具', '合成器', '鼓', '乐器', '效果', '能做什么', '能力'],

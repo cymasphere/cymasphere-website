@@ -33,8 +33,8 @@ const PLANS = [
   {
     key: "annual",
     env: "STRIPE_PRICE_ID_ANNUAL",
-    unit_amount: 6900,
-    compare_at: 8900,
+    unit_amount: 8900,
+    compare_at: 11900,
     recurring: { interval: "year" },
   },
   {

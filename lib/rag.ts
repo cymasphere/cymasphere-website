@@ -3,6 +3,7 @@ import { Document } from "@langchain/core/documents";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { FaissStore } from "@langchain/community/vectorstores/faiss";
 import { OpenAIEmbeddings } from "@langchain/openai";
+import { RAG_PRICING_BLOCK } from "@/lib/pricing";
 
 // Cymasphere website content (this would normally be scraped/updated dynamically)
 const CYMASPHERE_KNOWLEDGE_BASE = `
@@ -87,9 +88,7 @@ The Voicing Generator uses advanced algorithms to create rich, musically satisfy
 
 ## Pricing Plans
 Cymasphere offers flexible pricing options:
-- **Monthly billing**: $6.00/month - Pay month-to-month, cancel anytime (most flexible)
-- **Yearly billing**: $59.00/year - Save 25% with yearly billing (best value)
-- **Lifetime**: $149.00 one-time payment - Lifetime access (best value)
+${RAG_PRICING_BLOCK}
 
 All plans include full access to all Cymasphere features plus CymaSynth ($149 value when sold separately; included free). Pricing is simple and transparent.
 

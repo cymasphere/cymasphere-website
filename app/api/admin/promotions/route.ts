@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import Stripe from 'stripe';
 import { pstDateToUTC } from '@/utils/timezoneUtils';
+import { CYMASPHERE_SALE_PRICES_USD } from '@/lib/pricing';
 
 /**
  * Stripe client instance initialized with secret key from environment variables
@@ -235,12 +236,7 @@ export async function POST(request: NextRequest) {
       priority,
     } = body;
 
-    // Calculate sale prices based on discount
-    const NORMAL_PRICES = {
-      monthly: 9,
-      annual: 69,
-      lifetime: 199,
-    };
+    const NORMAL_PRICES = CYMASPHERE_SALE_PRICES_USD;
 
     const calculateSalePrice = (normalPrice: number) => {
       if (discount_type === 'percentage') {

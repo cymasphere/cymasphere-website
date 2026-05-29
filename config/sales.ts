@@ -51,7 +51,7 @@ export interface SaleConfig {
  * Black Friday Sale Configuration
  */
 export const BLACK_FRIDAY_SALE: SaleConfig = {
-  active: true, // Set to false to disable the sale
+  active: false, // Set to false to disable the sale
   name: 'black_friday_2025',
   title: '🔥 Black Friday Sale',
   description: 'Lifetime access for just $99 - Save $150!',

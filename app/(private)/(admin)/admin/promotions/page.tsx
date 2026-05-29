@@ -26,6 +26,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import TableLoadingRow from "@/components/common/TableLoadingRow";
 import { utcToPSTDate, formatPSTDate } from "@/utils/timezoneUtils";
+import { CYMASPHERE_SALE_PRICES_USD } from "@/lib/pricing";
 
 // Types
 interface Promotion {
@@ -520,11 +521,7 @@ export default function PromotionsPage() {
     priority: 0,
   });
 
-  const NORMAL_PRICES = {
-    monthly: 9,
-    annual: 69,
-    lifetime: 199,
-  };
+  const NORMAL_PRICES = CYMASPHERE_SALE_PRICES_USD;
 
   useEffect(() => {
     loadPromotions();

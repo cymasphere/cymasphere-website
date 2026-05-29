@@ -27,6 +27,7 @@ import React from "react";
 import styled from "styled-components";
 import { PlanType } from "@/types/stripe";
 import { useTranslation } from "react-i18next";
+import { getAnnualSavingsPercentRounded } from "@/lib/pricing";
 
 const BillingToggleContainer = styled.div`
   display: flex;
@@ -126,7 +127,7 @@ interface BillingToggleProps {
  * @returns {JSX.Element} The rendered billing toggle component
  * 
  * @note Disabled buttons are visually dimmed and non-clickable
- * @note Shows savings information below toggle (25% for annual, "Best Value" for lifetime)
+ * @note Shows savings information below toggle (annual % vs 12× monthly, "Best Value" for lifetime)
  * @note Uses gradient styling for active button
  * @note Supports internationalization through react-i18next
  */
@@ -146,6 +147,8 @@ export default function BillingToggle({
     if (!userSubscription || userSubscription === "none") return false;
     return userSubscription !== period;
   };
+
+  const annualSavingsPercent = getAnnualSavingsPercentRounded();
 
   return (
     <>
@@ -197,7 +200,8 @@ export default function BillingToggle({
           )}
           {billingPeriod === "annual" && (
             <SavingsInfo>
-              {t("pricing.save", "Save")} <span>25%</span>{" "}
+              {t("pricing.save", "Save")}{" "}
+              <span>{annualSavingsPercent}%</span>{" "}
               {t("pricing.withYearlyBilling", "with yearly billing")}
             </SavingsInfo>
           )}

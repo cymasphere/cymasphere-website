@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { checkAdmin } from "@/app/actions/user-management";
 import OpenAI from "openai";
+import { RAG_PRICING_BLOCK, CYMASPHERE_SALE_PRICES_USD } from "@/lib/pricing";
 
 /**
  * OpenAI client instance initialized with API key from environment variables
@@ -109,9 +110,7 @@ The Voicing Generator uses advanced algorithms to create rich, musically satisfy
 
 ## Pricing Plans
 Cymasphere offers flexible pricing options:
-- **Monthly billing**: $6.00/month - Pay month-to-month, cancel anytime (most flexible)
-- **Yearly billing**: $59.00/year - Save 25% with yearly billing (best value)
-- **Lifetime**: $149.00 one-time payment - Lifetime access (best value)
+${RAG_PRICING_BLOCK}
 
 All plans include full access to all Cymasphere features plus CymaSynth ($149 value when sold separately; included free). Pricing is simple and transparent.
 
@@ -573,9 +572,9 @@ Cymasphere offers two trial options:
 - **14-day free trial** - With a card on file (you won't be charged until the trial ends)
 
 Both options give you full access to all premium features, including CymaSynth. After your trial ends, you can choose from our subscription plans:
-- Monthly: $6/month
-- Annual: $59/year (save 25%)
-- Lifetime: $149 one-time payment
+- Monthly: $${CYMASPHERE_SALE_PRICES_USD.monthly}/month
+- Annual: $${CYMASPHERE_SALE_PRICES_USD.annual}/year
+- Lifetime: $${CYMASPHERE_SALE_PRICES_USD.lifetime} one-time payment
 
 Is there anything specific about the trial or features you'd like to know more about?`;
   }
@@ -583,9 +582,9 @@ Is there anything specific about the trial or features you'd like to know more a
   if (lowerPrompt.includes("pricing") || lowerPrompt.includes("price") || lowerPrompt.includes("cost")) {
     return `Here's our simple pricing:
 
-- **Monthly**: $6/month - Most flexible, cancel anytime
-- **Annual**: $59/year - Save 25% with yearly billing
-- **Lifetime**: $149 one-time payment - Best value, all future updates included
+- **Monthly**: $${CYMASPHERE_SALE_PRICES_USD.monthly}/month - Most flexible, cancel anytime
+- **Annual**: $${CYMASPHERE_SALE_PRICES_USD.annual}/year - Best value for yearly billing
+- **Lifetime**: $${CYMASPHERE_SALE_PRICES_USD.lifetime} one-time payment - Best value, all future updates included
 
 All plans include Cymasphere plus CymaSynth (wavetable synthesizer, VST3 & AU—a $149 value when sold separately, included free). We also offer free trials so you can try before you buy.
 
