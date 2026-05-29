@@ -30,8 +30,19 @@ import {
 import { BsSoundwave } from "react-icons/bs";
 import { GiBrain } from "react-icons/gi";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import { useParams } from "next/navigation";
+
+/** @brief Supabase CDN base for CymaSynth marketing assets. */
+const FEATURE_IMAGE_BASE =
+  "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized";
+
+const CYMASYNTH_SHOWCASE_IMAGES = {
+  hero: `${FEATURE_IMAGE_BASE}/cymasynth-feature-1.webp`,
+  product: `${FEATURE_IMAGE_BASE}/cymasynth-product.webp`,
+  thumb: `${FEATURE_IMAGE_BASE}/cymasynth-feature-1-thumb.webp`,
+} as const;
 
 // Dynamically import modal to avoid SSR issues
 const FeatureModal = dynamic(() => import("../modals/FeatureModal"), {
@@ -75,6 +86,10 @@ const FeaturesGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 30px;
   margin-top: 60px;
+
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
 `;
 
 const FeatureIcon = styled.div`
@@ -130,7 +145,222 @@ const FeatureDescription = styled.p`
   transition: all 0.3s ease;
 `;
 
-const FeatureCard = styled(motion.div)<{ $rotation?: number; $imageUrl?: string }>`
+const CymaSynthCta = styled.span`
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  margin-top: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(0, 229, 255, 0.95);
+  padding: 0.55rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  background: rgba(0, 229, 255, 0.1);
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+`;
+
+const CymaSynthShowcase = styled(motion.article)`
+  width: 100%;
+  margin-top: 36px;
+  cursor: pointer;
+  border-radius: 24px;
+  overflow: hidden;
+  position: relative;
+  isolation: isolate;
+  text-align: left;
+  border: 1px solid rgba(0, 229, 255, 0.28);
+  background: linear-gradient(
+    128deg,
+    rgba(6, 20, 28, 0.98) 0%,
+    rgba(10, 16, 36, 0.98) 42%,
+    rgba(8, 10, 24, 1) 100%
+  );
+  box-shadow:
+    0 28px 90px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 0 80px rgba(0, 229, 255, 0.1);
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.45s ease, border-color 0.45s ease;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        ellipse 70% 80% at 12% 50%,
+        rgba(0, 229, 255, 0.14),
+        transparent 55%
+      ),
+      radial-gradient(
+        ellipse 50% 60% at 88% 20%,
+        rgba(78, 205, 196, 0.12),
+        transparent 50%
+      );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  &:hover {
+    transform: translateY(-6px);
+    border-color: rgba(0, 229, 255, 0.5);
+    box-shadow:
+      0 36px 100px rgba(0, 0, 0, 0.5),
+      0 0 100px rgba(0, 229, 255, 0.16);
+
+    ${CymaSynthCta} {
+      color: #fff;
+      background: rgba(0, 229, 255, 0.22);
+      border-color: rgba(0, 229, 255, 0.55);
+    }
+  }
+`;
+
+const CymaSynthShowcaseInner = styled.div`
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  min-height: 0;
+
+  @media (min-width: 900px) {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    min-height: 420px;
+  }
+`;
+
+const CymaSynthVisual = styled.div`
+  position: relative;
+  overflow: hidden;
+  min-height: 280px;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 229, 255, 0.06) 0%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+  @media (min-width: 900px) {
+    min-height: 100%;
+    border-bottom: none;
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+  }
+`;
+
+const CymaSynthImageGlow = styled.div`
+  position: absolute;
+  inset: 10% 8% 12%;
+  border-radius: 20px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 229, 255, 0.2),
+    transparent 68%
+  );
+  filter: blur(24px);
+  pointer-events: none;
+`;
+
+const CymaSynthCopy = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem 1.75rem 2.25rem;
+  gap: 1rem;
+
+  @media (min-width: 900px) {
+    padding: 2.75rem 2.5rem 2.75rem 2rem;
+  }
+`;
+
+const CymaSynthEyebrow = styled.span`
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(0, 229, 255, 0.95);
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  background: rgba(0, 229, 255, 0.08);
+`;
+
+const CymaSynthTitle = styled.h3`
+  font-size: clamp(1.85rem, 4vw, 2.75rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin: 0;
+`;
+
+const CymaSynthDescription = styled.p`
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  line-height: 1.65;
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 36rem;
+`;
+
+const CymaSynthHighlights = styled.ul`
+  list-style: none;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+
+  @media (min-width: 600px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem 1.25rem;
+  }
+`;
+
+const CymaSynthHighlight = styled.li`
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+
+  &::before {
+    content: "";
+    flex-shrink: 0;
+    width: 7px;
+    height: 7px;
+    margin-top: 0.45rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00e5ff, #4ecdc4);
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.65);
+  }
+`;
+
+const CymaSynthFormats = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.15rem;
+`;
+
+const CymaSynthFormatBadge = styled.span`
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.35rem 0.7rem;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+`;
+
+const FeatureCard = styled(motion.div)<{
+  $rotation?: number;
+  $imageUrl?: string;
+}>`
   background: linear-gradient(
     ${props => props.$rotation || 165}deg,
     rgba(15, 14, 23, 0.98) 0%,
@@ -250,6 +480,64 @@ const cardVariants = {
   }),
 };
 
+interface FeatureItem {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  detailedDescription: string;
+  color: string;
+  rotation: number;
+  image?: { webp: string; png: string };
+}
+
+/** @brief Default CymaSynth modal bullets when i18n array is unavailable. */
+const CYMASYNTH_DEFAULT_BULLETS = [
+  "$149 value when purchased alone—included free with every Cymasphere plan (subscriptions and lifetime); no separate CymaSynth purchase",
+  "Triple oscillator architecture with wavetable morphing (256 frames) plus classic waveforms",
+  "64-route modulation matrix with 5 LFOs and 4 ADSR+Hold envelopes for evolving, expressive patches",
+  "Dual filters, up to 32-voice polyphony, unison, and a full built-in effects chain",
+  "Standalone app plus VST3 and AU—use on its own, with Cymasphere, or in your DAW",
+  "Designed to pair with Cymasphere's harmony and pattern tools: write the progression here, design the timbre in CymaSynth",
+] as const;
+
+/**
+ * @brief Resolves a feature bullet list from i18n.
+ * @param t - i18next translate function.
+ * @param featureId - Feature slug (e.g. `songBuilder`, `cymaSynth`).
+ * @returns Localized bullet strings for the modal list.
+ * @note Reads `features` from the feature bundle object to avoid i18next path ambiguity on `features.cymaSynth.features`.
+ */
+function resolveFeatureBullets(
+  t: (key: string, options?: Record<string, unknown>) => string | object,
+  featureId: string,
+): string[] {
+  const bundle = t(`features.${featureId}`, { returnObjects: true });
+
+  if (bundle && typeof bundle === "object" && bundle !== null && "features" in bundle) {
+    const nested = (bundle as { features: unknown }).features;
+    if (Array.isArray(nested)) {
+      return nested.filter((item): item is string => typeof item === "string");
+    }
+    if (nested && typeof nested === "object") {
+      return Object.values(nested as Record<string, string>).filter(
+        (item) => typeof item === "string",
+      );
+    }
+  }
+
+  const direct = t(`features.${featureId}.features`, { returnObjects: true });
+  if (Array.isArray(direct)) {
+    return direct.filter((item): item is string => typeof item === "string");
+  }
+  if (direct && typeof direct === "object") {
+    return Object.values(direct as Record<string, string>).filter(
+      (item) => typeof item === "string",
+    );
+  }
+
+  return [];
+}
+
 /**
  * @brief FeaturesSection component
  * 
@@ -263,6 +551,7 @@ const cardVariants = {
  * - DAW Integration
  * - Specialized Track Types
  * - Progression Timeline
+ * - CymaSynth (bundled wavetable synth)
  * 
  * @returns {JSX.Element} The rendered features section component
  * 
@@ -280,30 +569,43 @@ const FeaturesSection = () => {
   const params = useParams();
   const currentLocale = (params?.locale as string) || 'en';
 
-  // Force re-render when language changes
-  const [, forceUpdate] = useState({});
+  // Re-render when language changes or when translation bundles are loaded/updated
+  const [translationsRevision, setTranslationsRevision] = useState(0);
   useEffect(() => {
-    // This effect will run whenever the language changes
-    const handleLanguageChange = () => {
-      forceUpdate({});
+    const bumpRevision = () => {
+      setTranslationsRevision((revision) => revision + 1);
     };
 
-    i18n.on('languageChanged', handleLanguageChange);
-    
-    // Cleanup
+    i18n.on("languageChanged", bumpRevision);
+    i18n.on("loaded", bumpRevision);
+    i18n.on("added", bumpRevision);
+
     return () => {
-      i18n.off('languageChanged', handleLanguageChange);
+      i18n.off("languageChanged", bumpRevision);
+      i18n.off("loaded", bumpRevision);
+      i18n.off("added", bumpRevision);
     };
   }, [i18n]);
 
-  const formatDetailedDescription = (feature: string) => {
-    // Get the features array and ensure it's properly typed
-    const featureItems = t(`features.${feature}.features`, { returnObjects: true }) as string[];
-    
-    // Safety check: if featureItems is not an array, return empty string
-    if (!Array.isArray(featureItems)) {
-      console.warn(`Features array not found for: ${feature}`, featureItems);
-      return '';
+  const formatDetailedDescription = React.useCallback((feature: string) => {
+    let featureItems = resolveFeatureBullets(t, feature);
+
+    if (featureItems.length === 0 && feature === "cymaSynth") {
+      featureItems = [...CYMASYNTH_DEFAULT_BULLETS];
+    }
+
+    if (featureItems.length === 0) {
+      const modalTitle = t(`features.${feature}.modalTitle`, "");
+      const modalDescription = t(`features.${feature}.modalDescription`, "");
+      if (
+        modalTitle &&
+        modalTitle !== `features.${feature}.modalTitle` &&
+        modalDescription &&
+        modalDescription !== `features.${feature}.modalDescription`
+      ) {
+        return `<h3>${modalTitle}</h3><p>${modalDescription}</p>`;
+      }
+      return "";
     }
 
     const stopWords = [
@@ -383,7 +685,15 @@ const FeaturesSection = () => {
         { pattern: /^(Adaptive Drum Groove Generation)/i, bold: '$1' },
         { pattern: /^(Context-Aware Generation)/i, bold: '$1' },
         { pattern: /^(Style-Based Generation)/i, bold: '$1' },
-        { pattern: /^(Real-Time Adaptation)/i, bold: '$1' }
+        { pattern: /^(Real-Time Adaptation)/i, bold: '$1' },
+
+        // CymaSynth features
+        { pattern: /^(Triple oscillator)/i, bold: '$1' },
+        { pattern: /^(64-route modulation matrix)/i, bold: '$1' },
+        { pattern: /^(Dual filters)/i, bold: '$1' },
+        { pattern: /^(VST3 and AU)/i, bold: '$1' },
+        { pattern: /^(Designed to pair)/i, bold: '$1' },
+        { pattern: /(\$149 value)/i, bold: '$1' },
       ];
       
       // Find matching pattern and apply bold formatting
@@ -403,16 +713,31 @@ const FeaturesSection = () => {
       return `<li><strong>${keyword}</strong>${rest ? ` ${rest}` : ''}</li>`;
     }).join('');
 
+    const modalTitle = t(
+      `features.${feature}.modalTitle`,
+      feature === "cymaSynth" ? "Your Built-In Flagship Instrument" : "",
+    );
+    const modalDescription = t(
+      `features.${feature}.modalDescription`,
+      feature === "cymaSynth"
+        ? "Sold separately, CymaSynth is a $149 instrument. With Cymasphere it is included at no extra cost on every subscription and lifetime license—so you go from harmonic sketch to finished sound without a second purchase."
+        : "",
+    );
+    const keyFeaturesLabel = t(
+      `features.${feature}.keyFeatures`,
+      "Key Features:",
+    );
+
     return `
-      <h3>${t(`features.${feature}.modalTitle`)}</h3>
-      <p>${t(`features.${feature}.modalDescription`)}</p>
+      <h3>${modalTitle}</h3>
+      <p>${modalDescription}</p>
       
-      <h3 style="margin-bottom: 0.5rem;">${t(`features.${feature}.keyFeatures`)}</h3>
+      <h3 style="margin-bottom: 0.5rem;">${keyFeaturesLabel}</h3>
       <ul style="margin-top: 0.5rem;">
         ${featuresList}
       </ul>
     `;
-  };
+  }, [t, translationsRevision]);
 
   // Generate dramatically different rotations for each card
   const cardRotations = React.useMemo(() => {
@@ -431,16 +756,26 @@ const FeaturesSection = () => {
     ];
   }, []);
 
-  const featuresData = React.useMemo(() => {
-    // Check if translations are ready
-    const isReady = t("features.songBuilder.title") !== "features.songBuilder.title";
-    
-    // Defer processing heavy feature data to avoid blocking render
+  /** @brief Modal index for the CymaSynth showcase (always last in the combined list). */
+  const CYMASYNTH_MODAL_INDEX = 9;
+
+  const { allFeatures, gridFeatures, cymaSynthFeature } = React.useMemo(() => {
+    const empty = {
+      allFeatures: [] as FeatureItem[],
+      gridFeatures: [] as FeatureItem[],
+      cymaSynthFeature: null as FeatureItem | null,
+    };
+
+    const cymaSynthTitle = t("features.cymaSynth.title", "CymaSynth Included");
+    const isReady =
+      t("features.songBuilder.title") !== "features.songBuilder.title" &&
+      cymaSynthTitle !== "features.cymaSynth.title";
+
     if (!isReady) {
-      return [];
+      return empty;
     }
 
-    return [
+    const gridItems: FeatureItem[] = [
       {
         icon: <FaLayerGroup />,
         title: t("features.songBuilder.title"),
@@ -549,21 +884,54 @@ const FeaturesSection = () => {
           png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/voicing-track-view-thumb.webp"
         },
       },
-      {
-        icon: <BsSoundwave />,
-        title: t("features.cymaSynth.title"),
-        description: t("features.cymaSynth.description"),
-        detailedDescription: formatDetailedDescription("cymaSynth"),
-        color: "#00E5FF",
-        rotation: cardRotations[9],
-        image: {
-          webp:
-            "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/cymasynth-feature-1.webp",
-          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/cymasynth-feature-1-thumb.webp",
-        },
-      },
     ];
-  }, [t, currentLocale, i18n.language, cardRotations]);
+
+    const cymaSynth: FeatureItem = {
+      icon: <BsSoundwave />,
+      title: cymaSynthTitle,
+      description: t(
+        "features.cymaSynth.description",
+        "A $149-value professional wavetable synth—triple oscillators, deep modulation, studio effects—yours free with Cymasphere.",
+      ),
+      detailedDescription: formatDetailedDescription("cymaSynth"),
+      color: "#00E5FF",
+      rotation: cardRotations[9],
+      image: {
+        webp: CYMASYNTH_SHOWCASE_IMAGES.hero,
+        png: CYMASYNTH_SHOWCASE_IMAGES.thumb,
+      },
+    };
+
+    return {
+      allFeatures: [...gridItems, cymaSynth],
+      gridFeatures: gridItems,
+      cymaSynthFeature: cymaSynth,
+    };
+  }, [
+    t,
+    currentLocale,
+    i18n.language,
+    cardRotations,
+    translationsRevision,
+    formatDetailedDescription,
+  ]);
+
+  const cymaSynthHighlights = React.useMemo(() => {
+    const items = t("features.cymaSynth.features", {
+      returnObjects: true,
+    }) as string[] | string;
+
+    if (Array.isArray(items) && items.length > 0) {
+      return items.slice(1, 5);
+    }
+
+    return [
+      "Triple oscillator architecture with wavetable morphing (256 frames)",
+      "64-route modulation matrix with 5 LFOs and 4 ADSR+Hold envelopes",
+      "Dual filters, up to 32-voice polyphony, unison, and built-in effects",
+      "VST3 and AU—standalone or alongside Cymasphere in your DAW",
+    ];
+  }, [t, translationsRevision]);
 
   return (
     <FeaturesContainer id="features">
@@ -579,9 +947,9 @@ const FeaturesSection = () => {
         </motion.div>
 
         <FeaturesGrid>
-          {featuresData.map((feature, index) => (
+          {gridFeatures.map((feature, index) => (
             <FeatureCard
-              key={index}
+              key={feature.title}
               custom={index}
               initial="hidden"
               whileInView="visible"
@@ -600,10 +968,86 @@ const FeaturesSection = () => {
             </FeatureCard>
           ))}
         </FeaturesGrid>
+
+        {cymaSynthFeature && (
+          <CymaSynthShowcase
+            role="button"
+            tabIndex={0}
+            aria-label={cymaSynthFeature.title}
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.1 }}
+            viewport={{ once: true, margin: "-40px" }}
+            onClick={() => {
+              setSelectedFeature(CYMASYNTH_MODAL_INDEX);
+              setModalOpen(true);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setSelectedFeature(CYMASYNTH_MODAL_INDEX);
+                setModalOpen(true);
+              }
+            }}
+          >
+            <CymaSynthShowcaseInner>
+              <CymaSynthVisual>
+                <CymaSynthImageGlow aria-hidden />
+                <Image
+                  src={CYMASYNTH_SHOWCASE_IMAGES.hero}
+                  alt={t(
+                    "hero.bundleCymaSynthImageAlt",
+                    "CymaSynth wavetable synthesizer product interface",
+                  )}
+                  fill
+                  sizes="(max-width: 900px) 100vw, 55vw"
+                  quality={90}
+                  priority={false}
+                  style={{
+                    objectFit: "contain",
+                    objectPosition: "center center",
+                    padding: "clamp(1rem, 3vw, 2rem)",
+                  }}
+                />
+              </CymaSynthVisual>
+              <CymaSynthCopy>
+                <CymaSynthEyebrow>
+                  {t(
+                    "hero.bundleCymaSynthDesc",
+                    "Wavetable synth · $149 value included",
+                  )}
+                </CymaSynthEyebrow>
+                <CymaSynthTitle>{cymaSynthFeature.title}</CymaSynthTitle>
+                <CymaSynthDescription>
+                  {cymaSynthFeature.description}
+                </CymaSynthDescription>
+                <CymaSynthHighlights>
+                  {cymaSynthHighlights.map((item) => (
+                    <CymaSynthHighlight key={item.slice(0, 48)}>
+                      {item}
+                    </CymaSynthHighlight>
+                  ))}
+                </CymaSynthHighlights>
+                <CymaSynthFormats>
+                  <CymaSynthFormatBadge>Standalone app</CymaSynthFormatBadge>
+                  <CymaSynthFormatBadge>VST3</CymaSynthFormatBadge>
+                  <CymaSynthFormatBadge>AU</CymaSynthFormatBadge>
+                  <CymaSynthFormatBadge>
+                    {t("hero.platforms.macos", "macOS")} ·{" "}
+                    {t("hero.platforms.windows", "Windows")}
+                  </CymaSynthFormatBadge>
+                </CymaSynthFormats>
+                <CymaSynthCta>
+                  {t("features.cymaSynth.modalTitle", "Your Built-In Flagship Instrument")} →
+                </CymaSynthCta>
+              </CymaSynthCopy>
+            </CymaSynthShowcaseInner>
+          </CymaSynthShowcase>
+        )}
       </FeaturesContent>
 
       <FeatureModal
-        features={featuresData}
+        features={allFeatures}
         initialIndex={selectedFeature}
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}

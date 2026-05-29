@@ -1,7 +1,7 @@
 /**
  * @fileoverview Loading skeleton for the landing-page features grid.
  * @module components/skeletons/FeaturesSectionSkeleton
- * @note Card count matches FeaturesSection (10 cards including CymaSynth).
+ * @note Nine grid cards plus full-width CymaSynth showcase skeleton.
  */
 
 import React from "react";
@@ -67,8 +67,8 @@ const FeaturesSectionSkeleton = () => {
         </TitleContainer>
 
         <FeaturesGrid>
-          {/* Match FeaturesSection grid (10 feature cards including CymaSynth) */}
-          {Array(10).fill(0).map((_, index) => (
+          {/* Match FeaturesSection grid (9 standard feature cards) */}
+          {Array(9).fill(0).map((_, index) => (
             <FeatureCard key={index}>
               <FeatureIconSkeleton />
               <TextSkeleton lines={1} width="60%" style={{ marginBottom: "1rem" }} />
@@ -76,6 +76,14 @@ const FeaturesSectionSkeleton = () => {
             </FeatureCard>
           ))}
         </FeaturesGrid>
+        <CardSkeleton
+          style={{
+            marginTop: "2rem",
+            width: "100%",
+            height: "clamp(320px, 42vw, 440px)",
+            borderRadius: "24px",
+          }}
+        />
       </FeaturesSkeletonContent>
     </FeaturesSkeletonContainer>
   );
