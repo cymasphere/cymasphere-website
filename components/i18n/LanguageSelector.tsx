@@ -6,7 +6,7 @@ import useLanguage from "@/hooks/useLanguage";
 import { languages } from "@/app/i18n/config";
 
 // Define language code type
-type LanguageCode = "en" | "es" | "fr" | "it" | "de" | "pt" | "tr" | "ja";
+type LanguageCode = "en" | "es" | "fr" | "it" | "de" | "pt" | "tr" | "zh" | "ja";
 
 // Flag icons for each language
 const FLAGS: Record<LanguageCode, string> = {
@@ -17,6 +17,7 @@ const FLAGS: Record<LanguageCode, string> = {
   de: "🇩🇪",
   pt: "🇵🇹",
   tr: "🇹🇷",
+  zh: "🇨🇳",
   ja: "🇯🇵",
 };
 
@@ -29,6 +30,7 @@ const LANGUAGE_NAMES: Record<LanguageCode, string> = {
   de: "Deutsch",
   pt: "Português",
   tr: "Türkçe",
+  zh: "中文",
   ja: "日本語",
 };
 

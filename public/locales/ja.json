@@ -76,7 +76,7 @@
     "chords": {
       "cMajor": "C Major",
       "fMajor": "F Major",
-      "bDiminished": "B Diminished",
+      "bDiminished": "H短調",
       "eMinor": "E Minor",
       "aMinor": "A Minor",
       "dMinor": "D Minor",
@@ -86,7 +86,7 @@
       "playNote": "クリックでこの音を再生",
       "playChord": "クリックでコードを再生"
     },
-    "includedSynth": "CymaSynth—プロ仕様のウェーブテーブルシンセ（VST3・AU）—を全サブスクリプションと永久ライセンスに同梱。作曲スイートとフラッグシップ楽器をひとつに。",
+    "includedSynth": "CymaSynth—プロ仕様のウェーブテーブルシンセ（スタンドアロンアプリ、VST3・AU）—を全サブスクリプションと永久ライセンスに同梱。作曲スイートとフラッグシップ楽器をひとつに。",
     "bundleEyebrow": "1つのサブスクリプション · 2つのプロダクト",
     "bundleCymasphereTitle": "Cymasphere",
     "bundleCymasphereDesc": "作曲・理論スイート",
@@ -184,7 +184,7 @@
         "コード提案 - 進行のためのインテリジェントな推奨を受ける",
         "セクションマーカー - 構造的な目印で曲を整理",
         "機能分析 - 進行内の各コードの役割を理解",
-        "Dynamic Pattern Updates where patterns and voicings automatically adapt when changes are made to the progression"
+        "動的パターン更新：進行が変わるとパターンとボイシングが自動的に追従"
       ]
     },
     "voiceHandling": {
@@ -251,14 +251,14 @@
       "title": "CymaSynth 同梱",
       "description": "149ドル相当のプロ仕様ウェーブテーブルシンセ—トリプルOSC、深いモジュレーション、スタジオ級エフェクト—Cymasphereに無償で付属。",
       "modalTitle": "統合されたフラッグシップ楽器",
-      "modalDescription": "単体では149ドルのCymaSynth。Cymasphereなら全サブスクリプションと永久ライセンスに追加費用なしで同梱—和声のたたきから完成サウンドまで、二度目の購入は不要です。プロ級ウェーブテーブル合成、柔軟なモジュレーション、磨かれたエフェクト—Cymasphereのワークフローでも、DAWではVST3・AUプラグインとして。",
+      "modalDescription": "単体では149ドルのCymaSynth。Cymasphereなら全サブスクリプションと永久ライセンスに追加費用なしで同梱—和声のたたきから完成サウンドまで、二度目の購入は不要です。プロ級ウェーブテーブル合成、柔軟なモジュレーション、磨かれたエフェクト—Cymasphereのワークフロー、スタンドアロンアプリ、またはDAWのVST3・AUプラグインとして。",
       "keyFeatures": "主な特長:",
       "features": [
         "単体149ドル相当—全Cymasphereプラン（サブスク・永久）に無償同梱。CymaSynthの別売り購入は不要",
         "トリプルOSC構成、ウェーブテーブルモーフィング（256フレーム）とクラシック波形",
         "64ルートのモジュレーションマトリクス、5 LFO、4 ADSR+Hold エンベロープ",
         "デュアルフィルター、最大32ボイス、ユニゾン、内蔵エフェクトチェーン",
-        "VST3・AU形式—Cymasphereと併用、またはDAWに直接",
+        "スタンドアロンアプリに加え VST3・AU—単体、Cymasphere連携、DAW内で利用",
         "Cymasphereの和声・パターンと連携—進行はここで、音色はCymaSynthで"
       ]
     }
@@ -473,7 +473,7 @@
       "フルアレンジビュー",
       "カスタムボイシング生成エンジン",
       "プレミアムサポートと今後の全アップデート",
-      "ウェーブテーブルシンセ CymaSynth（VST3・AU）—149ドル相当、無償同梱"
+      "CymaSynth スタンドアロン、AU・VST3"
     ],
     "freeTrial": {
       "title": "最大14日間無料で試す",
@@ -488,7 +488,8 @@
       "or": "または"
     },
     "processing": "処理中",
-    "buyNow": "今すぐ購入"
+    "buyNow": "今すぐ購入",
+    "cymaSynthFeature": "CymaSynth スタンドアロン、AU・VST3"
   },
   "promotion": {
     "viewOffers": "オファーを見る"
@@ -696,7 +697,7 @@
       "lifetimeAccess": "生涯無料アップデート付き",
       "nextPayment": "次回支払い",
       "futurePayments": "今後の支払い",
-      "amountOnDate": "${{amount}} {{date}}",
+      "amountOnDate": "{{date}}に {{amount}}",
       "onDate": "{{date}}に",
       "firstPayment": "${{amount}}.00 {{date}}に",
       "devices": "接続デバイス",
@@ -741,7 +742,7 @@
       "standaloneAndPlugins": "スタンドアプリとプラグイン",
       "subscribeForAccess": "利用するにはご契約ください",
       "downloadAvailable": "最新のCymasphereとCymaSynthインストーラーをダウンロード—サブスクリプションは両方を含みます。",
-      "upgradeToLifetime": "Upgrade to Lifetime access",
+      "upgradeToLifetime": "ライフタイムアクセスにアップグレード",
       "downloadIntro": "ソフトウェアのダウンロードとインストーラーにアクセスします。",
       "downloadRequiresSubscription": "ソフトウェアのダウンロードとプレミアム機能を利用するにはご契約ください。",
       "goToDownloads": "ダウンロードへ",
@@ -772,12 +773,12 @@
       "title": "請求とサブスクリプション",
       "currentPlan": "現在のプラン",
       "paymentHistory": "支払い履歴",
-      "upgradeDowngrade": "アップグレード/ダウングレード",
-      "cancelSubscription": "サブスクリプションをキャンセル",
+      "upgradeDowngrade": "アップグレード / ダウングレード",
+      "cancelSubscription": "サブスクリプションを解約",
       "reactivateSubscription": "サブスクリプションを再開",
       "paymentMethods": "支払い方法",
       "addPaymentMethod": "支払い方法を追加",
-      "noPaymentHistory": "支払い履歴はありません",
+      "noPaymentHistory": "支払い履歴がありません",
       "transactionId": "取引ID",
       "date": "日付",
       "amount": "金額",
@@ -864,11 +865,11 @@
       "quickStart": "クイックスタートガイド",
       "quickStartDesc": "Cymasphereを数分で使い始める",
       "downloadPdf": "PDFをダウンロード",
-      "ipadTitle": "Cymasphere for iPad",
-      "ipadDesc": "Native iPad app with full feature set, optimized for iPad. Available now on the App Store.",
+      "ipadTitle": "iPad 版 Cymasphere",
+      "ipadDesc": "iPad 向けに最適化されたネイティブアプリ。全機能を利用できます。App Store で配信中。",
       "comingSoon": "Coming Soon",
-      "availableNow": "Available Now",
-      "viewOnAppStore": "View on App Store",
+      "availableNow": "今すぐ利用可能",
+      "viewOnAppStore": "App Store で見る",
       "loading": "Loading..."
     },
     "settings": {
@@ -970,12 +971,12 @@
     "cancelNotice": "サブスクリプションは{{date}}にキャンセルされます。それまでアクセスできます。",
     "continueToCheckout": "チェックアウトに進む",
     "gotIt": "了解",
-    "enterCardNow": "Enter card info now:",
-    "percentDiscount": "{{percent}}% discount applied!",
-    "amountDiscount": "${{amount}} off!",
-    "oneTimePurchase": "one-time purchase",
-    "provideCard": "Provide payment method now for a {{days}}-day trial",
-    "cardTooltip": "Adding your payment method now extends your trial to 14 days instead of 7. You won't be charged until your trial ends."
+    "enterCardNow": "今すぐカード情報を入力：",
+    "percentDiscount": "{{percent}}% 割引を適用しました！",
+    "amountDiscount": "${{amount}} オフ！",
+    "oneTimePurchase": "買い切り",
+    "provideCard": "{{days}} 日間トライアルのために今すぐ支払い方法を登録",
+    "cardTooltip": "今すぐ支払い方法を追加すると、トライアルが 7 日から 14 日に延長されます。トライアル終了まで請求されません。"
   },
   "legal": {
     "termsOfService": "利用規約",
@@ -1127,19 +1128,19 @@
       "title": "Our Team",
       "member1": {
         "name": "David Chen",
-        "role": "Founder & Lead Developer"
+        "role": "創業者兼リード開発者"
       },
       "member2": {
         "name": "Sarah Nguyen",
-        "role": "Music Theory Specialist"
+        "role": "音楽理論スペシャリスト"
       },
       "member3": {
         "name": "Michael Park",
-        "role": "UI/UX Designer"
+        "role": "UI/UXデザイナー"
       },
       "member4": {
         "name": "Emma Rodriguez",
-        "role": "Product Manager"
+        "role": "プロダクトマネージャー"
       }
     }
   },

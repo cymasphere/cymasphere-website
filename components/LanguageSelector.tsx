@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import dynamic from "next/dynamic";
 
 // Define language code type
-type LanguageCode = "en" | "es" | "fr" | "it" | "de" | "pt" | "tr" | "ja";
+type LanguageCode = "en" | "es" | "fr" | "it" | "de" | "pt" | "tr" | "zh" | "ja";
 
 // Make the component client-side only to prevent SSR issues
 const LanguageSelector = () => {
@@ -20,6 +20,7 @@ const LanguageSelector = () => {
     { code: "de" as LanguageCode, name: t("language.de"), flag: "🇩🇪" },
     { code: "pt" as LanguageCode, name: t("language.pt"), flag: "🇵🇹" },
     { code: "tr" as LanguageCode, name: t("language.tr"), flag: "🇹🇷" },
+    { code: "zh" as LanguageCode, name: t("language.zh"), flag: "🇨🇳" },
     { code: "ja" as LanguageCode, name: t("language.ja"), flag: "🇯🇵" },
   ];
 

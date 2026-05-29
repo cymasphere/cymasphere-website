@@ -1,18 +1,12 @@
 {
   "hero": {
     "bundleEyebrow": "一次订阅 · 两款产品",
-    "bundleCymasphereTitle": "Cymasphere",
     "bundleCymasphereDesc": "作曲与理论套件",
-    "bundleCymaSynthTitle": "CymaSynth",
     "bundleCymaSynthDesc": "波表合成器 · 价值 149 美元已包含",
     "bundleFootnote": "CymaSynth 单独售价 149 美元—已包含在所有 Cymasphere 方案中，无额外费用 · 独立版、AU 与 VST3",
     "bundleCymasphereImageAlt": "Cymasphere — 目录方形主图",
     "bundleCymaSynthImageAlt": "波表合成器 CymaSynth 产品界面",
-    "includedSynth": "包含 CymaSynth—专业波表合成器（VST3 与 AU）—随每次订阅与终身许可捆绑。完整作曲套件与旗舰乐器合一。",
-    "tooltips": {
-      "playNote": "点击播放此音",
-      "playChord": "点击播放和弦"
-    }
+    "includedSynth": "包含 CymaSynth—专业波表合成器（独立应用、VST3 与 AU）—随每次订阅与终身许可捆绑。完整作曲套件与旗舰乐器合一。"
   },
   "features": {
     "subtitle": "和声、旋律、编曲—另有价值 149 美元的波表乐器 CymaSynth 已纳入您的方案。一套产品，两款工具。",
@@ -20,20 +14,21 @@
       "title": "包含 CymaSynth",
       "description": "价值 149 美元的专业波表合成器—三振荡器、深度调制、录音室级效果—随 Cymasphere 免费提供。",
       "modalTitle": "集成的旗舰乐器",
-      "modalDescription": "单独购买 CymaSynth 为 149 美元。搭配 Cymasphere，每次订阅与终身许可均无需加价—从和声草稿到成品音色，无需第二次购买。专业波表合成、灵活调制与精致效果—可在 Cymasphere 工作流中使用，也可在 DAW 中作为 VST3 与 AU 插件。",
+      "modalDescription": "单独购买 CymaSynth 为 149 美元。搭配 Cymasphere，每次订阅与终身许可均无需加价—从和声草稿到成品音色，无需第二次购买。专业波表合成、灵活调制与精致效果—可在 Cymasphere 工作流中使用、作为独立应用运行，或在 DAW 中作为 VST3 与 AU 插件。",
       "keyFeatures": "主要特性：",
       "features": [
         "单独售价 149 美元—所有 Cymasphere 方案（订阅与终身）均免费包含；无需另购 CymaSynth",
         "三振荡器架构，波表变形（256 帧）及经典波形",
         "64 路调制矩阵，5 个 LFO 与 4 个 ADSR+Hold 包络",
         "双滤波器、最多 32 复音、齐奏与内置效果链",
-        "VST3 与 AU 格式—与 Cymasphere 并用或直接在 DAW 中使用",
+        "独立应用以及 VST3 与 AU—可单独使用、配合 Cymasphere 或在 DAW 中使用",
         "与 Cymasphere 和声与 pattern 搭配：在此写进行，在 CymaSynth 塑音色"
       ]
     }
   },
   "pricing": {
     "allFeatures": "每个方案均包含完整 Cymasphere 套件以及价值 149 美元的波表合成器 CymaSynth（免费包含），以及下方全部功能。",
+    "cymaSynthFeature": "CymaSynth 独立版、AU 与 VST3",
     "features": [
       "含多轨管理的歌曲构建器",
       "智能 pattern 编辑器与和弦适配",
@@ -46,7 +41,7 @@
       "完整编曲视图",
       "自定义 voicing 生成引擎",
       "高级支持与未来全部更新",
-      "波表合成器 CymaSynth（VST3 与 AU）—价值 149 美元，免费包含"
+      "CymaSynth 独立版、AU 与 VST3"
     ],
     "freeTrial": {
       "description": "通过两种试用方式体验完整套件（含 CymaSynth）。"

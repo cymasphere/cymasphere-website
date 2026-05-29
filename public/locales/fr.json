@@ -76,7 +76,7 @@
     "chords": {
       "cMajor": "C Major",
       "fMajor": "F Major",
-      "bDiminished": "B Diminished",
+      "bDiminished": "Si diminué",
       "eMinor": "E Minor",
       "aMinor": "A Minor",
       "dMinor": "D Minor",
@@ -86,7 +86,7 @@
       "playNote": "Cliquer pour jouer cette note",
       "playChord": "Cliquer pour jouer l’accord"
     },
-    "includedSynth": "Inclut CymaSynth—un synthétiseur wavetable professionnel (VST3 et AU)—inclus avec chaque abonnement et licence à vie. Suite de composition complète et instrument phare réunis.",
+    "includedSynth": "Inclut CymaSynth—un synthétiseur wavetable professionnel (app autonome, VST3 et AU)—inclus avec chaque abonnement et licence à vie. Suite de composition complète et instrument phare réunis.",
     "bundleEyebrow": "Un abonnement · deux produits",
     "bundleCymasphereTitle": "Cymasphere",
     "bundleCymasphereDesc": "Suite composition & théorie",
@@ -184,7 +184,7 @@
         "Suggestions d'accords - Recevez des recommandations intelligentes pour les progressions",
         "Marqueurs de section - Organisez votre morceau avec des repères structurels",
         "Analyse fonctionnelle - Comprenez le rôle de chaque accord dans la progression",
-        "Dynamic Pattern Updates where patterns and voicings automatically adapt when changes are made to the progression"
+        "Mises à jour dynamiques des motifs : les motifs et les voicings s’adaptent automatiquement lorsque la progression change"
       ]
     },
     "voiceHandling": {
@@ -251,14 +251,14 @@
       "title": "CymaSynth inclus",
       "description": "Un synthé wavetable pro d’une valeur de 149 $—triple oscillateur, modulation profonde, effets studio—offert avec Cymasphere.",
       "modalTitle": "Votre instrument phare intégré",
-      "modalDescription": "Seul, CymaSynth est un produit à 149 $. Avec Cymasphere, il est inclus sans frais supplémentaires sur chaque abonnement et licence à vie—de l’esquisse harmonique au son final sans second achat. Synthèse wavetable pro, modulation souple et effets soignés—dans Cymasphere ou en plugins VST3 et AU autonomes dans votre DAW.",
+      "modalDescription": "Seul, CymaSynth est un produit à 149 $. Avec Cymasphere, il est inclus sans frais supplémentaires sur chaque abonnement et licence à vie—de l’esquisse harmonique au son final sans second achat. Synthèse wavetable pro, modulation souple et effets soignés—dans Cymasphere, en app autonome ou en plugins VST3 et AU dans votre DAW.",
       "keyFeatures": "Points clés :",
       "features": [
         "Valeur 149 $ seul—inclus gratuitement avec toutes les offres Cymasphere (abonnement et à vie) ; pas d’achat CymaSynth séparé",
         "Triple oscillateur avec morphing wavetable (256 images) et formes d’onde classiques",
         "Matrice de modulation 64 chemins avec 5 LFO et 4 enveloppes ADSR+Hold",
         "Deux filtres, jusqu’à 32 voix, unisson et chaîne d’effets intégrée",
-        "Formats VST3 et AU—aux côtés de Cymasphere ou directement dans votre DAW",
+        "App autonome plus VST3 et AU—seul, avec Cymasphere ou dans votre DAW",
         "Conçu pour s’accorder aux outils d’harmonie et de motifs : la progression ici, le timbre dans CymaSynth"
       ]
     }
@@ -473,7 +473,7 @@
       "Vue d’arrangement complète",
       "Moteur de génération de voicings personnalisés",
       "Support premium et toutes les mises à jour futures",
-      "Synthé wavetable CymaSynth (VST3 et AU)—valeur 149 $, inclus gratuitement"
+      "CymaSynth autonome, AU et VST3"
     ],
     "freeTrial": {
       "title": "Essayez GRATUITEMENT jusqu'à 14 jours",
@@ -488,7 +488,8 @@
       "or": "ou"
     },
     "processing": "Traitement",
-    "buyNow": "Acheter Maintenant"
+    "buyNow": "Acheter Maintenant",
+    "cymaSynthFeature": "CymaSynth autonome, AU et VST3"
   },
   "promotion": {
     "viewOffers": "Voir les Offres"
@@ -499,11 +500,11 @@
     "questions": [
       {
         "question": "Qu'est-ce que Cymasphere ?",
-        "answer": "Cymasphere est une suite complète de création musicale, en application autonome et en plugin (AU et VST3) pour votre DAW. Outils intégrés pour l’harmonie et la mélodie, voicings intelligents, motifs mélodiques et visualisation interactive rendant la théorie accessible à tous niveaux. Chaque abonnement et licence à vie inclut aussi CymaSynth—notre synthétiseur wavetable professionnel (VST3 et AU)—sans frais supplémentaires."
+        "answer": "Cymasphere est une suite complète de création musicale, en application autonome et en plugin (AU et VST3) pour votre DAW. Outils intégrés pour l’harmonie et la mélodie, voicings intelligents, motifs mélodiques et visualisation interactive rendant la théorie accessible à tous niveaux. Chaque abonnement et licence à vie inclut aussi CymaSynth—notre synthétiseur wavetable professionnel (app autonome, VST3 et AU)—sans frais supplémentaires."
       },
       {
         "question": "Qu’est-ce que CymaSynth et est-il vraiment inclus avec Cymasphere ?",
-        "answer": "CymaSynth est le synthétiseur wavetable professionnel de NNAudio : oscillateurs multiples, modulation poussée, deux filtres, effets et polyphonie 32 voix. Seul, c’est un produit à 149 $ ; avec Cymasphere, il est inclus sans frais supplémentaires sur chaque abonnement et licence à vie. Vous ne l’achetez pas séparément en vous abonnant—suite de composition et instrument phare en un seul ensemble."
+        "answer": "CymaSynth est le synthétiseur wavetable professionnel de NNAudio : oscillateurs multiples, modulation poussée, deux filtres, effets et polyphonie 32 voix. Il fonctionne en app autonome et en plugins VST3 et AU. Seul, c’est un produit à 149 $ ; avec Cymasphere, il est inclus sans frais supplémentaires sur chaque abonnement et licence à vie. Vous ne l’achetez pas séparément en vous abonnant—suite de composition et instrument phare en un seul ensemble."
       },
       {
         "question": "Quels problèmes Cymasphere résout-il pour les musiciens ?",
@@ -699,7 +700,7 @@
       "lifetimeAccess": "Inclut des mises à jour gratuites à vie",
       "nextPayment": "Prochain Paiement",
       "futurePayments": "Paiements Futurs",
-      "amountOnDate": "${{amount}} {{date}}",
+      "amountOnDate": "{{amount}} le {{date}}",
       "onDate": "le {{date}}",
       "firstPayment": "${{amount}}.00 le {{date}}",
       "devices": "Appareils Connectés",
@@ -855,13 +856,13 @@
       "errorOccurred": "Une erreur s'est produite : {{error}}",
       "trialBanner": "Vous êtes actuellement en essai gratuit de {{trialDays}} jours avec accès complet à toutes les fonctionnalités premium. {{daysLeft}} jours restants. Votre premier paiement de {{amount}}€ aura lieu le {{date}}.",
       "planDescription": "Solution complète pour les producteurs de musique",
-      "upgradeDowngrade": "Upgrade/Downgrade",
-      "cancelSubscription": "Cancel Subscription",
-      "reactivateSubscription": "Reactivate Subscription",
-      "paymentMethods": "Payment Methods",
-      "addPaymentMethod": "Add Payment Method",
-      "noPaymentHistory": "No payment history available",
-      "transactionId": "Transaction ID",
+      "upgradeDowngrade": "Mettre à niveau / Rétrograder",
+      "cancelSubscription": "Annuler l'abonnement",
+      "reactivateSubscription": "Réactiver l'abonnement",
+      "paymentMethods": "Moyens de paiement",
+      "addPaymentMethod": "Ajouter un moyen de paiement",
+      "noPaymentHistory": "Aucun historique de paiement",
+      "transactionId": "Identifiant de transaction",
       "date": "Date",
       "amount": "Amount",
       "status": "Status",
@@ -894,11 +895,11 @@
       "quickStart": "Guide de démarrage rapide",
       "quickStartDesc": "Prenez en main Cymasphere en quelques minutes",
       "downloadPdf": "Télécharger le PDF",
-      "ipadTitle": "Cymasphere for iPad",
-      "ipadDesc": "Native iPad app with full feature set, optimized for iPad. Available now on the App Store.",
+      "ipadTitle": "Cymasphere pour iPad",
+      "ipadDesc": "Application iPad native avec toutes les fonctionnalités, optimisée pour iPad. Disponible sur l'App Store.",
       "comingSoon": "Coming Soon",
-      "availableNow": "Available Now",
-      "viewOnAppStore": "View on App Store",
+      "availableNow": "Disponible maintenant",
+      "viewOnAppStore": "Voir sur l'App Store",
       "loading": "Loading..."
     },
     "settings": {
@@ -906,7 +907,7 @@
       "preferences": "Préférences",
       "theme": "Thème",
       "language": "Langue",
-      "notifications": "Notifications",
+      "notifications": "Notifications et alertes",
       "emailNotifications": "Notifications par e-mail",
       "security": "Sécurité",
       "twoFactorAuth": "Authentification à deux facteurs",
@@ -1010,19 +1011,19 @@
       "title": "Our Team",
       "member1": {
         "name": "David Chen",
-        "role": "Founder & Lead Developer"
+        "role": "Fondateur et développeur principal"
       },
       "member2": {
         "name": "Sarah Nguyen",
-        "role": "Music Theory Specialist"
+        "role": "Spécialiste en théorie musicale"
       },
       "member3": {
         "name": "Michael Park",
-        "role": "UI/UX Designer"
+        "role": "Designer UI/UX"
       },
       "member4": {
         "name": "Emma Rodriguez",
-        "role": "Product Manager"
+        "role": "Chef de produit"
       }
     }
   },
@@ -1092,7 +1093,7 @@
     },
     "privacy": {
       "intro": {
-        "title": "1. Introduction",
+        "title": "1. Présentation",
         "content": "Cette Politique de confidentialité explique comment Cymasphere collecte, utilise et protège vos informations personnelles lorsque vous utilisez nos services. Nous respectons votre vie privée et nous nous engageons à protéger vos données personnelles."
       },
       "collect": {
@@ -1174,34 +1175,34 @@
     }
   },
   "billing": {
-    "choosePlan": "Choose Your Plan",
-    "limitedOffer": "Limited Time Offer",
-    "startWithTrial": "Start with a {{days}}-day FREE trial on any plan!",
-    "trialExperience": "Experience all premium features without commitment. No credit card required to start.",
-    "yearlyToMonthly": "Your subscription is currently billed yearly. If you switch to a monthly plan, the change will take effect after your current billing period ends on {{date}}.",
-    "monthly": "Monthly",
-    "yearly": "Yearly",
-    "save25": "Save 25%",
-    "lifetime": "Lifetime",
-    "bestValue": "Best Value",
-    "enterCardNow": "Enter card info now:",
-    "trialWithCard": "{{days}}-day trial - Add card on file",
-    "trialWithoutCard": "{{days}}-day trial - No credit card required",
-    "currentPlan": "Current Plan",
+    "choosePlan": "Choisissez votre forfait",
+    "limitedOffer": "Offre à durée limitée",
+    "startWithTrial": "Commencez avec un essai GRATUIT de {{days}} jours sur n'importe quel forfait !",
+    "trialExperience": "Profitez de toutes les fonctionnalités premium sans engagement. Aucune carte de crédit requise pour commencer.",
+    "yearlyToMonthly": "Votre abonnement est facturé annuellement. Si vous passez au mensuel, le changement prendra effet après la fin de votre période actuelle le {{date}}.",
+    "monthly": "Mensuel",
+    "yearly": "Annuel",
+    "save25": "Économisez 25 %",
+    "lifetime": "À vie",
+    "bestValue": "Meilleur rapport qualité-prix",
+    "enterCardNow": "Saisir la carte maintenant :",
+    "trialWithCard": "Essai {{days}} jours — Ajouter une carte",
+    "trialWithoutCard": "Essai {{days}} jours — Sans carte bancaire",
+    "currentPlan": "Forfait actuel",
     "proBadge": "PRO",
-    "afterTrial": "After your {{days}}-day free trial",
-    "percentDiscount": "{{percent}}% discount applied!",
-    "amountDiscount": "${{amount}} off!",
-    "firstPayment": "First payment: {{date}}",
-    "nextBilling": "Next billing: {{date}}",
-    "oneTimePurchase": "one-time purchase",
-    "purchased": "Purchased",
-    "allPlansInclude": "All Plans Include:",
-    "confirmationNote": "By confirming, you agree to the terms and pricing displayed above.",
-    "provideCard": "Provide payment method now for a {{days}}-day trial",
-    "cardTooltip": "Adding your payment method now extends your trial to 14 days instead of 7. You won't be charged until your trial ends.",
-    "chooseTrial": "Choose your free trial option:",
-    "noCharge": "(won't be charged until trial ends)"
+    "afterTrial": "Après votre essai gratuit de {{days}} jours",
+    "percentDiscount": "{{percent}} % de réduction appliquée !",
+    "amountDiscount": "{{amount}} $ de réduction !",
+    "firstPayment": "Premier paiement : {{date}}",
+    "nextBilling": "Prochaine facturation : {{date}}",
+    "oneTimePurchase": "achat unique",
+    "purchased": "Acheté",
+    "allPlansInclude": "Tous les forfaits incluent :",
+    "confirmationNote": "En confirmant, vous acceptez les conditions et les prix affichés ci-dessus.",
+    "provideCard": "Indiquez un moyen de paiement maintenant pour un essai de {{days}} jours",
+    "cardTooltip": "Ajouter un moyen de paiement prolonge l'essai à 14 jours au lieu de 7. Aucun débit avant la fin de l'essai.",
+    "chooseTrial": "Choisissez votre option d'essai gratuit :",
+    "noCharge": "(aucun débit avant la fin de l'essai)"
   },
   "admin": {
     "title": "Console d’administration",

@@ -76,7 +76,7 @@
       "playNote": "点击播放此音",
       "playChord": "点击播放和弦"
     },
-    "includedSynth": "包含 CymaSynth—专业波表合成器（VST3 与 AU）—随每次订阅与终身许可捆绑。完整作曲套件与旗舰乐器合一。",
+    "includedSynth": "包含 CymaSynth—专业波表合成器（独立应用、VST3 与 AU）—随每次订阅与终身许可捆绑。完整作曲套件与旗舰乐器合一。",
     "bundleEyebrow": "一次订阅 · 两款产品",
     "bundleCymasphereTitle": "Cymasphere",
     "bundleCymasphereDesc": "作曲与理论套件",
@@ -172,7 +172,7 @@
         "基于段落的组织，用于结构化作曲",
         "拖拽和弦编排，通过拖拽边界轻松重新排列和弦并调整其长度",
         "显示切换，根据偏好显示和弦名称为字母、罗马数字或唱名",
-        "动态模式更新，当进行发生变化时，模式和声部自动适应"
+        "动态 pattern 更新：进行变化时，pattern 与 voicing 自动适配"
       ]
     },
     "voiceHandling": {
@@ -239,14 +239,14 @@
       "title": "包含 CymaSynth",
       "description": "价值 149 美元的专业波表合成器—三振荡器、深度调制、录音室级效果—随 Cymasphere 免费提供。",
       "modalTitle": "集成的旗舰乐器",
-      "modalDescription": "单独购买 CymaSynth 为 149 美元。搭配 Cymasphere，每次订阅与终身许可均无需加价—从和声草稿到成品音色，无需第二次购买。专业波表合成、灵活调制与精致效果—可在 Cymasphere 工作流中使用，也可在 DAW 中作为 VST3 与 AU 插件。",
+      "modalDescription": "单独购买 CymaSynth 为 149 美元。搭配 Cymasphere，每次订阅与终身许可均无需加价—从和声草稿到成品音色，无需第二次购买。专业波表合成、灵活调制与精致效果—可在 Cymasphere 工作流中使用、作为独立应用运行，或在 DAW 中作为 VST3 与 AU 插件。",
       "keyFeatures": "主要特性：",
       "features": [
         "单独售价 149 美元—所有 Cymasphere 方案（订阅与终身）均免费包含；无需另购 CymaSynth",
         "三振荡器架构，波表变形（256 帧）及经典波形",
         "64 路调制矩阵，5 个 LFO 与 4 个 ADSR+Hold 包络",
         "双滤波器、最多 32 复音、齐奏与内置效果链",
-        "VST3 与 AU 格式—与 Cymasphere 并用或直接在 DAW 中使用",
+        "独立应用以及 VST3 与 AU—可单独使用、配合 Cymasphere 或在 DAW 中使用",
         "与 Cymasphere 和声与 pattern 搭配：在此写进行，在 CymaSynth 塑音色"
       ]
     }
@@ -359,7 +359,7 @@
       "完整编曲视图",
       "自定义 voicing 生成引擎",
       "高级支持与未来全部更新",
-      "波表合成器 CymaSynth（VST3 与 AU）—价值 149 美元，免费包含"
+      "CymaSynth 独立版、AU 与 VST3"
     ],
     "freeTrial": {
       "title": "免费试用最多14天",
@@ -374,7 +374,8 @@
       "or": "或"
     },
     "processing": "处理中",
-    "buyNow": "立即购买"
+    "buyNow": "立即购买",
+    "cymaSynthFeature": "CymaSynth 独立版、AU 与 VST3"
   },
   "promotion": {
     "viewOffers": "查看优惠"
@@ -765,9 +766,9 @@
       "installationInstructions": "安装说明",
       "systemRequirements": "系统要求",
       "installers": "Cymasphere安装包",
-      "macosTitle": "Cymasphere for macOS",
+      "macosTitle": "macOS 版 Cymasphere",
       "macosDesc": "适用于macOS的通用安装包，包含独立应用程序和插件（AU、VST3），支持Apple Silicon和Intel处理器。",
-      "windowsTitle": "Cymasphere for Windows",
+      "windowsTitle": "Windows 版 Cymasphere",
       "windowsDesc": "适用于Windows 10/11的完整安装包，包含独立应用程序和插件格式（VST3）。",
       "updated": "已更新",
       "updateDate": "2023年3月10日",
@@ -777,11 +778,11 @@
       "quickStart": "快速入门指南",
       "quickStartDesc": "几分钟内快速上手Cymasphere",
       "downloadPdf": "下载PDF",
-      "ipadTitle": "Cymasphere for iPad",
-      "ipadDesc": "Native iPad app with full feature set, optimized for iPad. Available now on the App Store.",
+      "ipadTitle": "iPad 版 Cymasphere",
+      "ipadDesc": "原生 iPad 应用，功能完整并为 iPad 优化。现已在 App Store 提供。",
       "comingSoon": "Coming Soon",
-      "availableNow": "Available Now",
-      "viewOnAppStore": "View on App Store",
+      "availableNow": "现已上线",
+      "viewOnAppStore": "在 App Store 查看",
       "loading": "Loading..."
     },
     "settings": {
@@ -855,22 +856,22 @@
     "save25": "节省25%",
     "lifetime": "终身",
     "bestValue": "最超值",
-    "enterCardNow": "现在输入卡信息：",
+    "enterCardNow": "立即填写银行卡信息：",
     "trialWithCard": "{{days}}天试用 - 添加存卡",
     "trialWithoutCard": "{{days}}天试用 - 无需信用卡",
     "currentPlan": "当前套餐",
     "proBadge": "专业版",
     "afterTrial": "在您的{{days}}天免费试用后",
-    "percentDiscount": "{{percent}}%折扣已应用！",
-    "amountDiscount": "优惠￥{{amount}}！",
+    "percentDiscount": "已应用 {{percent}}% 折扣！",
+    "amountDiscount": "立减 ${{amount}}！",
     "firstPayment": "首次付款：{{date}}",
     "nextBilling": "下次计费：{{date}}",
     "oneTimePurchase": "一次性购买",
     "purchased": "已购买",
     "allPlansInclude": "所有套餐包含：",
     "confirmationNote": "确认即表示您同意上述显示的条款和价格。",
-    "provideCard": "现在提供付款方式进行{{days}}天试用",
-    "cardTooltip": "现在添加您的付款方式可将试用期延长至14天而非7天。在试用结束前不会被收费。",
+    "provideCard": "立即提供支付方式以开始 {{days}} 天试用",
+    "cardTooltip": "现在添加支付方式可将试用从 7 天延长至 14 天。试用结束前不会扣款。",
     "chooseTrial": "选择您的免费试用选项：",
     "noCharge": "（试用结束前不收费）"
   },
@@ -998,7 +999,7 @@
       },
       "member3": {
         "name": "迈克尔·朴",
-        "role": "UI/UX设计师"
+        "role": "UI/UX 设计师"
       },
       "member4": {
         "name": "艾玛·罗德里格斯",

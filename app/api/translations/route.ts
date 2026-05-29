@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
     // Add CORS headers for cross-origin requests
     const headers = {
       'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=3600, s-maxage=3600', // Cache for 1 hour
+      'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
     };
     
     // Get the locale from the query parameter

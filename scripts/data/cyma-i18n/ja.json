@@ -6,11 +6,7 @@
     "bundleFootnote": "CymaSynthは単体で149ドル相当—Cymasphereの全プランに追加料金なしで同梱 · スタンドアロン、AU、VST3",
     "bundleCymasphereImageAlt": "Cymasphere — カタログ用スクエアアート",
     "bundleCymaSynthImageAlt": "ウェーブテーブルシンセ CymaSynth の製品画面",
-    "includedSynth": "CymaSynth—プロ仕様のウェーブテーブルシンセ（VST3・AU）—を全サブスクリプションと永久ライセンスに同梱。作曲スイートとフラッグシップ楽器をひとつに。",
-    "tooltips": {
-      "playNote": "クリックでこの音を再生",
-      "playChord": "クリックでコードを再生"
-    }
+    "includedSynth": "CymaSynth—プロ仕様のウェーブテーブルシンセ（スタンドアロンアプリ、VST3・AU）—を全サブスクリプションと永久ライセンスに同梱。作曲スイートとフラッグシップ楽器をひとつに。"
   },
   "features": {
     "subtitle": "和声、メロディ、アレンジ—さらにプランに含まれる149ドル相当のウェーブテーブル楽器 CymaSynth。1つのスイート、2つのプロダクト。",
@@ -18,20 +14,21 @@
       "title": "CymaSynth 同梱",
       "description": "149ドル相当のプロ仕様ウェーブテーブルシンセ—トリプルOSC、深いモジュレーション、スタジオ級エフェクト—Cymasphereに無償で付属。",
       "modalTitle": "統合されたフラッグシップ楽器",
-      "modalDescription": "単体では149ドルのCymaSynth。Cymasphereなら全サブスクリプションと永久ライセンスに追加費用なしで同梱—和声のたたきから完成サウンドまで、二度目の購入は不要です。プロ級ウェーブテーブル合成、柔軟なモジュレーション、磨かれたエフェクト—Cymasphereのワークフローでも、DAWではVST3・AUプラグインとして。",
+      "modalDescription": "単体では149ドルのCymaSynth。Cymasphereなら全サブスクリプションと永久ライセンスに追加費用なしで同梱—和声のたたきから完成サウンドまで、二度目の購入は不要です。プロ級ウェーブテーブル合成、柔軟なモジュレーション、磨かれたエフェクト—Cymasphereのワークフロー、スタンドアロンアプリ、またはDAWのVST3・AUプラグインとして。",
       "keyFeatures": "主な特長:",
       "features": [
         "単体149ドル相当—全Cymasphereプラン（サブスク・永久）に無償同梱。CymaSynthの別売り購入は不要",
         "トリプルOSC構成、ウェーブテーブルモーフィング（256フレーム）とクラシック波形",
         "64ルートのモジュレーションマトリクス、5 LFO、4 ADSR+Hold エンベロープ",
         "デュアルフィルター、最大32ボイス、ユニゾン、内蔵エフェクトチェーン",
-        "VST3・AU形式—Cymasphereと併用、またはDAWに直接",
+        "スタンドアロンアプリに加え VST3・AU—単体、Cymasphere連携、DAW内で利用",
         "Cymasphereの和声・パターンと連携—進行はここで、音色はCymaSynthで"
       ]
     }
   },
   "pricing": {
     "allFeatures": "各プランには完全なCymasphereスイートに加え、149ドル相当のウェーブテーブルシンセ CymaSynth（無償同梱）と以下の全機能が含まれます。",
+    "cymaSynthFeature": "CymaSynth スタンドアロン、AU・VST3",
     "features": [
       "マルチトラック管理付きソングビルダー",
       "インテリジェントパターンエディターとコード適合",
@@ -44,7 +41,7 @@
       "フルアレンジビュー",
       "カスタムボイシング生成エンジン",
       "プレミアムサポートと今後の全アップデート",
-      "ウェーブテーブルシンセ CymaSynth（VST3・AU）—149ドル相当、無償同梱"
+      "CymaSynth スタンドアロン、AU・VST3"
     ],
     "freeTrial": {
       "description": "CymaSynthを含むフルスイートを、2種類のトライアルでお試しください。"

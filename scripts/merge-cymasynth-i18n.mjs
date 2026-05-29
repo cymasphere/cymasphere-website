@@ -1,7 +1,8 @@
 /**
- * @fileoverview Merges CymaSynth-related translation keys from en.json into all other locale files.
+ * @fileoverview Merges missing CymaSynth-related keys from en.json into locale files.
  * @module scripts/merge-cymasynth-i18n
- * @note Run after updating public/locales/en.json. Skips zh_broken.json.
+ * @note Only fills missing keys — does not overwrite existing translations.
+ * @note Skips zh_broken.json. Prefer apply-cyma-i18n-patches.mjs for curated per-locale CymaSynth copy.
  */
 
 import fs from "fs";
@@ -10,11 +11,85 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const localesDir = path.join(__dirname, "..", "public", "locales");
-const enPath = path.join(localesDir, "en.json");
-const en = JSON.parse(fs.readFileSync(enPath, "utf8"));
+const en = JSON.parse(
+  fs.readFileSync(path.join(localesDir, "en.json"), "utf8"),
+);
 
-const EXTRA_FAQ_ANSWER =
-  " Every subscription and lifetime license also includes CymaSynth—our professional wavetable synthesizer (VST3 & AU)—a $149 value when sold separately, included at no extra cost.";
+/**
+ * @brief Recursively merge missing keys from source into target.
+ * @param {unknown} target
+ * @param {unknown} source
+ */
+function mergeMissing(target, source) {
+  if (source === undefined || source === null) return;
+  if (Array.isArray(source)) {
+    if (!Array.isArray(target)) return;
+    for (let i = 0; i < source.length; i++) {
+      if (i >= target.length) {
+        target[i] = JSON.parse(JSON.stringify(source[i]));
+        continue;
+      }
+      const te = target[i];
+      const se = source[i];
+      if (se !== null && typeof se === "object" && !Array.isArray(se)) {
+        if (te === null || typeof te !== "object" || Array.isArray(te)) {
+          target[i] = JSON.parse(JSON.stringify(se));
+        } else {
+          mergeMissing(te, se);
+        }
+      }
+    }
+    return;
+  }
+  if (typeof source === "object") {
+    if (target === null || typeof target !== "object" || Array.isArray(target)) {
+      return;
+    }
+    for (const key of Object.keys(source)) {
+      if (!(key in target)) {
+        target[key] = JSON.parse(JSON.stringify(source[key]));
+        continue;
+      }
+      mergeMissing(target[key], source[key]);
+    }
+  }
+}
+
+/** @brief CymaSynth-related subtrees to merge from English when keys are absent. */
+const CYMA_PATCH_TREE = {
+  hero: {
+    includedSynth: en.hero?.includedSynth,
+    bundleEyebrow: en.hero?.bundleEyebrow,
+    bundleCymasphereTitle: en.hero?.bundleCymasphereTitle,
+    bundleCymasphereDesc: en.hero?.bundleCymasphereDesc,
+    bundleCymaSynthTitle: en.hero?.bundleCymaSynthTitle,
+    bundleCymaSynthDesc: en.hero?.bundleCymaSynthDesc,
+    bundleFootnote: en.hero?.bundleFootnote,
+    bundleCymasphereImageAlt: en.hero?.bundleCymasphereImageAlt,
+    bundleCymaSynthImageAlt: en.hero?.bundleCymaSynthImageAlt,
+  },
+  features: {
+    subtitle: en.features?.subtitle,
+    cymaSynth: en.features?.cymaSynth,
+  },
+  pricing: {
+    allFeatures: en.pricing?.allFeatures,
+    cymaSynthFeature: en.pricing?.cymaSynthFeature,
+    features: en.pricing?.features,
+    freeTrial: { description: en.pricing?.freeTrial?.description },
+  },
+  footer: { description: en.footer?.description },
+  chat: { greeting: en.chat?.greeting },
+  dashboard: {
+    main: {
+      fullAccess: en.dashboard?.main?.fullAccess,
+      trialMessage: en.dashboard?.main?.trialMessage,
+      lifetimeMessage: en.dashboard?.main?.lifetimeMessage,
+      activeSubscriptionMessage: en.dashboard?.main?.activeSubscriptionMessage,
+      downloadAvailable: en.dashboard?.main?.downloadAvailable,
+    },
+  },
+};
 
 for (const file of fs.readdirSync(localesDir)) {
   if (!file.endsWith(".json") || file === "en.json" || file === "zh_broken.json") {
@@ -23,55 +98,7 @@ for (const file of fs.readdirSync(localesDir)) {
   const p = path.join(localesDir, file);
   const data = JSON.parse(fs.readFileSync(p, "utf8"));
 
-  data.hero = data.hero || {};
-  data.hero.includedSynth = en.hero.includedSynth;
-  for (const k of [
-    "bundleEyebrow",
-    "bundleCymasphereTitle",
-    "bundleCymasphereDesc",
-    "bundleCymaSynthTitle",
-    "bundleCymaSynthDesc",
-    "bundleFootnote",
-    "bundleCymasphereImageAlt",
-    "bundleCymaSynthImageAlt",
-  ]) {
-    if (en.hero[k] !== undefined) {
-      data.hero[k] = en.hero[k];
-    }
-  }
-
-  data.features = data.features || {};
-  data.features.subtitle = en.features.subtitle;
-  data.features.cymaSynth = en.features.cymaSynth;
-
-  data.pricing = data.pricing || {};
-  data.pricing.allFeatures = en.pricing.allFeatures;
-  data.pricing.features = en.pricing.features;
-  data.pricing.freeTrial = data.pricing.freeTrial || {};
-  data.pricing.freeTrial.description = en.pricing.freeTrial.description;
-
-  data.footer = data.footer || {};
-  data.footer.description = en.footer.description;
-
-  data.chat = data.chat || {};
-  data.chat.greeting = en.chat.greeting;
-
-  const dm = en.dashboard?.main;
-  if (dm) {
-    data.dashboard = data.dashboard || {};
-    data.dashboard.main = data.dashboard.main || {};
-    for (const k of [
-      "fullAccess",
-      "trialMessage",
-      "lifetimeMessage",
-      "activeSubscriptionMessage",
-      "downloadAvailable",
-    ]) {
-      if (dm[k] !== undefined) {
-        data.dashboard.main[k] = dm[k];
-      }
-    }
-  }
+  mergeMissing(data, CYMA_PATCH_TREE);
 
   data.faq = data.faq || {};
   data.faq.questions = data.faq.questions || [];
@@ -80,18 +107,15 @@ for (const file of fs.readdirSync(localesDir)) {
     (q) =>
       q &&
       typeof q.question === "string" &&
-      q.question.includes("CymaSynth") &&
-      q.question.includes("included"),
+      /cymaSynth/i.test(q.question) &&
+      /included|inclus/i.test(q.question),
   );
-  if (!hasCymaFaq && en.faq.questions[1]) {
+  if (!hasCymaFaq && en.faq?.questions?.[1]) {
     qs.splice(1, 0, JSON.parse(JSON.stringify(en.faq.questions[1])));
-  }
-  if (qs[0] && typeof qs[0].answer === "string" && !qs[0].answer.includes("CymaSynth")) {
-    qs[0].answer += EXTRA_FAQ_ANSWER;
   }
 
   fs.writeFileSync(p, JSON.stringify(data, null, 2) + "\n", "utf8");
-  console.log("updated", file);
+  console.log("merged missing CymaSynth keys into", file);
 }
 
 console.log("done");

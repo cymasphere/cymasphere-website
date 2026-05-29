@@ -18,7 +18,9 @@
     "i18n:sync-from-en": "node scripts/sync-missing-locale-keys-from-en.mjs",
     "i18n:apply-cyma": "node scripts/apply-cyma-i18n-patches.mjs",
     "i18n:apply-overrides": "node scripts/apply-locale-overrides.mjs",
-    "i18n:refresh": "node scripts/sync-missing-locale-keys-from-en.mjs && node scripts/apply-cyma-i18n-patches.mjs && node scripts/apply-locale-overrides.mjs"
+    "i18n:refresh": "node scripts/sync-missing-locale-keys-from-en.mjs && node scripts/apply-cyma-i18n-patches.mjs && node scripts/apply-locale-overrides.mjs",
+    "i18n:sync-translations": "node scripts/sync-locale-translations.mjs",
+    "i18n:check": "node scripts/list-missing-locale-paths.mjs"
   },
   "packageManager": "bun@1.2.2",
   "overrides": {

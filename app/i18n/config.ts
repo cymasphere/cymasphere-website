@@ -8,7 +8,7 @@
  * @brief Array of supported language codes.
  * @description List of all language codes supported by the application.
  */
-export const languages = ['en', 'es', 'fr', 'it', 'de', 'pt', 'tr', 'ja'];
+export const languages = ['en', 'es', 'fr', 'it', 'de', 'pt', 'tr', 'zh', 'ja'];
 
 /**
  * @brief Default language code.

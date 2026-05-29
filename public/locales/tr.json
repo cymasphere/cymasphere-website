@@ -86,7 +86,7 @@
       "playNote": "Bu notayı çalmak için tıklayın",
       "playChord": "Akoru çalmak için tıklayın"
     },
-    "includedSynth": "CymaSynth—profesyonel wavetable sentezleyici (VST3 ve AU)—her abonelik ve ömür boyu lisansla birlikte gelir. Tam kompozisyon paketi ve amiral gemisi enstrüman tek pakette.",
+    "includedSynth": "CymaSynth—profesyonel wavetable sentezleyici (bağımsız uygulama, VST3 ve AU)—her abonelik ve ömür boyu lisansla birlikte gelir. Tam kompozisyon paketi ve amiral gemisi enstrüman tek pakette.",
     "bundleEyebrow": "Bir abonelik · iki ürün",
     "bundleCymasphereTitle": "Cymasphere",
     "bundleCymasphereDesc": "Kompozisyon ve teori paketi",
@@ -182,7 +182,7 @@
         "Yapılandırılmış kompozisyon için bölüm tabanlı organizasyon",
         "Akorları kolayca yeniden düzenlemek ve sınırları sürükleyerek uzunluklarını ayarlamak için sürükle ve bırak akor düzenlemesi",
         "Tercihe göre akor isimlerini harf, Roma rakamları veya solfej olarak göstermek için ekran değiştirme",
-        "İlerlemede değişiklik yapıldığında desenlerin ve seslendirmelerin otomatik olarak uyarlandığı dinamik desen güncellemeleri"
+        "Dinamik desen güncellemeleri: progresyon değiştiğinde desenler ve voicing’ler otomatik uyum sağlar"
       ]
     },
     "voiceHandling": {
@@ -249,14 +249,14 @@
       "title": "CymaSynth dahil",
       "description": "149 $ değerinde profesyonel wavetable sentezleyici—üç osilatör, derin modülasyon, stüdyo efektleri—Cymasphere ile ücretsiz.",
       "modalTitle": "Entegre amiral gemisi enstrümanınız",
-      "modalDescription": "Tek başına CymaSynth 149 $. Cymasphere ile her abonelik ve ömür boyu lisans için ek ücret yok—armonik taslaktan bitmiş sese ikinci bir satın alma gerekmez. Profesyonel wavetable sentezi, esnek modülasyon ve cilalı efektler—Cymasphere akışında veya DAW’ınızda VST3 ve AU eklentileri olarak.",
+      "modalDescription": "Tek başına CymaSynth 149 $. Cymasphere ile her abonelik ve ömür boyu lisans için ek ücret yok—armonik taslaktan bitmiş sese ikinci bir satın alma gerekmez. Profesyonel wavetable sentezi, esnek modülasyon ve cilalı efektler—Cymasphere akışında, bağımsız uygulama olarak veya DAW’ınızda VST3 ve AU eklentileri olarak.",
       "keyFeatures": "Öne çıkan özellikler:",
       "features": [
         "Tek başına 149 $ değeri—tüm Cymasphere planlarında (abonelik ve ömür boyu) ücretsiz; ayrı CymaSynth satın alımı yok",
         "Üç osilatör mimarisi, wavetable morfing (256 kare) ve klasik dalga formları",
         "5 LFO ve 4 ADSR+Hold zarf ile 64 yönlü modülasyon matrisi",
         "Çift filtre, 32’ye kadar ses, unison ve entegre efekt zinciri",
-        "VST3 ve AU formatları—Cymasphere ile birlikte veya doğrudan DAW’da",
+        "Bağımsız uygulama artı VST3 ve AU—tek başına, Cymasphere ile veya DAW’da",
         "Cymasphere armoni ve desenleriyle uyumlu: progresyon burada, tını CymaSynth’te"
       ]
     }
@@ -304,8 +304,8 @@
         "description": "Temponuza ve stilinize uyum sağlayan akıllı eşlik ile pratik yapın. Sistem girişlerinize yanıt vererek becerilerinizle birlikte gelişen dinamik bir pratik deneyimi oluşturur."
       },
       "step4": {
-        "title": "Refine Your Skills",
-        "description": "Improve your musical ear by experimenting with different chord substitutions and modal interchange. As you refine your harmonic choices, you'll develop a deeper understanding of chord qualities and progressions, naturally building both your technical skills and creative voice."
+        "title": "Becerilerinizi geliştirin",
+        "description": "Farklı akor yer değiştirmeleri ve modal interchange ile deney yaparak müzikal kulağınızı geliştirin. Armonik seçimlerinizi iyileştirdikçe akor kaliteleri ve progresyonları daha derin anlarsınız; teknik beceri ve yaratıcı sesiniz doğal olarak güçlenir."
       }
     },
     "integrateWorkflow": {
@@ -322,8 +322,8 @@
         "description": "Bulut platformumuz aracılığıyla işbirlikçilerle projeler paylaşın. Gerçek zamanlı veya asenkron çalışın, sürüm kontrolü ve değişiklik geçmişini koruyun."
       },
       "step4": {
-        "title": "Seamless Workflow",
-        "description": "Integrate Cymasphere into your production process as a powerful harmony and pattern generator—then voice your ideas with CymaSynth, the professional wavetable synthesizer included with your plan (VST3 & AU). Route MIDI from Cymasphere to any instrument, or design patches in CymaSynth for a complete sketch-to-sound workflow."
+        "title": "Sorunsuz iş akışı",
+        "description": "Cymasphere’i güçlü bir armoni ve desen üreteci olarak üretim sürecinize entegre edin—ardından planınıza dahil profesyonel wavetable sentezleyici CymaSynth ile (bağımsız uygulama, VST3 ve AU) fikirlerinize ses verin. Cymasphere’den herhangi bir enstrümana MIDI gönderin veya eskizden sese tam bir akış için CymaSynth’te patch tasarlayın."
       }
     }
   },
@@ -430,7 +430,7 @@
       "Tam düzenleme görünümü",
       "Özel voicing üretim motoru",
       "Premium destek ve gelecekteki tüm güncellemeler",
-      "Wavetable sentezleyici CymaSynth (VST3 ve AU)—149 $ değer, ücretsiz dahil"
+      "CymaSynth Bağımsız, AU ve VST3"
     ],
     "freeTrial": {
       "title": "14 güne kadar ÜCRETSİZ deneyin",
@@ -498,7 +498,8 @@
       "answer4": "MIDI dışa aktarımının yanı sıra analiz ve yeniden armonizasyon için MIDI ve MusicXML dosya içe aktarımını destekliyoruz."
     },
     "processing": "İşleniyor...",
-    "buyNow": "Şimdi Satın Al"
+    "buyNow": "Şimdi Satın Al",
+    "cymaSynthFeature": "CymaSynth Bağımsız, AU ve VST3"
   },
   "promotion": {
     "viewOffers": "Teklifleri Görüntüle"
@@ -807,8 +808,8 @@
       "trialCompleted": "Ücretsiz deneme tamamlandı",
       "trialAvailable": "Ücretsiz deneme mevcut - başlamak için aşağıdan bir plan seçin",
       "usedFreeTrial": "Bu aboneliği başlatmak için ücretsiz denemenizi kullandınız",
-      "continueToCheckout": "Continue to Checkout",
-      "gotIt": "Got It"
+      "continueToCheckout": "Ödemeye devam et",
+      "gotIt": "Anladım"
     },
     "downloads": {
       "title": "İndirmeler",
@@ -836,11 +837,11 @@
       "quickStart": "Hızlı Başlangıç Kılavuzu",
       "quickStartDesc": "Cymasphere ile dakikalar içinde başlayın",
       "downloadPdf": "PDF İndir",
-      "ipadTitle": "Cymasphere for iPad",
-      "ipadDesc": "Native iPad app with full feature set, optimized for iPad. Available now on the App Store.",
+      "ipadTitle": "iPad için Cymasphere",
+      "ipadDesc": "iPad için optimize edilmiş, tam özellikli yerel uygulama. App Store’da mevcut.",
       "comingSoon": "Coming Soon",
-      "availableNow": "Available Now",
-      "viewOnAppStore": "View on App Store",
+      "availableNow": "Şimdi kullanılabilir",
+      "viewOnAppStore": "App Store’da görüntüle",
       "loading": "Loading..."
     },
     "settings": {
@@ -997,7 +998,7 @@
     "questions": [
       {
         "question": "Cymasphere nedir?",
-        "answer": "Cymasphere; bağımsız uygulama ve DAW için eklenti (AU ve VST3) olarak kullanılabilen tam bir müzik üretim paketidir. Armoni ve melodi, akıllı voicing’ler, desen oluşturma ve teoriyi her seviyede erişilebilir kılan etkileşimli görselleştirme sunar. Her abonelik ve ömür boyu lisans, profesyonel wavetable sentezleyici CymaSynth’i (VST3 ve AU) ek ücret olmadan içerir."
+        "answer": "Cymasphere; bağımsız uygulama ve DAW için eklenti (AU ve VST3) olarak kullanılabilen tam bir müzik üretim paketidir. Armoni ve melodi, akıllı voicing’ler, desen oluşturma ve teoriyi her seviyede erişilebilir kılan etkileşimli görselleştirme sunar. Her abonelik ve ömür boyu lisans, profesyonel wavetable sentezleyici CymaSynth’i (bağımsız uygulama, VST3 ve AU) ek ücret olmadan içerir."
       },
       {
         "question": "CymaSynth nedir ve gerçekten Cymasphere ile mi geliyor?",
@@ -1150,15 +1151,15 @@
     "proBadge": "PRO",
     "afterTrial": "{{days}} günlük ücretsiz denemenizden sonra",
     "percentDiscount": "%{{percent}} indirim uygulandı!",
-    "amountDiscount": "₺{{amount}} indirim!",
+    "amountDiscount": "{{amount}} $ indirim!",
     "firstPayment": "İlk ödeme: {{date}}",
     "nextBilling": "Sonraki faturalama: {{date}}",
     "oneTimePurchase": "tek seferlik satın alma",
     "purchased": "Satın Alındı",
     "allPlansInclude": "Tüm Planlar Şunları İçerir:",
     "confirmationNote": "Onaylayarak, yukarıda gösterilen şartları ve fiyatlandırmayı kabul ediyorsunuz.",
-    "provideCard": "{{days}} günlük deneme için şimdi ödeme yöntemi sağlayın",
-    "cardTooltip": "Ödeme yönteminizi şimdi eklemek denemenizi 7 gün yerine 14 güne uzatır. Denemeniz bitene kadar ücretlendirilmezsiniz.",
+    "provideCard": "{{days}} günlük deneme için şimdi ödeme yöntemi ekleyin",
+    "cardTooltip": "Ödeme yöntemini şimdi eklemek denemenizi 7 gün yerine 14 güne uzatır. Deneme bitene kadar ücret alınmaz.",
     "chooseTrial": "Ücretsiz deneme seçeneğinizi seçin:",
     "noCharge": "(deneme bitene kadar ücretlendirilmez)",
     "continueToCheckout": "Ödemeye Devam Et",

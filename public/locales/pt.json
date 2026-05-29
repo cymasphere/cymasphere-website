@@ -86,7 +86,7 @@
       "playNote": "Clique para tocar esta nota",
       "playChord": "Clique para tocar o acorde"
     },
-    "includedSynth": "Inclui o CymaSynth—um sintetizador wavetable profissional (VST3 e AU)—incluído em cada assinatura e licença vitalícia. Suite de composição completa e instrumento principal juntos.",
+    "includedSynth": "Inclui o CymaSynth—um sintetizador wavetable profissional (app standalone, VST3 e AU)—incluído em cada assinatura e licença vitalícia. Suite de composição completa e instrumento principal juntos.",
     "bundleEyebrow": "Uma assinatura · dois produtos",
     "bundleCymasphereTitle": "Cymasphere",
     "bundleCymasphereDesc": "Suite de composição e teoria",
@@ -182,7 +182,7 @@
         "Organização baseada em seções para composição estruturada",
         "Arranjo de acordes por arrastar e soltar para reorganizar facilmente acordes e ajustar seu comprimento arrastando bordas",
         "Alternância de display para mostrar nomes de acordes como letras, números romanos ou solfejo baseado na preferência",
-        "Atualizações dinâmicas de padrões onde padrões e voicings se adaptam automaticamente quando mudanças são feitas na progressão"
+        "Atualizações dinâmicas de padrões: padrões e voicings se adaptam automaticamente quando a progressão muda"
       ]
     },
     "voiceHandling": {
@@ -249,14 +249,14 @@
       "title": "CymaSynth incluído",
       "description": "Um sintetizador wavetable profissional avaliado em US$ 149—triplo oscilador, modulação profunda, efeitos de estúdio—grátis com o Cymasphere.",
       "modalTitle": "Seu instrumento principal integrado",
-      "modalDescription": "Separado, o CymaSynth custa US$ 149. Com o Cymasphere, vem sem custo extra em toda assinatura e licença vitalícia—do esboço harmônico ao som final sem segunda compra. Síntese wavetable profissional, modulação flexível e efeitos polidos—no fluxo Cymasphere ou como plugins VST3 e AU na sua DAW.",
+      "modalDescription": "Separado, o CymaSynth custa US$ 149. Com o Cymasphere, vem sem custo extra em toda assinatura e licença vitalícia—do esboço harmônico ao som final sem segunda compra. Síntese wavetable profissional, modulação flexível e efeitos polidos—no fluxo Cymasphere, como app standalone ou como plugins VST3 e AU na sua DAW.",
       "keyFeatures": "Recursos principais:",
       "features": [
         "Valor de US$ 149 à parte—incluído grátis em todos os planos Cymasphere (assinatura e vitalício); sem compra separada do CymaSynth",
         "Arquitetura de triplo oscilador com morphing wavetable (256 quadros) mais formas de onda clássicas",
         "Matriz de modulação de 64 rotas com 5 LFOs e 4 envelopes ADSR+Hold",
         "Dois filtros, até 32 vozes, uníssono e cadeia de efeitos integrada",
-        "Formatos VST3 e AU—junto ao Cymasphere ou direto na DAW",
+        "App standalone mais VST3 e AU—sozinho, com Cymasphere ou na sua DAW",
         "Feito para combinar com harmonia e padrões Cymasphere: a progressão aqui, o timbre no CymaSynth"
       ]
     }
@@ -304,8 +304,8 @@
         "description": "Pratique com acompanhamento inteligente que se adapta ao seu tempo e estilo. O sistema responde às suas entradas, criando uma experiência de prática dinâmica que evolui com suas habilidades."
       },
       "step4": {
-        "title": "Refine Your Skills",
-        "description": "Improve your musical ear by experimenting with different chord substitutions and modal interchange. As you refine your harmonic choices, you'll develop a deeper understanding of chord qualities and progressions, naturally building both your technical skills and creative voice."
+        "title": "Aprimore suas habilidades",
+        "description": "Aprimore seu ouvido musical experimentando substituições de acordes e intercâmbio modal. Ao refinar suas escolhas harmônicas, você desenvolverá uma compreensão mais profunda das qualidades dos acordes e progressões, fortalecendo técnica e voz criativa."
       }
     },
     "integrateWorkflow": {
@@ -322,8 +322,8 @@
         "description": "Compartilhe projetos com colaboradores através de nossa plataforma em nuvem. Trabalhe em tempo real ou assincronamente, mantendo controle de versão e histórico de mudanças."
       },
       "step4": {
-        "title": "Seamless Workflow",
-        "description": "Integrate Cymasphere into your production process as a powerful harmony and pattern generator—then voice your ideas with CymaSynth, the professional wavetable synthesizer included with your plan (VST3 & AU). Route MIDI from Cymasphere to any instrument, or design patches in CymaSynth for a complete sketch-to-sound workflow."
+        "title": "Fluxo de trabalho integrado",
+        "description": "Integre o Cymasphere ao seu processo de produção como gerador de harmonia e padrões—depois dê voz às suas ideias com o CymaSynth, sintetizador wavetable profissional incluído no seu plano (app standalone, VST3 e AU). Envie MIDI do Cymasphere para qualquer instrumento ou crie patches no CymaSynth para um fluxo completo do esboço ao som."
       }
     }
   },
@@ -430,7 +430,7 @@
       "Vista de arranjo completa",
       "Motor de geração de voicings personalizados",
       "Suporte premium e todas as atualizações futuras",
-      "Sintetizador wavetable CymaSynth (VST3 e AU)—valor US$ 149, incluído grátis"
+      "CymaSynth Standalone, AU e VST3"
     ],
     "freeTrial": {
       "title": "Teste GRATUITO por até 14 dias",
@@ -445,7 +445,8 @@
       "or": "ou"
     },
     "processing": "Processando",
-    "buyNow": "Comprar agora"
+    "buyNow": "Comprar agora",
+    "cymaSynthFeature": "CymaSynth Standalone, AU e VST3"
   },
   "promotion": {
     "viewOffers": "Ver Ofertas"
@@ -480,16 +481,16 @@
       "instagram": "Instagram",
       "youtube": "YouTube"
     },
-    "description": "We'd love to hear from you! Whether you have questions about features, pricing, or just want to share your feedback, our team is here to help. Fill out the form and we'll get back to you as soon as possible.",
-    "emailInfo": "You can also reach us directly at",
+    "description": "Adoraríamos ouvir você! Se tiver dúvidas sobre recursos, preços ou quiser compartilhar feedback, nossa equipe está aqui para ajudar. Preencha o formulário e responderemos o mais rápido possível.",
+    "emailInfo": "Você também pode nos contatar diretamente em",
     "nameLabel": "Your Name",
-    "emailLabel": "Email Address",
+    "emailLabel": "Endereço de e-mail",
     "subjectLabel": "Subject",
     "messageLabel": "Message",
-    "submitButton": "Send Message",
+    "submitButton": "Enviar mensagem",
     "sending": "Sending...",
-    "successMessage": "Thanks! Your message has been sent successfully.",
-    "errorMessage": "Oops! Something went wrong. Please try again."
+    "successMessage": "Obrigado! Sua mensagem foi enviada com sucesso.",
+    "errorMessage": "Ops! Algo deu errado. Tente novamente."
   },
   "download": {
     "title": "Download do Cymasphere",
@@ -664,7 +665,7 @@
       "title": "Cobrança e assinatura",
       "currentPlan": "Plano atual",
       "paymentHistory": "Histórico de pagamento",
-      "upgradeDowngrade": "Upgrade/Downgrade",
+      "upgradeDowngrade": "Fazer upgrade / downgrade",
       "cancelSubscription": "Cancelar assinatura",
       "reactivateSubscription": "Reativar assinatura",
       "paymentMethods": "Métodos de pagamento",
@@ -756,11 +757,11 @@
       "quickStart": "Guia de início rápido",
       "quickStartDesc": "Comece a usar o Cymasphere em minutos",
       "downloadPdf": "Baixar PDF",
-      "ipadTitle": "Cymasphere for iPad",
-      "ipadDesc": "Native iPad app with full feature set, optimized for iPad. Available now on the App Store.",
+      "ipadTitle": "Cymasphere para iPad",
+      "ipadDesc": "App nativo para iPad com conjunto completo de recursos, otimizado para iPad. Disponível na App Store.",
       "comingSoon": "Coming Soon",
-      "availableNow": "Available Now",
-      "viewOnAppStore": "View on App Store",
+      "availableNow": "Disponível agora",
+      "viewOnAppStore": "Ver na App Store",
       "loading": "Loading..."
     },
     "settings": {
@@ -917,11 +918,11 @@
     "questions": [
       {
         "question": "O que é o Cymasphere?",
-        "answer": "O Cymasphere é uma suite completa de criação musical, disponível como aplicativo independente e como plugin (AU e VST3) para sua DAW. Oferece ferramentas integradas para harmonia e melodia, voicings inteligentes, construção de padrões e visualização interativa que torna a teoria acessível a todos os níveis. Cada assinatura e licença vitalícia também inclui o CymaSynth—nosso sintetizador wavetable profissional (VST3 e AU)—sem custo extra."
+        "answer": "O Cymasphere é uma suite completa de criação musical, disponível como aplicativo independente e como plugin (AU e VST3) para sua DAW. Oferece ferramentas integradas para harmonia e melodia, voicings inteligentes, construção de padrões e visualização interativa que torna a teoria acessível a todos os níveis. Cada assinatura e licença vitalícia também inclui o CymaSynth—nosso sintetizador wavetable profissional (app standalone, VST3 e AU)—sem custo extra."
       },
       {
         "question": "O que é o CymaSynth e ele vem mesmo com o Cymasphere?",
-        "answer": "O CymaSynth é o sintetizador wavetable profissional da NNAudio: múltiplos osciladores, modulação profunda, dois filtros, efeitos e polifonia de 32 vozes. Sozinho custa US$ 149; com o Cymasphere vem sem custo extra em toda assinatura e licença vitalícia. Você não compra separado ao assinar—suite de composição e instrumento principal em um só."
+        "answer": "O CymaSynth é o sintetizador wavetable profissional da NNAudio: múltiplos osciladores, modulação profunda, dois filtros, efeitos e polifonia de 32 vozes. Funciona como app standalone e como plugins VST3 e AU. Sozinho custa US$ 149; com o Cymasphere vem sem custo extra em toda assinatura e licença vitalícia. Você não compra separado ao assinar—suite de composição e instrumento principal em um só."
       },
       {
         "question": "Que problemas o Cymasphere resolve para músicos?",
@@ -1149,22 +1150,22 @@
     "save25": "Economize 25%",
     "lifetime": "Vitalício",
     "bestValue": "Melhor valor",
-    "enterCardNow": "Digite as informações do cartão agora:",
+    "enterCardNow": "Informar cartão agora:",
     "trialWithCard": "Teste de {{days}} dias - Adicionar cartão em arquivo",
     "trialWithoutCard": "Teste de {{days}} dias - Nenhum cartão de crédito necessário",
     "currentPlan": "Plano atual",
     "proBadge": "PRO",
     "afterTrial": "Após seu teste gratuito de {{days}} dias",
     "percentDiscount": "{{percent}}% de desconto aplicado!",
-    "amountDiscount": "R${{amount}} de desconto!",
+    "amountDiscount": "{{amount}} $ de desconto!",
     "firstPayment": "Primeiro pagamento: {{date}}",
     "nextBilling": "Próxima cobrança: {{date}}",
     "oneTimePurchase": "compra única",
     "purchased": "Comprado",
     "allPlansInclude": "Todos os planos incluem:",
     "confirmationNote": "Ao confirmar, você concorda com os termos e preços exibidos acima.",
-    "provideCard": "Forneça método de pagamento agora para um teste de {{days}} dias",
-    "cardTooltip": "Adicionar seu método de pagamento agora estende seu teste para 14 dias em vez de 7. Você não será cobrado até seu teste terminar.",
+    "provideCard": "Informe o pagamento agora para um teste de {{days}} dias",
+    "cardTooltip": "Adicionar o pagamento agora estende o teste para 14 dias em vez de 7. Você só será cobrado ao final do teste.",
     "chooseTrial": "Escolha sua opção de teste gratuito:",
     "noCharge": "(não será cobrado até o teste terminar)"
   },
