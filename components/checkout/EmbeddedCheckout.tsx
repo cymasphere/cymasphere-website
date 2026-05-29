@@ -46,6 +46,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { buildLoginUrlWithBillingResumeCheckout } from "@/utils/checkout/billing-resume-checkout";
 import { ACCOUNT_EXISTS_REQUIRE_LOGIN } from "@/utils/checkout/guest-checkout-constants";
 import { PlanType, PriceData } from "@/types/stripe";
+import {
+  formatCompareAtPrice,
+  getCompareAtDollars,
+} from "@/lib/pricing";
 import { useTranslation } from "react-i18next";
 import dynamic from "next/dynamic";
 import { FaCheckCircle } from "react-icons/fa";
@@ -624,13 +628,8 @@ function PaymentFormInner({
   };
 
   if (!stripe || !elements) {
-    return (
-      <div
-        style={{ display: "flex", justifyContent: "center", padding: "2rem" }}
-      >
-        <LoadingSpinner />
-      </div>
-    );
+    /** Stripe.js hooks initialize immediately after Elements mounts; avoid a second logo spinner. */
+    return <PaymentElementWrapper aria-busy="true" aria-hidden="true" />;
   }
 
   return (
@@ -1034,13 +1033,8 @@ function SetupIntentSubmitForm({
   };
 
   if (!stripe || !elements) {
-    return (
-      <div
-        style={{ display: "flex", justifyContent: "center", padding: "2rem" }}
-      >
-        <LoadingSpinner />
-      </div>
-    );
+    /** Parent SetupIntentCheckoutForm already showed the bootstrap spinner. */
+    return <PaymentElementWrapper aria-busy="true" aria-hidden="true" />;
   }
 
   const isServerBlockError =
@@ -1808,6 +1802,14 @@ function CheckoutPlanCard({
         isSale: false,
       };
     const baseAmount = currentPlan.amount / 100;
+    const retailDollars = getCompareAtDollars(
+      planType,
+      currentPlan.compareAtAmount != null
+        ? currentPlan.compareAtAmount / 100
+        : undefined,
+    );
+    const retailLabel = formatCompareAtPrice(retailDollars, planType, t);
+
     let discountedAmount = baseAmount;
     let discountText = "";
     let originalPrice: string | undefined;
@@ -1833,16 +1835,8 @@ function CheckoutPlanCard({
       const salePrice = activePromotion[salePriceField];
       if (typeof salePrice === "number") {
         discountedAmount = salePrice;
-        if (planType === "lifetime") {
-          originalPrice = "$249";
-          discountText = `${Math.round(((249 - salePrice) / 249) * 100)}% OFF`;
-        } else if (planType === "annual") {
-          originalPrice = `$79${t("pricing.perYear", "/year")}`;
-          discountText = `${Math.round(((79 - salePrice) / 79) * 100)}% OFF`;
-        } else {
-          originalPrice = `$${baseAmount.toFixed(0)}${t("pricing.perMonth", "/month")}`;
-          discountText = `${Math.round(((baseAmount - salePrice) / baseAmount) * 100)}% OFF`;
-        }
+        originalPrice = retailLabel;
+        discountText = `${Math.round(((retailDollars - salePrice) / retailDollars) * 100)}% OFF`;
         isSale = true;
       }
     } else if (currentPlan.discount) {
@@ -1861,6 +1855,8 @@ function CheckoutPlanCard({
       } else {
         originalPrice = `$${baseAmount.toFixed(0)}`;
       }
+    } else if (retailDollars > baseAmount) {
+      originalPrice = retailLabel;
     }
 
     return {
@@ -2009,7 +2005,7 @@ function CheckoutPlanCard({
           </div>
         )}
 
-        {pricesLoading && !is7DayNoCard ? (
+        {pricesLoading && !is7DayNoCard && !atPaymentStep ? (
           <div style={{ textAlign: "center", padding: "20px" }}>
             <LoadingSpinner size="small" />
           </div>

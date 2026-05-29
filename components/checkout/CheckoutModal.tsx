@@ -30,17 +30,7 @@ const EmbeddedCheckoutLazy = dynamic(
     import("./EmbeddedCheckout").then((m) => ({ default: m.EmbeddedCheckout })),
   {
     ssr: false,
-    loading: () => (
-      <div
-        style={{
-          padding: "2rem",
-          textAlign: "center",
-          color: "var(--text-secondary)",
-        }}
-      >
-        Loading checkout…
-      </div>
-    ),
+    loading: () => null,
   },
 );
 
