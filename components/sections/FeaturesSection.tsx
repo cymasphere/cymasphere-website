@@ -38,6 +38,9 @@ import { useParams } from "next/navigation";
 const FEATURE_IMAGE_BASE =
   "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized";
 
+/** @brief Official CymaSynth product page on NNAudio. */
+const CYMASYNTH_LEARN_MORE_URL = "https://nnaud.io/product/cymasynth";
+
 const CYMASYNTH_SHOWCASE_IMAGES = {
   hero: `${FEATURE_IMAGE_BASE}/cymasynth-feature-1.webp`,
   product: `${FEATURE_IMAGE_BASE}/cymasynth-product.webp`,
@@ -145,7 +148,7 @@ const FeatureDescription = styled.p`
   transition: all 0.3s ease;
 `;
 
-const CymaSynthCta = styled.span`
+const CymaSynthLearnMore = styled.a`
   display: inline-flex;
   align-items: center;
   align-self: flex-start;
@@ -157,7 +160,20 @@ const CymaSynthCta = styled.span`
   border-radius: 10px;
   border: 1px solid rgba(0, 229, 255, 0.35);
   background: rgba(0, 229, 255, 0.1);
+  text-decoration: none;
+  cursor: pointer;
   transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+
+  &:hover {
+    color: #fff;
+    background: rgba(0, 229, 255, 0.22);
+    border-color: rgba(0, 229, 255, 0.55);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(0, 229, 255, 0.8);
+    outline-offset: 2px;
+  }
 `;
 
 const CymaSynthShowcase = styled(motion.article)`
@@ -208,7 +224,7 @@ const CymaSynthShowcase = styled(motion.article)`
       0 36px 100px rgba(0, 0, 0, 0.5),
       0 0 100px rgba(0, 229, 255, 0.16);
 
-    ${CymaSynthCta} {
+    ${CymaSynthLearnMore} {
       color: #fff;
       background: rgba(0, 229, 255, 0.22);
       border-color: rgba(0, 229, 255, 0.55);
@@ -1037,9 +1053,18 @@ const FeaturesSection = () => {
                     {t("hero.platforms.windows", "Windows")}
                   </CymaSynthFormatBadge>
                 </CymaSynthFormats>
-                <CymaSynthCta>
-                  {t("features.cymaSynth.modalTitle", "Your Built-In Flagship Instrument")} →
-                </CymaSynthCta>
+                <CymaSynthLearnMore
+                  href={CYMASYNTH_LEARN_MORE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(event) => event.stopPropagation()}
+                  onKeyDown={(event) => event.stopPropagation()}
+                >
+                  {t("features.cymaSynth.learnMore", {
+                    defaultValue: t("common.learnMore", "Learn More"),
+                  })}{" "}
+                  →
+                </CymaSynthLearnMore>
               </CymaSynthCopy>
             </CymaSynthShowcaseInner>
           </CymaSynthShowcase>

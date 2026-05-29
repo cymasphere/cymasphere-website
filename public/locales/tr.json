@@ -258,7 +258,8 @@
         "Çift filtre, 32’ye kadar ses, unison ve entegre efekt zinciri",
         "Bağımsız uygulama artı VST3 ve AU—tek başına, Cymasphere ile veya DAW’da",
         "Cymasphere armoni ve desenleriyle uyumlu: progresyon burada, tını CymaSynth’te"
-      ]
+      ],
+      "learnMore": "Daha fazla bilgi"
     }
   },
   "howItWorks": {

@@ -258,7 +258,8 @@
         "Dos filtros, hasta 32 voces de polifonía, unísono y cadena de efectos integrada",
         "App standalone más VST3 y AU—solo, con Cymasphere o en tu DAW",
         "Diseñado para combinar con la armonía y los patrones de Cymasphere: la progresión aquí, el timbre en CymaSynth"
-      ]
+      ],
+      "learnMore": "Más información"
     }
   },
   "synth": {

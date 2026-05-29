@@ -260,7 +260,8 @@
         "Deux filtres, jusqu’à 32 voix, unisson et chaîne d’effets intégrée",
         "App autonome plus VST3 et AU—seul, avec Cymasphere ou dans votre DAW",
         "Conçu pour s’accorder aux outils d’harmonie et de motifs : la progression ici, le timbre dans CymaSynth"
-      ]
+      ],
+      "learnMore": "En savoir plus"
     }
   },
   "synth": {

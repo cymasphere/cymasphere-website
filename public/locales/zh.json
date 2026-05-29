@@ -248,7 +248,8 @@
         "双滤波器、最多 32 复音、齐奏与内置效果链",
         "独立应用以及 VST3 与 AU—可单独使用、配合 Cymasphere 或在 DAW 中使用",
         "与 Cymasphere 和声与 pattern 搭配：在此写进行，在 CymaSynth 塑音色"
-      ]
+      ],
+      "learnMore": "了解更多"
     }
   },
   "howItWorks": {
