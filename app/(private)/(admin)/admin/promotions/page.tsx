@@ -521,9 +521,9 @@ export default function PromotionsPage() {
   });
 
   const NORMAL_PRICES = {
-    monthly: 6,
-    annual: 59,
-    lifetime: 149,
+    monthly: 9,
+    annual: 69,
+    lifetime: 199,
   };
 
   useEffect(() => {

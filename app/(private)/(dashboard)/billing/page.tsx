@@ -2406,7 +2406,7 @@ export default function BillingPage() {
                 "Comprehensive Arrangement View",
                 "Custom Voicing Generation Engine",
                 "Premium Support & All Future Updates",
-                "CymaSynth wavetable synth (VST3 & AU)—$149 value, included free",
+                "CymaSynth Standalone, AU & VST3",
               ];
             })()}
             monthlyDiscount={prices.monthlyDiscount || undefined}

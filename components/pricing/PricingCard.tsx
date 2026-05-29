@@ -32,10 +32,63 @@ import { FaCheck, FaGift, FaUnlock } from "react-icons/fa";
 import { PlanType, PriceData } from "@/types/stripe";
 import { useAuth } from "@/contexts/AuthContext";
 import type { TrialOption } from "@/hooks/useCheckout";
+import {
+  formatCompareAtPrice,
+  getCompareAtDollars,
+} from "@/lib/pricing";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import LoadingSpinner from "../common/LoadingSpinner";
+
+/** Matches CymaSynth lines in `pricing.features` across locales. */
+const CYMASYNTH_FEATURE_PATTERN = /cymaSynth/i;
+
+const DEFAULT_CYMASYNTH_PRICING_FEATURE =
+  "CymaSynth Standalone, AU & VST3";
+
+const FALLBACK_PRICING_FEATURES = [
+  "Song Builder with Multi-Track Management",
+  "Intelligent Pattern Editor & Chord Adaptation",
+  "Gestural Harmony Palette Interface",
+  "Advanced Voice Leading & Chord Voicings",
+  "Interactive Chord Progression Timeline",
+  "Complete Voice and Range Control",
+  "Standalone App & DAW Plugin Support",
+  "Real-Time Chord Reharmonization Tools",
+  "Comprehensive Arrangement View",
+  "Custom Voicing Generation Engine",
+  "Premium Support & All Future Updates",
+];
+
+/**
+ * @brief Normalizes i18n feature lists and ensures a concise CymaSynth row at the end.
+ * @param raw Value from `t('pricing.features', { returnObjects: true })`.
+ * @param cymaSynthLine Localized CymaSynth checklist label (`pricing.cymaSynthFeature`).
+ * @returns Feature strings with CymaSynth last; empty when `raw` is not yet loaded.
+ */
+function normalizePricingFeatures(
+  raw: unknown,
+  cymaSynthLine: string,
+): string[] {
+  let list: string[] = [];
+
+  if (Array.isArray(raw)) {
+    list = raw.filter((item): item is string => typeof item === "string");
+  } else if (raw && typeof raw === "object") {
+    list = Object.values(raw as Record<string, unknown>).filter(
+      (item): item is string => typeof item === "string",
+    );
+  }
+
+  if (list.length === 0) {
+    return [];
+  }
+
+  const rest = list.filter((item) => !CYMASYNTH_FEATURE_PATTERN.test(item));
+
+  return [...rest, cymaSynthLine];
+}
 
 // Type definitions for CymasphereLogo component
 interface CymasphereLogoProps {
@@ -489,6 +542,24 @@ export default function PricingCard({
   initiateCheckout: initiateCheckoutProp,
 }: PricingCardProps) {
   const { t, i18n } = useTranslation();
+  const [translationsRevision, setTranslationsRevision] = useState(0);
+
+  useEffect(() => {
+    const bumpRevision = () => {
+      setTranslationsRevision((revision) => revision + 1);
+    };
+
+    i18n.on("languageChanged", bumpRevision);
+    i18n.on("loaded", bumpRevision);
+    i18n.on("added", bumpRevision);
+
+    return () => {
+      i18n.off("languageChanged", bumpRevision);
+      i18n.off("loaded", bumpRevision);
+      i18n.off("added", bumpRevision);
+    };
+  }, [i18n]);
+
   const { user } = useAuth();
   const router = useRouter();
   /** @note Only parent-provided checkout (modal path). No internal `useCheckout()` — avoids fallback that navigates to /checkout. */
@@ -597,9 +668,17 @@ export default function PricingCard({
       };
 
     const baseAmount = currentPlan.amount / 100;
+    const retailDollars = getCompareAtDollars(
+      billingPeriod,
+      currentPlan.compareAtAmount != null
+        ? currentPlan.compareAtAmount / 100
+        : undefined,
+    );
+    const retailLabel = formatCompareAtPrice(retailDollars, billingPeriod, t);
+
     let discountedAmount = baseAmount;
     let discountText = "";
-    let originalPrice = undefined;
+    let originalPrice: string | undefined;
     let isSale = false;
 
     // Check if there's an active promotion for this plan from database
@@ -613,22 +692,11 @@ export default function PricingCard({
 
       if (salePrice !== null && salePrice !== undefined) {
         discountedAmount = salePrice;
-        // Use retail price for strikethrough to show bigger discount
-        if (billingPeriod === "lifetime") {
-          originalPrice = "$249";
-          const discount = Math.round(((249 - salePrice) / 249) * 100);
-          discountText = `${discount}% OFF`;
-        } else if (billingPeriod === "annual") {
-          originalPrice = `$79${t("pricing.perYear", "/year")}`;
-          const discount = Math.round(((79 - salePrice) / 79) * 100);
-          discountText = `${discount}% OFF`;
-        } else {
-          originalPrice = `$${baseAmount.toFixed(0)}${t("pricing.perMonth", "/month")}`;
-          const discount = Math.round(
-            ((baseAmount - salePrice) / baseAmount) * 100,
-          );
-          discountText = `${discount}% OFF`;
-        }
+        originalPrice = retailLabel;
+        const discount = Math.round(
+          ((retailDollars - salePrice) / retailDollars) * 100,
+        );
+        discountText = `${discount}% OFF`;
         isSale = true;
       }
     } else if (currentPlan.discount) {
@@ -648,15 +716,8 @@ export default function PricingCard({
       } else {
         originalPrice = `$${baseAmount.toFixed(0)}`;
       }
-    } else {
-      // No sale, no discount - show standard strikethrough prices
-      if (billingPeriod === "lifetime") {
-        originalPrice = "$249"; // $149 is 40% off $249
-      } else if (billingPeriod === "annual") {
-        originalPrice = `$79${t("pricing.perYear", "/year")}`; // $59 is 25% off $79
-      } else if (billingPeriod === "monthly") {
-        originalPrice = `$8${t("pricing.perMonth", "/month")}`; // $6 is 25% off $8
-      }
+    } else if (retailDollars > baseAmount) {
+      originalPrice = retailLabel;
     }
 
     return {
@@ -675,29 +736,31 @@ export default function PricingCard({
       : t("pricing.perYear", "/year");
   };
 
-  // Get features
+  // Get features (CymaSynth last; refresh when async translations load)
   const features = useMemo(() => {
+    const cymaSynthLine = t(
+      "pricing.cymaSynthFeature",
+      DEFAULT_CYMASYNTH_PRICING_FEATURE,
+    );
+
     try {
       const translatedFeatures = t("pricing.features", {
         returnObjects: true,
       });
+      const normalized = normalizePricingFeatures(
+        translatedFeatures,
+        cymaSynthLine,
+      );
 
-      if (Array.isArray(translatedFeatures) && translatedFeatures.length > 0) {
-        return translatedFeatures;
+      if (normalized.length > 0) {
+        return normalized;
       }
     } catch (error) {
       console.log("Error loading translated features", error);
     }
 
-    // Fallback to English features
-    return [
-      "Unlimited chord progressions",
-      "Advanced chord voicings",
-      "Real-time audio playback",
-      "Export to MIDI",
-      "Premium Support",
-    ];
-  }, [t]);
+    return normalizePricingFeatures(FALLBACK_PRICING_FEATURES, cymaSynthLine);
+  }, [t, i18n.language, translationsRevision]);
 
   // Check if this is the current plan
   const sub = user?.profile?.subscription as PlanType | "none" | null | undefined;

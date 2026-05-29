@@ -11,6 +11,7 @@
 
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { parseCompareAtFromMetadata } from "@/lib/pricing";
 import { PlanType, PriceData, PricesResponse } from "@/types/stripe";
 
 /**
@@ -102,31 +103,28 @@ export async function GET(): Promise<NextResponse<PricesResponse>> {
     const productName =
       (monthlyPrice.product as Stripe.Product).name || "Pro Plan";
 
-    // Format response
+    const toPriceData = (
+      price: Stripe.Price,
+      type: PlanType,
+      label: string,
+    ): PriceData => {
+      const compareAtDollars = parseCompareAtFromMetadata(price.metadata);
+      return {
+        id: price.id,
+        type,
+        amount: price.unit_amount || 0,
+        compareAtAmount:
+          compareAtDollars != null ? Math.round(compareAtDollars * 100) : undefined,
+        currency: price.currency,
+        interval: price.recurring?.interval,
+        name: `${productName} (${label})`,
+      };
+    };
+
     const prices: Record<PlanType, PriceData> = {
-      monthly: {
-        id: monthlyPrice.id,
-        type: "monthly",
-        amount: monthlyPrice.unit_amount || 0,
-        currency: monthlyPrice.currency,
-        interval: monthlyPrice.recurring?.interval,
-        name: `${productName} (Monthly)`,
-      },
-      annual: {
-        id: annualPrice.id,
-        type: "annual",
-        amount: annualPrice.unit_amount || 0,
-        currency: annualPrice.currency,
-        interval: annualPrice.recurring?.interval,
-        name: `${productName} (Annual)`,
-      },
-      lifetime: {
-        id: lifetimePrice.id,
-        type: "lifetime",
-        amount: lifetimePrice.unit_amount || 0,
-        currency: lifetimePrice.currency,
-        name: `${productName} (Lifetime)`,
-      },
+      monthly: toPriceData(monthlyPrice, "monthly", "Monthly"),
+      annual: toPriceData(annualPrice, "annual", "Annual"),
+      lifetime: toPriceData(lifetimePrice, "lifetime", "Lifetime"),
     };
 
     return NextResponse.json({

@@ -4,6 +4,8 @@ export interface PriceData {
   id: string;
   type: PlanType;
   amount: number;
+  /** @brief Strikethrough retail anchor in cents (from Stripe metadata `compare_at_amount`). */
+  compareAtAmount?: number;
   currency: string;
   interval?: string;
   name: string;

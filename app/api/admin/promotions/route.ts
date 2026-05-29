@@ -237,9 +237,9 @@ export async function POST(request: NextRequest) {
 
     // Calculate sale prices based on discount
     const NORMAL_PRICES = {
-      monthly: 6,
-      annual: 59,
-      lifetime: 149,
+      monthly: 9,
+      annual: 69,
+      lifetime: 199,
     };
 
     const calculateSalePrice = (normalPrice: number) => {
