@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Conditionally loads GTM, GA, and Meta Pixel on the client.
+ * @module components/analytics/Analytics
+ * @note GTM uses `afterInteractive` so it does not block first paint vs `beforeInteractive`.
+ */
+
 "use client";
 
 import Script from "next/script";
@@ -31,7 +37,7 @@ export default function Analytics() {
           {/* GTM DataLayer initialization - must be before GTM container */}
           <Script
             id="gtm-datalayer"
-            strategy="beforeInteractive"
+            strategy="afterInteractive"
             dangerouslySetInnerHTML={{
               __html: `
                 window.dataLayer = window.dataLayer || [];
@@ -41,7 +47,7 @@ export default function Analytics() {
           {/* GTM Container Script */}
           <Script
             id="gtm-container"
-            strategy="beforeInteractive"
+            strategy="afterInteractive"
             dangerouslySetInnerHTML={{
               __html: `
                 (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':

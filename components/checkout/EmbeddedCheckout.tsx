@@ -52,15 +52,24 @@ import { FaCheckCircle } from "react-icons/fa";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
 
-/** HMR re-evaluates modules; reuse one Promise so <Elements> never sees a new `stripe` prop on the same tree. */
-const globalForStripe = globalThis as typeof globalThis & {
-  __cymasphereStripePromise?: Promise<Stripe | null>;
-};
-const stripePromise =
-  globalForStripe.__cymasphereStripePromise ??
-  (globalForStripe.__cymasphereStripePromise = loadStripe(
-    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "",
-  ));
+/**
+ * @brief Lazy Stripe.js loader: runs when checkout code first mounts (not at module parse time).
+ * @returns `Promise` resolved with Stripe instance or null if the publishable key is missing.
+ * @note Reuses one Promise globally so `<Elements>` never receives a new `stripe` prop on one tree.
+ */
+function getStripePromise(): Promise<Stripe | null> {
+  const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "";
+  if (!publishableKey) {
+    return Promise.resolve(null);
+  }
+  const globalForStripe = globalThis as typeof globalThis & {
+    __cymasphereStripePromise?: Promise<Stripe | null>;
+  };
+  return (
+    globalForStripe.__cymasphereStripePromise ??
+    (globalForStripe.__cymasphereStripePromise = loadStripe(publishableKey))
+  );
+}
 
 /** Trial length when starting from pricing (matches `InlineCheckoutParams.trialOption`). */
 export type TrialOption = "7day" | "14day";
@@ -804,7 +813,7 @@ function SetupIntentCheckoutForm({
   return (
     <Elements
       key={setupClientSecret}
-      stripe={stripePromise}
+      stripe={getStripePromise()}
       options={{
         clientSecret: setupClientSecret,
         appearance: STRIPE_APPEARANCE,
@@ -1246,7 +1255,7 @@ function UnifiedCheckoutForm({
 
   return (
     <Elements
-      stripe={stripePromise}
+      stripe={getStripePromise()}
       options={{
         clientSecret: clientSecretToUse,
         appearance: STRIPE_APPEARANCE,

@@ -15,11 +15,34 @@
 "use client";
 
 import React from "react";
+import dynamic from "next/dynamic";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaTimes } from "react-icons/fa";
 import type { InlineCheckoutParams } from "@/hooks/useCheckout";
-import { EmbeddedCheckout } from "./EmbeddedCheckout";
+
+/**
+ * @brief Deferred checkout bundle so Stripe.js is not fetched until the modal opens.
+ * @note Standalone `/checkout` still statically imports EmbeddedCheckout separately.
+ */
+const EmbeddedCheckoutLazy = dynamic(
+  () =>
+    import("./EmbeddedCheckout").then((m) => ({ default: m.EmbeddedCheckout })),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        style={{
+          padding: "2rem",
+          textAlign: "center",
+          color: "var(--text-secondary)",
+        }}
+      >
+        Loading checkout…
+      </div>
+    ),
+  },
+);
 
 /** Overlay and container for inline checkout modal. */
 const CheckoutModalOverlay = styled(motion.div)`
@@ -125,7 +148,7 @@ export function CheckoutModal({
             >
               <FaTimes size={18} />
             </CheckoutModalCloseButton>
-            <EmbeddedCheckout
+            <EmbeddedCheckoutLazy
               planType={params.planType}
               collectPaymentMethod={params.collectPaymentMethod}
               isPlanChange={params.isPlanChange}

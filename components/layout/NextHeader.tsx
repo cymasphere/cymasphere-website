@@ -196,6 +196,17 @@ const LogoText = styled.div`
   }
 `;
 
+/** @brief Crawlable home link with sufficient touch target (WCAG 2.5.5). */
+const LogoHomeLink = styled(Link)`
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  position: relative;
+  cursor: pointer;
+  box-sizing: border-box;
+  min-height: 44px;
+`;
+
 const Nav = styled.nav`
   display: flex;
   align-items: center;
@@ -213,6 +224,13 @@ const Nav = styled.nav`
 `;
 
 const NavLink = styled.div<{ $isActive: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 6px;
   color: ${(props) => (props.$isActive ? "white" : "rgba(255, 255, 255, 0.7)")};
   font-weight: ${(props) => (props.$isActive ? "600" : "500")};
   letter-spacing: 0.3px;
@@ -282,7 +300,16 @@ const MobileActions = styled.div`
   }
 `;
 
-const MenuToggle = styled.div`
+const MenuToggle = styled.button`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
   font-size: 1.5rem;
   cursor: pointer;
   color: white;
@@ -459,16 +486,21 @@ const MobileFooter = styled.div`
 `;
 
 const AuthButton = styled.a<{ $isPrimary?: boolean; $isMobile?: boolean }>`
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: ${(props) => (props.$isPrimary ? "10px 24px" : "9px 20px")};
+  box-sizing: border-box;
+  min-height: 44px;
+  min-width: 44px;
+  padding: ${(props) =>
+    props.$isPrimary ? "10px 24px" : "9px 20px"};
   border-radius: 50px;
   font-weight: 600;
   transition: all 0.3s ease;
   letter-spacing: 0.3px;
   cursor: pointer;
+  text-decoration: none;
 
   ${(props) =>
     props.$isPrimary
@@ -520,6 +552,10 @@ const UserMenuContainer = styled.div`
 const UserButton = styled.button`
   display: flex;
   align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 44px;
+  min-width: 44px;
   gap: 8px;
   background: transparent;
   border: none;
@@ -527,7 +563,7 @@ const UserButton = styled.button`
   cursor: pointer;
   padding: 5px;
   border-radius: 50%;
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, background-color 0.3s ease;
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
@@ -747,16 +783,11 @@ const NextHeader = ({ hasActiveBanner = false }: NextHeaderProps = {}) => {
     }
   };
 
-  const handleLoginClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    router.push(`/login`);
-  };
-
-  const handleSignupClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    router.push(`/signup`);
-  };
-
+  /**
+   * @brief Renders sign-in CTAs or user menu when logged in.
+   * @note Login/sign up use real `href` for SEO crawlers (Lighthouse crawlable-links audit).
+   * @returns {JSX.Element} Auth UI for the desktop header tray.
+   */
   const renderAuthSection = () => {
     if (user) {
       return (
@@ -790,10 +821,10 @@ const NextHeader = ({ hasActiveBanner = false }: NextHeaderProps = {}) => {
 
     return (
       <>
-        <AuthButton onClick={handleLoginClick}>
+        <AuthButton href="/login">
           {getTranslation("common.login")}
         </AuthButton>
-        <AuthButton $isPrimary onClick={handleSignupClick}>
+        <AuthButton href="/signup" $isPrimary>
           {getTranslation("common.signUp")}
         </AuthButton>
       </>
@@ -804,12 +835,16 @@ const NextHeader = ({ hasActiveBanner = false }: NextHeaderProps = {}) => {
     <>
       <HeaderContainer $isScrolled={isScrolled} $menuOpen={menuOpen} $hasActiveBanner={hasActiveBanner}>
         <HeaderContent $isScrolled={isScrolled}>
-          <span
-            onClick={playSound}
-            style={{
-              textDecoration: "none",
-              position: "relative",
-              cursor: "pointer",
+          <LogoHomeLink
+            href="/"
+            prefetch={false}
+            aria-label="Cymasphere home"
+            onClick={(e) => {
+              void playSound();
+              if (pathname === "/") {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }
             }}
             onMouseDown={(e) => {
               // Create ripple element at the body level rather than within the logo
@@ -848,7 +883,7 @@ const NextHeader = ({ hasActiveBanner = false }: NextHeaderProps = {}) => {
               <span className="cyma">CYMA</span>
               <span className="sphere">SPHERE</span>
             </LogoText>
-          </span>
+          </LogoHomeLink>
 
           <Nav>
             {navItems.map((item) => (
@@ -870,7 +905,7 @@ const NextHeader = ({ hasActiveBanner = false }: NextHeaderProps = {}) => {
           </Nav>
 
           <MobileActions>
-            <MenuToggle onClick={() => setMenuOpen(!menuOpen)}>
+            <MenuToggle type="button" aria-label={menuOpen ? "Close menu" : "Open menu"} onClick={() => setMenuOpen(!menuOpen)}>
               {menuOpen ? <FaTimes /> : <FaBars />}
             </MenuToggle>
           </MobileActions>
@@ -970,23 +1005,17 @@ const NextHeader = ({ hasActiveBanner = false }: NextHeaderProps = {}) => {
               {!user && (
                 <MobileAuthSection>
                   <AuthButton
+                    href="/login"
                     $isPrimary
                     $isMobile
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setMenuOpen(false);
-                      handleLoginClick(e);
-                    }}
+                    onClick={() => setMenuOpen(false)}
                   >
                     {getTranslation("common.login")}
                   </AuthButton>
                   <AuthButton
+                    href="/signup"
                     $isMobile
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setMenuOpen(false);
-                      handleSignupClick(e);
-                    }}
+                    onClick={() => setMenuOpen(false)}
                   >
                     {getTranslation("common.signUp")}
                   </AuthButton>

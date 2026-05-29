@@ -1,10 +1,21 @@
+/**
+ * @fileoverview How It Works landing section with tabbed workflows and step imagery.
+ * @module components/sections/HowItWorksSection
+ * @description Uses `next/image` with responsive `sizes` so step art is not served at full 1200px width.
+ */
+
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
+
+/** @brief Approximate rendered column width for half of the 960px info card (PSI “displayed ~344–456px”). */
+const HOW_IT_WORKS_IMAGE_SIZES =
+  "(max-width: 768px) min(100vw - 88px, 920px), 456px";
 
 const SectionContainer = styled.section`
   width: 100%;
@@ -167,27 +178,13 @@ interface StepImageProps {
 
 const StepImage = styled(motion.div)<StepImageProps>`
   flex: 1;
+  position: relative;
   border-radius: 12px;
   overflow: hidden;
   height: 240px;
   display: flex;
   align-items: center;
   justify-content: center;
-
-  picture {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    object-position: center;
-  }
 
   @media (max-width: 768px) {
     width: 100%;
@@ -518,14 +515,14 @@ const HowItWorksSection = () => {
               viewport={{ once: true }}
               custom={index}
             >
-              <picture>
-                <source srcSet={step.imageWebp} type="image/webp" />
-                <img 
-                  src={step.image} 
-                  alt={step.title}
-                  loading="lazy"
-                />
-              </picture>
+              <Image
+                src={step.imageWebp}
+                alt={step.title}
+                fill
+                sizes={HOW_IT_WORKS_IMAGE_SIZES}
+                loading="lazy"
+                style={{ objectFit: "contain", objectPosition: "center" }}
+              />
             </StepImage>
           </WorkflowStep>
         ))}

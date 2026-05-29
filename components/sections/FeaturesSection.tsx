@@ -89,7 +89,8 @@ const FeatureIcon = styled.div`
   font-size: 32px;
   box-shadow: 0 10px 20px rgba(108, 99, 255, 0.3);
   position: relative;
-  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.4s ease;
   transform: translateZ(0);
   will-change: transform;
 
@@ -150,7 +151,8 @@ const FeatureCard = styled(motion.div)<{ $rotation?: number; $imageUrl?: string 
   overflow: hidden;
   isolation: isolate;
   transform: translateZ(0);
-  will-change: transform, box-shadow;
+  will-change: transform;
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   backface-visibility: hidden;
 
   /* Background image layer - static, no hover effects */
@@ -202,7 +204,6 @@ const FeatureCard = styled(motion.div)<{ $rotation?: number; $imageUrl?: string 
   }
 
   &:hover {
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
     transform: translateY(-10px) translateZ(0);
 
     ${FeatureIcon} {
@@ -214,7 +215,6 @@ const FeatureCard = styled(motion.div)<{ $rotation?: number; $imageUrl?: string 
 
       svg {
         transform: scale(1.1);
-        filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
       }
     }
 

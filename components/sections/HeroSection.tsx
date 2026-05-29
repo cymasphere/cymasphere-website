@@ -29,7 +29,6 @@ import * as Tone from "tone";
 import { getPresetById } from "@/utils/presets";
 import { createSynth, disposeSynth, DisposableSynth } from "@/utils/synthUtils";
 import useEffectsChain from "@/hooks/useEffectsChain";
-import dynamic from "next/dynamic";
 
 const HeroContainer = styled.section`
   min-height: 100vh;
@@ -101,7 +100,7 @@ const HeroTitle = styled(motion.h1)`
   }
 `;
 
-const HeroSubtitle = styled(motion.p)`
+const HeroSubtitle = styled.p`
   font-size: 1.25rem;
   color: var(--text-secondary);
   margin-bottom: 3rem;
@@ -127,12 +126,11 @@ const PrimaryButton = styled(motion.a)`
   border-radius: 50px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);
+  transition: transform 0.3s ease;
+  box-shadow: 0 6px 18px rgba(108, 99, 255, 0.35);
 
   &:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(108, 99, 255, 0.4);
   }
 `;
 
@@ -144,7 +142,7 @@ const SecondaryButton = styled(motion.a)`
   font-weight: 600;
   cursor: pointer;
   border: 2px solid var(--primary);
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
 
   &:hover {
     background: rgba(108, 99, 255, 0.1);
@@ -235,14 +233,13 @@ const NoteShadow = styled(motion.div)`
   width: 60px;
   height: 8px;
   border-radius: 50%;
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.22);
   filter: blur(4px);
   z-index: 1;
   will-change: transform, opacity;
   transform: translateZ(0);
   backface-visibility: hidden;
   pointer-events: none;
-  filter: blur(4px) drop-shadow(0 0 1px rgba(0, 0, 0, 0.1)); /* Force GPU rendering */
 `;
 
 // Color mapping for all 12 chromatic pitches
@@ -289,29 +286,6 @@ const useWindowSize = () => {
 
   return windowSize;
 };
-
-// Client-only component to ensure proper measurement
-const ClientOnlyHeroTitle: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) {
-    // Return a simple placeholder during SSR
-    return <div style={{ minHeight: "260px" }}></div>;
-  }
-
-  return <>{children}</>;
-};
-
-// Use dynamic import with ssr: false to completely prevent server-side rendering
-const ClientOnly = dynamic(() => Promise.resolve(ClientOnlyHeroTitle), {
-  ssr: false,
-});
 
 /**
  * @brief HeroSection component
@@ -377,45 +351,38 @@ const HeroSection = () => {
   const isMobile = windowWidth <= 768;
 
   // Measure all word widths once on first render and when language changes
-  // Defer this to avoid blocking FCP
   useEffect(() => {
-    // Skip SSR execution
     if (typeof window === "undefined") return;
 
-    // Use a longer timeout to ensure DOM is fully rendered and FCP is done
-    const timeoutId = setTimeout(() => {
-      if (wordMeasureRef.current) {
-        const widths: Record<number, number> = {};
-
+    const timeoutId = window.setTimeout(() => {
+      requestAnimationFrame(() => {
         const tempDiv = wordMeasureRef.current;
+        if (!tempDiv) return;
+
+        const widths: Record<number, number> = {};
         const baseStyle = {
           visibility: "hidden",
           position: "absolute",
-          fontSize: !isMobile ? "4rem" : "3rem", // Match the actual font size
+          left: "0",
+          top: "0",
+          fontSize: !isMobile ? "4rem" : "3rem",
           whiteSpace: "nowrap",
           padding: "0 10px",
-          fontWeight: "bold", // Match the actual font weight
+          fontWeight: "bold",
         };
 
-        // Apply base style to the measurement div
         Object.assign(tempDiv.style, baseStyle);
-        document.body.appendChild(tempDiv);
 
-        // Measure each word
         titleWords.forEach((word, index) => {
           tempDiv.textContent = word;
           widths[index] = tempDiv.offsetWidth;
         });
 
-        // Clean up
-        document.body.removeChild(tempDiv);
+        tempDiv.textContent = "";
         setWordWidths(widths);
-        
-        // Also update the current center word width
-        setCenterWordWidth(widths[currentWordIndex] || 120);
-      }
-    }, 800); // Increased timeout to 800ms to ensure FCP is complete before measurement
-    
+      });
+    }, 100);
+
     return () => clearTimeout(timeoutId);
   }, [titleWords, isMobile]);
 
@@ -527,7 +494,8 @@ const HeroSection = () => {
     | "masterVolume";
 
   const [audioContextStarted, setAudioContextStarted] = useState(false);
-  const [videoLoaded, setVideoLoaded] = useState(true); // Start as true for immediate fade-in
+  const [shouldLoadHeroVideo, setShouldLoadHeroVideo] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [textContentLoaded, setTextContentLoaded] = useState(false); // Track when text content is ready
   const effectsChain = useEffectsChain();
@@ -540,34 +508,39 @@ const HeroSection = () => {
     { x: 0, y: 0, delay: 1.5 }, // Third position offset - delay by 1.5s
   ]);
 
-  // Add a specific effect to force re-measurement after client-side mounting
+  /**
+   * @brief Defer hero background video until idle so first paint does not compete with ~1.6 MiB media.
+   * @note Skips entirely when the user prefers reduced motion.
+   * @note Falls back to `setTimeout` when `requestIdleCallback` is unavailable (older WebKit).
+   */
   useEffect(() => {
-    // This effect will run after the component has mounted on the client side
-    if (typeof window !== "undefined" && wordMeasureRef.current) {
-      // Force re-measurement by triggering a measurement cycle
-      const widths: Record<number, number> = {};
-
-      const tempDiv = wordMeasureRef.current;
-      const baseStyle = {
-        visibility: "hidden",
-        position: "absolute",
-        fontSize: "4rem",
-        whiteSpace: "nowrap",
-        padding: "0 10px",
-      };
-
-      Object.assign(tempDiv.style, baseStyle);
-      document.body.appendChild(tempDiv);
-
-      titleWords.forEach((word, index) => {
-        tempDiv.textContent = word;
-        widths[index] = tempDiv.offsetWidth;
-      });
-
-      document.body.removeChild(tempDiv);
-      setWordWidths(widths);
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
     }
-  }, [titleWords]);
+    const load = () => {
+      setShouldLoadHeroVideo(true);
+    };
+    let cancelSchedule: (() => void) | undefined;
+
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(load, { timeout: 3500 });
+      cancelSchedule = () => {
+        if (typeof window.cancelIdleCallback === "function") {
+          window.cancelIdleCallback(id);
+        }
+      };
+    } else {
+      const id = window.setTimeout(load, 300);
+      cancelSchedule = () => {
+        window.clearTimeout(id);
+      };
+    }
+
+    return () => {
+      cancelSchedule?.();
+    };
+  }, []);
 
   // Use the synth in a way consistent with the Try Me section
   // Defer initialization to avoid blocking FCP
@@ -1002,16 +975,15 @@ const HeroSection = () => {
           }}
         />
 
-        <ClientOnly>
-          <HeroTitle
-            style={{
-              position: "relative",
-              minHeight: isMobile ? "260px" : "100px",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
+        <HeroTitle
+          style={{
+            position: "relative",
+            minHeight: isMobile ? "260px" : "100px",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
             {/* Title container */}
             <div
               style={{
@@ -1112,13 +1084,8 @@ const HeroSection = () => {
               </motion.span>
             </div>
           </HeroTitle>
-        </ClientOnly>
 
-        <HeroSubtitle
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1.2, delay: 0.2 }}
-        >
+        <HeroSubtitle>
           {t("hero.subtitle", "Enter the next evolution of music creation, where theoretical foundations invisibly guide your workflow. Chords and melodies connect with purpose, empowering your unique musical vision.")}
         </HeroSubtitle>
 
@@ -1331,7 +1298,7 @@ const HeroSection = () => {
               width: isMobile ? "45px" : "60px",
               height: "8px",
               borderRadius: "50%",
-              backgroundColor: "rgba(0, 0, 0, 0.2)",
+              backgroundColor: "rgba(0, 0, 0, 0.22)",
               filter: "blur(4px)",
               zIndex: 1,
               top: shadowTop,
@@ -1340,28 +1307,28 @@ const HeroSection = () => {
               right: shadowRight,
             }}
             initial={{ opacity: 0 }}
-            animate={textContentLoaded ? {
-              scale: [0.9, 1, 0.9],
-              opacity: [0.3, 0.4, 0.3],
-            } : { opacity: 0 }}
-            transition={textContentLoaded ? {
-              scale: {
-                repeatType: "mirror",
-                repeat: Infinity,
-                duration: 2.5,
-                ease: "easeInOut",
-                delay: animationOffset.delay + 0.5, // Add extra delay after text loads
-              },
-              opacity: {
-                repeatType: "mirror",
-                repeat: Infinity,
-                duration: 2.5,
-                ease: "easeInOut",
-                delay: animationOffset.delay + 0.5, // Add extra delay after text loads
-              },
-            } : {
-              opacity: { duration: 0.8, delay: 0.3 + animationOffset.delay }
-            }}
+            animate={
+              textContentLoaded
+                ? { opacity: [0.28, 0.45, 0.28] }
+                : { opacity: 0 }
+            }
+            transition={
+              textContentLoaded
+                ? {
+                    opacity: {
+                      repeat: Infinity,
+                      duration: 2.8,
+                      ease: "easeInOut",
+                      delay: animationOffset.delay + 0.5,
+                    },
+                  }
+                : {
+                    opacity: {
+                      duration: 0.8,
+                      delay: 0.3 + animationOffset.delay,
+                    },
+                  }
+            }
           />
 
           {/* Note circle */}
@@ -1575,17 +1542,16 @@ const HeroSection = () => {
 
   return (
     <HeroContainer id="home">
-      {!videoError && (
+      {shouldLoadHeroVideo && !videoError && (
         <BackgroundVideo
           autoPlay
           loop
           muted
           playsInline
-          preload="metadata"
+          preload="none"
           $loaded={videoLoaded}
           disablePictureInPicture
           disableRemotePlayback
-          x-webkit-airplay="deny"
           onError={() => {
             setVideoError(true);
           }}
