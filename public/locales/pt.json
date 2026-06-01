@@ -435,7 +435,7 @@
     ],
     "freeTrial": {
       "title": "Teste GRATUITO por até 14 dias",
-      "description": "Experimente a suite completa—incluindo CymaSynth—com duas opções de teste.",
+      "description": "Experimente a suite completa com duas opções de teste.",
       "options": "Escolha 7 dias sem cartão ou 14 dias com cartão em arquivo.",
       "chooseFree": "Escolha sua opção de teste gratuito:",
       "withCard": "Teste de 14 dias - Adicionar cartão em arquivo",

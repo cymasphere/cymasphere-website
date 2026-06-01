@@ -364,7 +364,7 @@
     ],
     "freeTrial": {
       "title": "免费试用最多14天",
-      "description": "通过两种试用方式体验完整套件（含 CymaSynth）。",
+      "description": "通过两种试用方式体验完整套件。",
       "options": "选择7天无卡或14天有卡存档。",
       "chooseFree": "选择您的免费试用选项：",
       "withCard": "14天试用 - 添加存卡",
