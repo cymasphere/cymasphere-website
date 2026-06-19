@@ -28,6 +28,9 @@ All subscription status visible to the app is derived from **`updateUserProStatu
 5. **Lifetime wins over subscriptions**  
    If a customer has both a lifetime purchase and an active subscription, `customerPurchasedProFromSupabase` treats them as lifetime and cancels the redundant subscription in Stripe.
 
+6. **Grandfathered recurring prices**  
+   When `STRIPE_PRICE_ID_MONTHLY` / `STRIPE_PRICE_ID_ANNUAL` change, existing Stripe subscriptions keep their original price IDs. `customerPurchasedProFromSupabase` (via `utils/stripe/classify-recurring-plan.ts`) resolves plan type in order: current env price IDs → optional `STRIPE_LEGACY_PRICE_IDS_MONTHLY` / `STRIPE_LEGACY_PRICE_IDS_ANNUAL` → recurring billing interval (`month` / `year`). Profiles must not show `none` while Stripe still bills an active monthly or annual subscription.
+
 ## Endpoints that create or modify subscriptions
 
 | Endpoint / flow | Creates/updates | Constraints |
@@ -69,6 +72,8 @@ Both scripts must use the same lifetime metadata keys as runtime purchases so de
 ## Safe extension points
 
 - **New plan types (e.g. biennial)**: Add price ID and plan type to the same checkout/subscription-setup flows; reuse the same duplicate-sub and trial checks and idempotency key pattern (`sub_${customerId}_${planType}_${hourKey}`).
+- **New Stripe price IDs (price increase)**: Update `STRIPE_PRICE_ID_MONTHLY` / `ANNUAL` for new checkouts only. Do not migrate existing subscriptions in Stripe—they remain on the old price. Subscription sync uses interval-based classification so grandfathered customers keep `monthly` / `annual` in `profiles`. Optionally add retired IDs to `STRIPE_LEGACY_PRICE_IDS_*` for explicit auditing.
+- **Backfill after a price migration**: `npx tsx scripts/sync-grandfathered-subscriptions.ts` runs `updateUserProStatus` for profiles stuck at `none` with an active recurring Stripe subscription.
 - **New platforms (e.g. another app store)**: Add a new source in `updateUserProStatus` (similar to iOS), resolve priority (e.g. lifetime > platform sub > none), and write only via `updateUserProStatus`.
 - **New discounts/promos**: Apply at checkout via existing coupon/promotion code paths; do not bypass duplicate-subscription or lifetime checks.
 

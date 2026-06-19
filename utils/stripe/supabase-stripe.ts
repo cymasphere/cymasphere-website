@@ -14,6 +14,12 @@
 import { SubscriptionType } from "@/utils/supabase/types";
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
 import { cancelSubscription } from "./actions";
+import {
+  classifyRecurringPlanFromSubscriptionItem,
+  isActiveSubscriptionStatus,
+  type RecurringPlanType,
+  type StripeSubscriptionItemShape,
+} from "./classify-recurring-plan";
 import Stripe from "stripe";
 
 /**
@@ -40,9 +46,67 @@ type StripeSubscriptionAttrs = {
     | "canceled"
     | "unpaid"
     | "paused";
-  items?: { data?: Array<{ price?: { id?: string } }> };
+  items?: { data?: StripeSubscriptionItemShape[] };
   trial_end?: number;
 };
+
+type ResolvedActiveSubscription = {
+  type: RecurringPlanType;
+  periodEnd: Date;
+  trialEnd: Date | undefined;
+  subscriptionId: string | undefined;
+  priceId: string | undefined;
+};
+
+/**
+ * @brief Resolves monthly/annual access from subscription line items.
+ * @param items Stripe subscription items (mirror or live API).
+ * @param subscriptionId Stripe subscription id.
+ * @param currentPeriodEnd Period end from row or API (ISO string, Date, or unix seconds).
+ * @param trialEndUnix Trial end from attrs/API (unix seconds).
+ * @returns Resolved plan metadata or null when no Cymasphere recurring item matches.
+ */
+function resolveActiveSubscriptionFromItems(
+  items: StripeSubscriptionItemShape[],
+  subscriptionId: string | undefined,
+  currentPeriodEnd: string | Date | number | null | undefined,
+  trialEndUnix: number | null | undefined,
+): ResolvedActiveSubscription | null {
+  for (const item of items) {
+    const planType = classifyRecurringPlanFromSubscriptionItem(item);
+    if (!planType) {
+      continue;
+    }
+
+    let periodEnd = new Date();
+    if (currentPeriodEnd != null) {
+      if (typeof currentPeriodEnd === "number") {
+        const ms =
+          currentPeriodEnd > 1_000_000_000_000
+            ? currentPeriodEnd
+            : currentPeriodEnd * 1000;
+        periodEnd = new Date(ms);
+      } else {
+        periodEnd = new Date(currentPeriodEnd);
+      }
+    }
+
+    const trialEnd =
+      typeof trialEndUnix === "number"
+        ? new Date(trialEndUnix * 1000)
+        : undefined;
+
+    return {
+      type: planType,
+      periodEnd,
+      trialEnd,
+      subscriptionId,
+      priceId: item.price?.id ?? item.plan?.id ?? undefined,
+    };
+  }
+
+  return null;
+}
 
 /**
  * @brief Checks if a customer has purchased a pro subscription from Supabase Stripe tables
@@ -259,57 +323,50 @@ export async function customerPurchasedProFromSupabase(
       }
     }
 
-    // Get subscription details from the subscriptions
-    const monthlyPriceId = process.env.STRIPE_PRICE_ID_MONTHLY!;
-    const annualPriceId = process.env.STRIPE_PRICE_ID_ANNUAL!;
+    const currentMonthlyPriceId = process.env.STRIPE_PRICE_ID_MONTHLY?.trim() ?? "";
+    const currentAnnualPriceId = process.env.STRIPE_PRICE_ID_ANNUAL?.trim() ?? "";
 
     let hasActiveSubscription = false;
-    let activeSubscriptionType: "monthly" | "annual" | undefined;
+    let activeSubscriptionType: RecurringPlanType | undefined;
 
     for (const subscription of safeSubscriptions) {
-      // Skip canceled or incomplete subscriptions
       const attrs = (subscription as any)
         .attrs as StripeSubscriptionAttrs | null;
 
-      switch (attrs?.status) {
-        case "active":
-        case "trialing":
-        case "past_due":
-          break;
-        default:
-          continue;
+      if (!isActiveSubscriptionStatus(attrs?.status)) {
+        continue;
       }
 
-      // Check subscription items
-      const items = attrs?.items?.data || [];
-      for (const item of items) {
-        const priceId = item.price?.id;
-        if (priceId === monthlyPriceId || priceId === annualPriceId) {
-          // Consider active subscriptions - those that are active, trialing, or past_due
-          // These are statuses where the customer still has access to the service
-          hasActiveSubscription = true;
-          activeSubscriptionType =
-            priceId === monthlyPriceId ? "monthly" : "annual";
-          activeSubscriptionId = (subscription as any).id || undefined;
+      const resolved = resolveActiveSubscriptionFromItems(
+        attrs?.items?.data ?? [],
+        (subscription as any).id || undefined,
+        (subscription as any).current_period_end,
+        attrs?.trial_end,
+      );
 
-          // Set expiration date
-          if ((subscription as any).current_period_end) {
-            current_period_end = new Date(
-              (subscription as any).current_period_end
-            );
-          }
-
-          // Check for trial end date
-          const trialEnd = attrs?.trial_end;
-          if (trialEnd) {
-            trial_end_date = new Date(trialEnd * 1000);
-          }
-
-          break;
-        }
+      if (!resolved) {
+        continue;
       }
 
-      if (hasActiveSubscription) break;
+      hasActiveSubscription = true;
+      activeSubscriptionType = resolved.type;
+      activeSubscriptionId = resolved.subscriptionId;
+      current_period_end = resolved.periodEnd;
+      if (resolved.trialEnd) {
+        trial_end_date = resolved.trialEnd;
+      }
+
+      if (
+        resolved.priceId &&
+        resolved.priceId !== currentMonthlyPriceId &&
+        resolved.priceId !== currentAnnualPriceId
+      ) {
+        console.log(
+          `[customerPurchasedProFromSupabase] Grandfathered ${resolved.type} price ${resolved.priceId} for customer ${customer_id}`,
+        );
+      }
+
+      break;
     }
 
     /**
@@ -317,18 +374,13 @@ export async function customerPurchasedProFromSupabase(
      * @description Right after `subscriptions.create`, webhook-synced `stripe_tables.stripe_subscriptions`
      *   rows may not exist yet; `updateUserProStatus` would otherwise write `none` to the profile until refresh.
      * @param stripeCustomerId Stripe customer id (cus_…).
-     * @returns Active recurring plan from API, or null if none match env price IDs.
+     * @returns Active recurring plan from API, or null if none match Cymasphere recurring items.
      */
     const resolveActiveSubscriptionFromStripeApi = async (
       stripeCustomerId: string,
-    ): Promise<{
-      type: "monthly" | "annual";
-      periodEnd: Date;
-      trialEnd: Date | undefined;
-      subscriptionId: string;
-    } | null> => {
+    ): Promise<ResolvedActiveSubscription | null> => {
       const secret = process.env.STRIPE_SECRET_KEY?.trim();
-      if (!secret || !monthlyPriceId || !annualPriceId) {
+      if (!secret) {
         return null;
       }
       const stripe = new Stripe(secret);
@@ -337,33 +389,22 @@ export async function customerPurchasedProFromSupabase(
         status: "all",
         limit: 30,
       });
-      const activeLive = liveList.data.filter(
-        (sub) =>
-          sub.status === "active" ||
-          sub.status === "trialing" ||
-          sub.status === "past_due",
+      const activeLive = liveList.data.filter((sub) =>
+        isActiveSubscriptionStatus(sub.status),
       );
       for (const sub of activeLive) {
-        for (const item of sub.items.data) {
-          const priceId = item.price?.id;
-          if (priceId === monthlyPriceId || priceId === annualPriceId) {
-            const attrs = sub as Stripe.Subscription & {
-              current_period_end: number;
-              trial_end: number | null;
-            };
-            const periodEndSec = attrs.current_period_end;
-            return {
-              type: priceId === monthlyPriceId ? "monthly" : "annual",
-              periodEnd: new Date(
-                (typeof periodEndSec === "number" ? periodEndSec : 0) * 1000,
-              ),
-              trialEnd:
-                typeof attrs.trial_end === "number"
-                  ? new Date(attrs.trial_end * 1000)
-                  : undefined,
-              subscriptionId: sub.id,
-            };
-          }
+        const attrs = sub as Stripe.Subscription & {
+          current_period_end: number;
+          trial_end: number | null;
+        };
+        const resolved = resolveActiveSubscriptionFromItems(
+          sub.items.data as StripeSubscriptionItemShape[],
+          sub.id,
+          attrs.current_period_end,
+          attrs.trial_end,
+        );
+        if (resolved) {
+          return resolved;
         }
       }
       return null;
@@ -385,6 +426,15 @@ export async function customerPurchasedProFromSupabase(
           console.log(
             `[customerPurchasedProFromSupabase] Active subscription from Stripe API (mirror lag): ${fromApi.type} for ${customer_id}`,
           );
+          if (
+            fromApi.priceId &&
+            fromApi.priceId !== currentMonthlyPriceId &&
+            fromApi.priceId !== currentAnnualPriceId
+          ) {
+            console.log(
+              `[customerPurchasedProFromSupabase] Grandfathered ${fromApi.type} price ${fromApi.priceId} for customer ${customer_id}`,
+            );
+          }
         }
       } catch (apiErr) {
         console.warn(
