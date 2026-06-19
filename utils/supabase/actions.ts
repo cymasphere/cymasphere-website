@@ -15,6 +15,15 @@ import { createClient } from "@/utils/supabase/server";
 import { Profile } from "@/utils/supabase/types";
 import { getRegistrationDisplayName } from "@/utils/registration-display-name";
 import { findOrCreateCustomer } from "@/utils/stripe/actions";
+import {
+  ensureRevokeCymasphereDeviceFunction,
+  getSupabaseDbPassword,
+  revokeCymasphereDeviceSessionsDirect,
+} from "@/utils/supabase/device-session-db";
+import {
+  extractCymasphereDeviceHost,
+  formatCymasphereDeviceName,
+} from "@/utils/supabase/cymasphere-device";
 
 /**
  * @brief Server action to sign up a user with Stripe customer creation
@@ -182,11 +191,22 @@ export async function fetchIsAdmin(
   return { is_admin: isAdmin, error: null };
 }
 
+/** Cymasphere app session row returned to the dashboard settings UI. */
+export type CymasphereDeviceSession = {
+  ip: string;
+  device_name: string;
+  last_used: string;
+  user_agent: string;
+};
+
 /**
- * Fetches the sessions for a user
+ * @brief Fetches active Cymasphere app sessions for the authenticated user.
+ * @description Only returns sessions whose user agent starts with `cymasphere:`.
+ * Sessions are grouped by user agent so each physical app install appears once.
+ * @returns Cymasphere app sessions and an error message when the fetch fails.
  */
 export async function fetchUserSessions(): Promise<{
-  sessions: { ip: string; device_name: string; last_used: string }[];
+  sessions: CymasphereDeviceSession[];
   error: string | null;
 }> {
   try {
@@ -214,26 +234,27 @@ export async function fetchUserSessions(): Promise<{
         return { sessions: [], error: "Failed to fetch user sessions" };
       }
 
-      // Group sessions by user_agent and keep only the most recent session for each unique user agent
-      const uniqueSessions = new Map();
+      // Group sessions by stable device host so OS updates do not appear as new devices.
+      const uniqueSessions = new Map<string, CymasphereDeviceSession>();
 
       data.forEach((session) => {
         const userAgent = session.user_agent;
         if (userAgent) {
+          const deviceHost = extractCymasphereDeviceHost(userAgent);
           const lastUsed =
             session.refreshed_at || session.updated_at || session.created_at;
 
-          // If we haven't seen this user agent before, or if this session is more recent
           if (
-            !uniqueSessions.has(userAgent) ||
+            !uniqueSessions.has(deviceHost) ||
             (lastUsed &&
               new Date(lastUsed) >
-                new Date(uniqueSessions.get(userAgent).last_used))
+                new Date(uniqueSessions.get(deviceHost)!.last_used))
           ) {
-            uniqueSessions.set(userAgent, {
+            uniqueSessions.set(deviceHost, {
               ip: (session.ip as string) || "Unknown",
-              device_name: userAgent.replace("cymasphere: ", ""),
+              device_name: formatCymasphereDeviceName(userAgent),
               last_used: lastUsed || new Date().toISOString(),
+              user_agent: userAgent,
             });
           }
         }
@@ -249,5 +270,113 @@ export async function fetchUserSessions(): Promise<{
   } catch (error) {
     console.error("Error in fetchUserSession:", error);
     return { sessions: [], error: "Failed to fetch user sessions" };
+  }
+}
+
+/**
+ * @brief Revokes all auth sessions for one Cymasphere app device.
+ * @description Deletes every `auth.sessions` row for the current user that matches
+ * the provided Cymasphere user agent. Web browser sessions are never affected.
+ * @param userAgent Full Cymasphere user agent string (must start with `cymasphere:`).
+ * @returns Number of revoked sessions, or an error message when revocation fails.
+ * @note Requires the `revoke_cymasphere_device_sessions` database function.
+ */
+export async function revokeCymasphereDeviceSession(userAgent: string): Promise<{
+  revoked_count: number;
+  error: string | null;
+}> {
+  try {
+    if (!userAgent.startsWith("cymasphere:")) {
+      return { revoked_count: 0, error: "Invalid Cymasphere device session" };
+    }
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return { revoked_count: 0, error: "Failed to fetch user" };
+    }
+
+    const targetDeviceHost = extractCymasphereDeviceHost(userAgent);
+
+    const { data: ownedSessions, error: ownershipError } = await supabase
+      .from("user_sessions")
+      .select("user_agent")
+      .ilike("user_agent", "cymasphere:%");
+
+    if (ownershipError) {
+      console.error("Error verifying Cymasphere device ownership:", ownershipError);
+      return { revoked_count: 0, error: "Failed to verify device session" };
+    }
+
+    const ownsDevice = ownedSessions?.some(
+      (session) =>
+        session.user_agent &&
+        extractCymasphereDeviceHost(session.user_agent) === targetDeviceHost,
+    );
+
+    if (!ownsDevice) {
+      return { revoked_count: 0, error: "Device session not found" };
+    }
+
+    let { data, error } = await supabase.rpc(
+      "revoke_cymasphere_device_sessions",
+      { p_user_agent: userAgent },
+    );
+
+    if (error?.code === "PGRST202" && getSupabaseDbPassword()) {
+      try {
+        await ensureRevokeCymasphereDeviceFunction();
+        ({ data, error } = await supabase.rpc(
+          "revoke_cymasphere_device_sessions",
+          { p_user_agent: userAgent },
+        ));
+      } catch (migrationError) {
+        console.error("Error applying revoke-device migration:", migrationError);
+      }
+    }
+
+    if (error?.code === "PGRST202" && getSupabaseDbPassword()) {
+      try {
+        const revokedCount = await revokeCymasphereDeviceSessionsDirect(
+          user.id,
+          userAgent,
+        );
+        return { revoked_count: revokedCount, error: null };
+      } catch (directSqlError) {
+        console.error("Error revoking Cymasphere device via SQL:", directSqlError);
+        return {
+          revoked_count: 0,
+          error: "Device logout is not configured yet. Apply the revoke-device migration.",
+        };
+      }
+    }
+
+    if (error) {
+      console.error("Error revoking Cymasphere device session:", error);
+      return {
+        revoked_count: 0,
+        error:
+          error.code === "PGRST202"
+            ? "Device logout is not configured yet. Apply the revoke-device migration."
+            : "Failed to revoke device session",
+      };
+    }
+
+    const revokedCount = data ?? 0;
+    if (revokedCount === 0) {
+      return {
+        revoked_count: 0,
+        error: "No active sessions were found for that device.",
+      };
+    }
+
+    return { revoked_count: revokedCount, error: null };
+  } catch (error) {
+    console.error("Error in revokeCymasphereDeviceSession:", error);
+    return { revoked_count: 0, error: "Failed to revoke device session" };
   }
 }

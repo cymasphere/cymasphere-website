@@ -2565,6 +2565,10 @@ export type Database = {
         Args: { p_audience_id: string; p_subscriber_id: string }
         Returns: boolean
       }
+      revoke_cymasphere_device_sessions: {
+        Args: { p_user_agent: string }
+        Returns: number
+      }
       schedule_automation_job: {
         Args: {
           p_job_type: Database["public"]["Enums"]["automation_job_type"]

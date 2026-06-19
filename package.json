@@ -13,6 +13,7 @@
     "test:e2e": "echo \"No E2E tests configured. Replace npm script 'test:e2e' with your E2E runner.\"",
     "supabase-gen-types": "bun x supabase gen types typescript --project-id \"jibirpbauzqhdiwjlrmf\" --schema public,stripe_tables > database.types.ts",
     "supabase-migrate": "bun x supabase db push",
+    "db:apply-revoke-device": "npx tsx scripts/apply-revoke-device-migration.ts",
     "sync:cymasynth-assets": "npx tsx scripts/sync-cymasynth-assets.ts",
     "sync:nnaudio-product-images": "npx tsx scripts/sync-cymasynth-assets.ts",
     "i18n:sync-from-en": "node scripts/sync-missing-locale-keys-from-en.mjs",

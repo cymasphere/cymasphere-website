@@ -47,6 +47,7 @@ interface Device {
   type: "mobile" | "tablet" | "desktop";
   location: string;
   lastActive: string;
+  userAgent: string;
 }
 
 /**
@@ -284,6 +285,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
             type: deviceType,
             location: sessionData.ip || "Unknown",
             lastActive: formattedTime,
+            userAgent: sessionData.user_agent,
           };
         });
 

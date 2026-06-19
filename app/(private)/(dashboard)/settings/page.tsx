@@ -28,6 +28,8 @@ import { useDashboard } from "@/contexts/DashboardContext";
 import AnimatedCard from "@/components/settings/CardComponent";
 import NextSEO from "@/components/NextSEO";
 import { useTranslation } from "react-i18next";
+import { revokeCymasphereDeviceSession, fetchUserSessions } from "@/utils/supabase/actions";
+import { extractCymasphereDeviceHost } from "@/utils/supabase/cymasphere-device";
 
 const SettingsContainer = styled.div`
   width: 100%;
@@ -191,6 +193,31 @@ const DeviceName = styled.div`
 const DeviceDetails = styled.div`
   font-size: 0.8rem;
   color: var(--text-secondary);
+`;
+
+const DeviceLogoutButton = styled.button`
+  background: rgba(255, 87, 51, 0.15);
+  border: 1px solid rgba(255, 87, 51, 0.35);
+  color: var(--error);
+  border-radius: 6px;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 87, 51, 0.25);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 `;
 
 const DeviceCount = styled.div`
@@ -430,7 +457,7 @@ function Settings() {
       deleteConfirmation: "",
     });
 
-  const { user, signOut, refreshUser, requestEmailChange, updateProfile, resetPassword } =
+  const { user, refreshUser, requestEmailChange, updateProfile, resetPassword } =
     useAuth();
 
   const [personalInfoForm, setPersonalInfoForm] =
@@ -447,6 +474,13 @@ function Settings() {
 
   // Modal states
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [devicePendingLogout, setDevicePendingLogout] = useState<{
+    name: string;
+    userAgent: string;
+  } | null>(null);
+  const [revokingDeviceUserAgent, setRevokingDeviceUserAgent] = useState<
+    string | null
+  >(null);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState("");
   const [confirmationTitle, setConfirmationTitle] = useState("");
@@ -656,6 +690,15 @@ function Settings() {
   };
 
   const handleLogout = () => {
+    setDevicePendingLogout(null);
+    setShowLogoutModal(true);
+  };
+
+  const handleDeviceLogout = (device: {
+    name: string;
+    userAgent: string;
+  }) => {
+    setDevicePendingLogout(device);
     setShowLogoutModal(true);
   };
 
@@ -691,18 +734,73 @@ function Settings() {
 
   const confirmLogout = async () => {
     try {
-      // Sign out of all devices using the auth context
-      await signOut("others");
+      if (devicePendingLogout) {
+        setRevokingDeviceUserAgent(devicePendingLogout.userAgent);
+        const { error } = await revokeCymasphereDeviceSession(
+          devicePendingLogout.userAgent,
+        );
+
+        setShowLogoutModal(false);
+        const signedOutDeviceName = devicePendingLogout.name;
+        setDevicePendingLogout(null);
+
+        if (error) {
+          setConfirmationTitle(
+            t("dashboard.settings.logoutFailed", "Logout Failed"),
+          );
+          setConfirmationMessage(
+            error ||
+              t(
+                "dashboard.settings.deviceLogoutError",
+                "There was an error signing out that device. Please try again.",
+              ),
+          );
+          setConfirmationIcon("warning");
+          setShowConfirmationModal(true);
+          return;
+        }
+
+        setConfirmationTitle(
+          t("dashboard.settings.deviceLogoutSuccess", "Device Signed Out"),
+        );
+        setConfirmationMessage(
+          t(
+            "dashboard.settings.deviceLogoutMessage",
+            "{{device}} has been signed out of the Cymasphere app.",
+            { device: signedOutDeviceName },
+          ),
+        );
+        setConfirmationIcon("success");
+        setShowConfirmationModal(true);
+        await refreshSessionData();
+        return;
+      }
+
+      const { sessions, error: fetchError } = await fetchUserSessions();
+      if (fetchError) {
+        throw new Error(fetchError);
+      }
+
+      const revokeResults = await Promise.all(
+        sessions.map((session) =>
+          revokeCymasphereDeviceSession(session.user_agent),
+        ),
+      );
+
+      const failedRevoke = revokeResults.find((result) => result.error);
+      if (failedRevoke?.error) {
+        throw new Error(failedRevoke.error);
+      }
 
       setShowLogoutModal(false);
       setConfirmationTitle(
-        t("dashboard.settings.logoutSuccess", "Logged Out Successfully")
+        t("dashboard.settings.logoutSuccess", "Logged Out Successfully"),
       );
       setConfirmationMessage(
         t(
           "dashboard.settings.logoutMessage",
-          "You have been logged out from all devices."
-        )
+          "You have been signed out from all other Cymasphere app devices.",
+        ),
       );
       setConfirmationIcon("success");
       setShowConfirmationModal(true);
@@ -711,17 +809,20 @@ function Settings() {
     } catch (error) {
       console.error("Error logging out:", error);
       setShowLogoutModal(false);
+      setDevicePendingLogout(null);
       setConfirmationTitle(
-        t("dashboard.settings.logoutFailed", "Logout Failed")
+        t("dashboard.settings.logoutFailed", "Logout Failed"),
       );
       setConfirmationMessage(
         t(
           "dashboard.settings.logoutError",
-          "There was an error logging out from all devices. Please try again."
-        )
+          "There was an error logging out. Please try again.",
+        ),
       );
       setConfirmationIcon("warning");
       setShowConfirmationModal(true);
+    } finally {
+      setRevokingDeviceUserAgent(null);
     }
   };
 
@@ -985,9 +1086,9 @@ function Settings() {
                 {t("dashboard.settings.noDevices", "No active devices found")}
               </div>
             ) : (
-              activeDevices.map((device, index) => (
+              activeDevices.map((device) => (
                 <DeviceItem
-                  key={index}
+                  key={extractCymasphereDeviceHost(device.userAgent)}
                   $isActive={
                     device.location ===
                     "current" /* For current session highlighting */
@@ -1010,6 +1111,25 @@ function Settings() {
                       </DeviceDetails>
                     </div>
                   </DeviceInfo>
+                  <DeviceLogoutButton
+                    type="button"
+                    onClick={() =>
+                      handleDeviceLogout({
+                        name: device.name,
+                        userAgent: device.userAgent,
+                      })
+                    }
+                    disabled={revokingDeviceUserAgent === device.userAgent}
+                    aria-label={t(
+                      "dashboard.settings.signOutDevice",
+                      "Sign out device",
+                    )}
+                  >
+                    <FaSignOutAlt />
+                    {revokingDeviceUserAgent === device.userAgent
+                      ? t("common.loading", "Loading...")
+                      : t("dashboard.settings.signOutDevice", "Sign Out")}
+                  </DeviceLogoutButton>
                 </DeviceItem>
               ))
             )}
@@ -1257,7 +1377,10 @@ function Settings() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setShowLogoutModal(false)}
+            onClick={() => {
+              setShowLogoutModal(false);
+              setDevicePendingLogout(null);
+            }}
           >
             <ModalContent
               initial={{ y: 50, opacity: 0 }}
@@ -1267,23 +1390,42 @@ function Settings() {
             >
               <ModalHeader>
                 <ModalTitle>
-                  {t("dashboard.settings.confirmLogout", "Confirm Logout")}
+                  {devicePendingLogout
+                    ? t(
+                        "dashboard.settings.confirmDeviceLogout",
+                        "Sign Out Device",
+                      )
+                    : t("dashboard.settings.confirmLogout", "Confirm Logout")}
                 </ModalTitle>
-                <CloseButton onClick={() => setShowLogoutModal(false)}>
+                <CloseButton
+                  onClick={() => {
+                    setShowLogoutModal(false);
+                    setDevicePendingLogout(null);
+                  }}
+                >
                   <FaTimes />
                 </CloseButton>
               </ModalHeader>
               <ModalBody>
                 <p>
-                  {t(
-                    "dashboard.settings.logoutConfirmation",
-                    "Are you sure you want to sign out from all devices? This will end all your active sessions."
-                  )}
+                  {devicePendingLogout
+                    ? t(
+                        "dashboard.settings.deviceLogoutConfirmation",
+                        "Sign out {{device}} from the Cymasphere app? That device will need to sign in again.",
+                        { device: devicePendingLogout.name },
+                      )
+                    : t(
+                        "dashboard.settings.logoutConfirmation",
+                        "Sign out from all other Cymasphere app devices? Each one will need to sign in again.",
+                      )}
                 </p>
               </ModalBody>
               <ModalFooter>
                 <Button
-                  onClick={() => setShowLogoutModal(false)}
+                  onClick={() => {
+                    setShowLogoutModal(false);
+                    setDevicePendingLogout(null);
+                  }}
                   style={{
                     marginRight: "0.5rem",
                     background: "rgba(255, 255, 255, 0.1)",
@@ -1291,7 +1433,10 @@ function Settings() {
                 >
                   {t("common.cancel", "Cancel")}
                 </Button>
-                <Button onClick={confirmLogout}>
+                <Button
+                  onClick={confirmLogout}
+                  disabled={Boolean(revokingDeviceUserAgent)}
+                >
                   {t("dashboard.settings.signOut", "Sign Out")}
                 </Button>
               </ModalFooter>
