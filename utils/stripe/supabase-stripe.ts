@@ -20,6 +20,12 @@ import {
   type RecurringPlanType,
   type StripeSubscriptionItemShape,
 } from "./classify-recurring-plan";
+import {
+  hasLifetimePurchaseMetadata,
+  isKnownLifetimePriceId,
+  isLifetimePaidInvoice,
+  isLifetimeSucceededPaymentIntent,
+} from "./classify-lifetime-purchase";
 import Stripe from "stripe";
 
 /**
@@ -148,7 +154,6 @@ export async function customerPurchasedProFromSupabase(
     // This is the most reliable method and handles $0 invoices with coupons
     // Do this BEFORE checking payment intents so it takes priority
     const lifetimePriceId = process.env.STRIPE_PRICE_ID_LIFETIME;
-    const lifetimePriceId2 = process.env.LIFETIME_PRICE_ID_2;
 
     if (lifetimePriceId) {
       try {
@@ -168,23 +173,12 @@ export async function customerPurchasedProFromSupabase(
         );
 
         const hasLifetimeInvoice = invoices.data.some((invoice) => {
-          // Check if invoice has lifetime metadata (same as normal checkout purchases)
-          const hasMetadata = invoice.metadata?.purchase_type === "lifetime";
+          const hasMetadata = hasLifetimePurchaseMetadata(invoice.metadata);
+          const hasLifetimePrice = isLifetimePaidInvoice(invoice);
 
-          // Check if invoice line items contain lifetime price ID
-          const hasLifetimePrice = invoice.lines.data.some(
-            (line) => {
-              const price = (line as { price?: { id?: string } }).price;
-              return (
-                price?.id === lifetimePriceId ||
-                (lifetimePriceId2 && price?.id === lifetimePriceId2)
-              );
-            }
-          );
-
-          if (hasMetadata || hasLifetimePrice) {
+          if (hasLifetimePrice) {
             console.log(
-              `[customerPurchasedProFromSupabase] ✅ Lifetime invoice found: ${invoice.id} (metadata: ${hasMetadata}, price: ${hasLifetimePrice})`
+              `[customerPurchasedProFromSupabase] ✅ Lifetime invoice found: ${invoice.id} (metadata: ${hasMetadata}, knownPrice: ${!hasMetadata})`
             );
             return true;
           }
@@ -252,36 +246,32 @@ export async function customerPurchasedProFromSupabase(
     for (const paymentIntent of safePaymentIntents) {
       const attrs =
         ((paymentIntent as any).attrs as {
-          metadata?: { purchase_type?: string };
+          metadata?: {
+            purchase_type?: string;
+            is_lifetime?: string;
+            price_id?: string;
+          };
           status?: string;
           dispute?: unknown | null;
           refunded?: boolean;
         }) || {};
 
-      // Check metadata - this should be set by checkout/payment-intent routes for all new flows
-      const hasLifetimeMetadata = attrs?.metadata?.purchase_type === "lifetime";
+      if (isLifetimeSucceededPaymentIntent(attrs)) {
+        hasLifetime = true;
+        subscriptionType = "lifetime";
+        continue;
+      }
 
-      const isLifetimePurchase = hasLifetimeMetadata;
-
-      if (isLifetimePurchase) {
-        // If this is a lifetime purchase, check its status
-        if (attrs.status === "succeeded" && !attrs.dispute && !attrs.refunded) {
-          hasLifetime = true;
-          subscriptionType = "lifetime";
-        } else if (
-          attrs.status !== "succeeded" &&
-          attrs.status !== "canceled"
-        ) {
-          // Payment intent exists with lifetime metadata but not succeeded yet
-          // Check if there's a corresponding paid invoice (for $0 invoices with coupons)
-          // Don't set hasLifetime = false here - let the invoice check handle it
-          console.log(
-            `ℹ️ Found payment intent with lifetime metadata but status ${attrs.status} for customer ${customer_id} - will check invoices`
-          );
-        } else if (attrs.status === "canceled" || attrs.refunded) {
-          // If this lifetime purchase was canceled or refunded, they no longer have lifetime access
-          hasLifetime = false;
-        }
+      const metadataPriceId = attrs?.metadata?.price_id;
+      if (
+        metadataPriceId &&
+        isKnownLifetimePriceId(metadataPriceId) &&
+        attrs.status === "succeeded" &&
+        !attrs.dispute &&
+        !attrs.refunded
+      ) {
+        hasLifetime = true;
+        subscriptionType = "lifetime";
       }
     }
 

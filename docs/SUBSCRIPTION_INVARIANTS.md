@@ -31,6 +31,9 @@ All subscription status visible to the app is derived from **`updateUserProStatu
 6. **Grandfathered recurring prices**  
    When `STRIPE_PRICE_ID_MONTHLY` / `STRIPE_PRICE_ID_ANNUAL` change, existing Stripe subscriptions keep their original price IDs. `customerPurchasedProFromSupabase` (via `utils/stripe/classify-recurring-plan.ts`) resolves plan type in order: current env price IDs → optional `STRIPE_LEGACY_PRICE_IDS_MONTHLY` / `STRIPE_LEGACY_PRICE_IDS_ANNUAL` → recurring billing interval (`month` / `year`). Profiles must not show `none` while Stripe still bills an active monthly or annual subscription.
 
+7. **Grandfathered lifetime prices**  
+   Lifetime detection (`utils/stripe/classify-lifetime-purchase.ts`) uses `purchase_type: lifetime` / `is_lifetime: true` metadata first (all checkout and grant flows set this). Legacy lifetime price IDs are matched via `LIFETIME_PRICE_ID_2` and `STRIPE_LEGACY_PRICE_IDS_LIFETIME` when metadata is absent. Existing lifetime profiles are preserved by safety nets in `updateUserProStatus` even if Stripe queries lag.
+
 ## Endpoints that create or modify subscriptions
 
 | Endpoint / flow | Creates/updates | Constraints |

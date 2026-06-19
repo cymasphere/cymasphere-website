@@ -14,6 +14,11 @@ import Stripe from "stripe";
 import { SubscriptionType } from "@/utils/supabase/types";
 import { PlanType, PriceData } from "@/types/stripe";
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
+import {
+  hasLifetimePurchaseMetadata,
+  isLifetimePaidInvoice,
+  isLifetimeSucceededPaymentIntent,
+} from "./classify-lifetime-purchase";
 
 /**
  * Stripe client instance initialized with secret key.
@@ -522,7 +527,7 @@ export async function hasCustomerPurchasedLifetime(
       (charge) =>
         charge.paid &&
         charge.amount > 0 &&
-        (charge.metadata?.purchase_type === "lifetime" ||
+        (hasLifetimePurchaseMetadata(charge.metadata) ||
           charge.description?.toLowerCase().includes("lifetime")),
     );
     if (hasLifetimeCharge) return true;
@@ -531,9 +536,13 @@ export async function hasCustomerPurchasedLifetime(
       customer: customerId,
       limit: 100,
     });
-    const hasLifetimePayment = paymentIntents.data.some(
-      (pi) =>
-        pi.status === "succeeded" && pi.metadata?.purchase_type === "lifetime",
+    const hasLifetimePayment = paymentIntents.data.some((pi) =>
+      isLifetimeSucceededPaymentIntent({
+        metadata: pi.metadata,
+        status: pi.status,
+        dispute: null,
+        refunded: false,
+      }),
     );
     if (hasLifetimePayment) return true;
 
@@ -548,14 +557,12 @@ export async function hasCustomerPurchasedLifetime(
     const invoices = await stripe.invoices.list({
       customer: customerId,
       limit: 100,
+      status: "paid",
+      expand: ["data.lines.data.price"],
     });
-    const hasLifetimeInvoice = invoices.data.some((invoice) => {
-      if (invoice.status !== "paid") return false;
-      return invoice.lines.data.some(
-        (line) =>
-          (line as { price?: { id?: string } }).price?.id === lifetimePriceId,
-      );
-    });
+    const hasLifetimeInvoice = invoices.data.some((invoice) =>
+      isLifetimePaidInvoice(invoice),
+    );
     if (hasLifetimeInvoice) return true;
 
     return false;
