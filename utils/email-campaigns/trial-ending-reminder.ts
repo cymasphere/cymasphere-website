@@ -7,6 +7,8 @@
  * @module utils/email-campaigns/trial-ending-reminder
  */
 
+import { resolvePublicSiteUrlForEmail } from "./public-site-url";
+
 export interface TrialEndingReminderData {
   customerName?: string;
   customerEmail: string;
@@ -43,7 +45,7 @@ export interface TrialEndingReminderData {
 export function generateTrialEndingReminderHtml(data: TrialEndingReminderData): string {
   const { customerName, customerEmail, trialEndDate, trialDays, planName, monthlyPrice, updatePaymentUrl } = data;
   const firstName = customerName?.split(' ')[0] || 'there';
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com';
+  const siteUrl = resolvePublicSiteUrlForEmail();
   const logoUrlSupabase = 'https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/logos//cymasphere-logo.png';
 
   // Format trial end date
@@ -183,7 +185,7 @@ export function generateTrialEndingReminderHtml(data: TrialEndingReminderData): 
 export function generateTrialEndingReminderText(data: TrialEndingReminderData): string {
   const { customerName, trialEndDate, planName, monthlyPrice, updatePaymentUrl } = data;
   const firstName = customerName?.split(' ')[0] || 'there';
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com';
+  const siteUrl = resolvePublicSiteUrlForEmail();
 
   // Format trial end date
   const trialDate = new Date(trialEndDate);
