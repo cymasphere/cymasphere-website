@@ -6,7 +6,7 @@
  *
  * @example
  * npx tsx scripts/sync-grandfathered-subscriptions.ts
- * npx tsx scripts/sync-grandfathered-subscriptions.ts jlgraham33@hotmail.com
+ * @note Always passes skipEmail: true — backfills must never send welcome or subscription-change emails.
  */
 
 import { config } from "dotenv";
@@ -134,7 +134,7 @@ async function main(): Promise<void> {
   for (const profile of candidates) {
     try {
       const before = profile.subscription;
-      const result = await updateUserProStatus(profile.id);
+      const result = await updateUserProStatus(profile.id, { skipEmail: true });
       const after = result.subscription;
       if (after !== before) {
         updated += 1;
