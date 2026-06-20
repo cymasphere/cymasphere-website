@@ -282,6 +282,27 @@ const ComingSoonBadge = styled.div`
   letter-spacing: 0.3px;
 `;
 
+const RecommendedBadge = styled.div`
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+`;
+
+const DAWSubtitle = styled.div`
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.35rem;
+  line-height: 1.3;
+`;
+
 const InstructionsContainer = styled.div`
   margin-top: 2rem;
 
@@ -578,6 +599,7 @@ const DownloadButtonStyled = styled.a`
 type OS = "macos" | "windows" | null;
 type InstallationType = "standalone" | "plugin" | null;
 type DAW =
+  | "cymasphere"
   | "logic"
   | "ableton"
   | "flstudio"
@@ -767,6 +789,37 @@ const getInstructions = (
         ],
       });
     }
+  } else if (daw === "cymasphere" && type === "standalone") {
+    instructions.push({
+      title: "CymaSynth Loads Automatically — Zero Setup",
+      steps: [
+        "CymaSynth is included with Cymasphere — no separate install or instrument selection needed to start making music",
+        "When you create Pattern, Voicing, or Sequencer tracks, Cymasphere automatically assigns CymaSynth and loads an instance in the background for each track",
+        "On first launch, Cymasphere scans for CymaSynth automatically — you don't need to hunt for plugin folders or configure a default instrument",
+        "Create a song, add a track, and press voicing buttons in Palette view — you should hear sound immediately and see meters move on the Mixer strip",
+        "Each track gets its own CymaSynth instance; instrument settings are saved with your project and restored when you reopen the song",
+      ],
+    });
+    instructions.push({
+      title: "Use the Built-in Mixer",
+      steps: [
+        "Open the Mixer tab from the top bar — Cymasphere includes a full mixing console with track faders, pan, mute/solo, a master fader, and real-time audio metering",
+        "Add up to five Audio FX slots per track, plus master bus effects; create aux tracks and route sends for parallel processing and submixes",
+        "Add per-track MIDI FX to process MIDI before it reaches your instrument",
+        "All mixer settings — fader levels, routing, and plugin assignments — are saved automatically with your project",
+      ],
+    });
+    instructions.push({
+      title: "Swap In Third-Party Plugins Anytime (Optional)",
+      steps: [
+        os === "macos"
+          ? "Prefer your own sounds? Click INSTRUMENT on any mixer strip (or manage plugins from Track view) to replace CymaSynth with any Audio Unit instrument — Cymasphere handles loading and routing automatically"
+          : "Prefer your own sounds? Click INSTRUMENT on any mixer strip (or manage plugins from Track view) to replace CymaSynth with any VST3 instrument — Cymasphere handles loading and routing automatically",
+        "Load third-party Audio FX and MIDI FX plugins alongside or instead of the built-in chain — plugin states and bypass settings persist with your song",
+        "Click Scan for Plugins if a newly installed plugin isn't listed — Cymasphere discovers plugins from standard install locations automatically",
+        "Open User Menu → Audio Settings to select your audio interface, sample rate, and buffer size; use Profile Menu → Performance to monitor CPU and per-plugin usage",
+      ],
+    });
   } else if (daw === "other") {
     instructions.push({
       title: "General Setup Instructions",
@@ -906,6 +959,13 @@ export default function GettingStartedWizard() {
   }, [supabase]);
 
   const handleNext = () => {
+    if (
+      currentStep === 3 &&
+      installationType === "standalone" &&
+      daw === null
+    ) {
+      setDAW("cymasphere");
+    }
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     }
@@ -1071,7 +1131,10 @@ export default function GettingStartedWizard() {
             <OptionsGrid>
               <OptionCard
                 $selected={installationType === "plugin"}
-                onClick={() => setInstallationType("plugin")}
+                onClick={() => {
+                  setInstallationType("plugin");
+                  if (daw === "cymasphere") setDAW(null);
+                }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -1085,7 +1148,10 @@ export default function GettingStartedWizard() {
               </OptionCard>
               <OptionCard
                 $selected={installationType === "standalone"}
-                onClick={() => setInstallationType("standalone")}
+                onClick={() => {
+                  setInstallationType("standalone");
+                  if (daw === null) setDAW("cymasphere");
+                }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -1094,7 +1160,8 @@ export default function GettingStartedWizard() {
                 </OptionIcon>
                 <OptionName>Standalone</OptionName>
                 <OptionDescription>
-                  Run Cymasphere as a separate application
+                  All-in-one app with built-in mixer — CymaSynth loads
+                  automatically on every track
                 </OptionDescription>
               </OptionCard>
             </OptionsGrid>
@@ -1104,46 +1171,86 @@ export default function GettingStartedWizard() {
       case 4:
         return (
           <>
-            <StepTitle>Select Your DAW</StepTitle>
+            <StepTitle>
+              {installationType === "standalone"
+                ? "Where Will Audio Play?"
+                : "Select Your DAW"}
+            </StepTitle>
             <StepDescription>
-              Choose your digital audio workstation for specific setup
-              instructions.
+              {installationType === "standalone"
+                ? "Use Cymasphere's built-in mixer with automatically loaded CymaSynth on every track — or route MIDI to an external DAW."
+                : "Choose your digital audio workstation for specific setup instructions."}
             </StepDescription>
             <DAWGrid>
               {[
+                ...(installationType === "standalone"
+                  ? [
+                      {
+                        id: "cymasphere",
+                        name: "Cymasphere",
+                        subtitle: "All-in-one · CymaSynth auto-loads",
+                        os: "both" as const,
+                        comingSoon: false,
+                        recommended: true,
+                      },
+                    ]
+                  : []),
                 {
                   id: "logic",
                   name: "Logic Pro",
                   os: "macos",
                   comingSoon: false,
+                  recommended: false,
                 },
                 {
                   id: "ableton",
                   name: "Ableton Live",
                   os: "both",
                   comingSoon: false,
+                  recommended: false,
                 },
                 {
                   id: "flstudio",
                   name: "FL Studio",
                   os: "both",
                   comingSoon: true,
+                  recommended: false,
                 },
                 {
                   id: "protools",
                   name: "Pro Tools",
                   os: "both",
                   comingSoon: true,
+                  recommended: false,
                 },
-                { id: "cubase", name: "Cubase", os: "both", comingSoon: true },
-                { id: "reaper", name: "Reaper", os: "both", comingSoon: true },
+                {
+                  id: "cubase",
+                  name: "Cubase",
+                  os: "both",
+                  comingSoon: true,
+                  recommended: false,
+                },
+                {
+                  id: "reaper",
+                  name: "Reaper",
+                  os: "both",
+                  comingSoon: true,
+                  recommended: false,
+                },
                 {
                   id: "studioone",
                   name: "Studio One",
                   os: "both",
                   comingSoon: false,
+                  recommended: false,
                 },
-                { id: "other", name: "Other", os: "both", comingSoon: true },
+                {
+                  id: "other",
+                  name: "Other",
+                  os: "both",
+                  comingSoon: true,
+                  recommended: false,
+                },
               ].map((dawOption) => {
                 const isDisabled =
                   dawOption.comingSoon ||
@@ -1160,7 +1267,13 @@ export default function GettingStartedWizard() {
                     {dawOption.comingSoon && (
                       <ComingSoonBadge>Coming Soon</ComingSoonBadge>
                     )}
+                    {"recommended" in dawOption && dawOption.recommended && (
+                      <RecommendedBadge>Recommended</RecommendedBadge>
+                    )}
                     <DAWName>{dawOption.name}</DAWName>
+                    {"subtitle" in dawOption && dawOption.subtitle && (
+                      <DAWSubtitle>{dawOption.subtitle}</DAWSubtitle>
+                    )}
                   </DAWCard>
                 );
               })}
@@ -1172,9 +1285,15 @@ export default function GettingStartedWizard() {
         const instructions = getInstructions(os, installationType, daw);
         return (
           <>
-            <StepTitle>Setup Instructions</StepTitle>
+            <StepTitle>
+              {daw === "cymasphere"
+                ? "You're Ready to Go"
+                : "Setup Instructions"}
+            </StepTitle>
             <StepDescription>
-              Follow these steps to get Cymasphere working with your setup.
+              {daw === "cymasphere"
+                ? "Cymasphere handles instruments and mixing automatically — here's how it works."
+                : "Follow these steps to get Cymasphere working with your setup."}
             </StepDescription>
             <InstructionsContainer>
               {instructions.map((instruction, index) => (
