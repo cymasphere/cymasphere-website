@@ -339,9 +339,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           if (error) {
             console.log("error fetching profile", error.message);
-            // Don't set user to null - keep them logged in even if profile fetch fails
-            // This is important for password reset flow
-            // Create a minimal profile object with required fields
             const defaultProfile: Profile = {
               id: logged_in_user.id,
               email: logged_in_user.email || "",
@@ -355,10 +352,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (latestAuthUserIdRef.current !== expectedUserId) {
               return;
             }
+            const { is_admin } = await withTimeout(
+              fetchIsAdminClient(logged_in_user.id),
+              AUTH_SYNC_TIMEOUT_MS,
+              "fetchIsAdmin",
+            );
+            if (latestAuthUserIdRef.current !== expectedUserId) {
+              return;
+            }
             setUser({
               ...logged_in_user,
               profile: defaultProfile,
-              is_admin: false,
+              is_admin: is_admin || false,
             });
             return;
           }
