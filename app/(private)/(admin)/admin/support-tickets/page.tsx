@@ -1659,7 +1659,7 @@ interface Ticket {
 }
 
 function SupportTicketsPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
@@ -1753,7 +1753,11 @@ function SupportTicketsPage() {
   }, [languageLoading]);
 
   // Show page immediately - no early returns
-  const showContent = !languageLoading && translationsLoaded && user;
+  const showContent = !languageLoading && translationsLoaded && user && !authLoading;
+
+  const getTicketForModal = (ticketId: string): Ticket | undefined => {
+    return tickets.find((ticket) => ticket.id === ticketId) ?? ticketDetails.get(ticketId);
+  };
 
   // Fetch tickets from database
   useEffect(() => {
@@ -1764,21 +1768,56 @@ function SupportTicketsPage() {
 
   // Handle ticket query parameter to open ticket modal
   useEffect(() => {
-    if (showContent) {
-      const ticketId = searchParams.get('ticket');
-      if (ticketId && ticketId !== selectedTicketId) {
-        openTicketModal(ticketId);
-        // Remove query parameter from URL after opening modal
-        const newSearchParams = new URLSearchParams(searchParams.toString());
-        newSearchParams.delete('ticket');
-        const newUrl = newSearchParams.toString() 
-          ? `${window.location.pathname}?${newSearchParams.toString()}`
-          : window.location.pathname;
-        router.replace(newUrl, { scroll: false });
-      }
+    if (!showContent) {
+      return;
+    }
+
+    const ticketId = searchParams.get("ticket");
+    if (ticketId && ticketId !== selectedTicketId) {
+      openTicketModal(ticketId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showContent, searchParams]);
+
+  // Remove ticket query param only after the modal has ticket data to render
+  useEffect(() => {
+    if (!showContent) {
+      return;
+    }
+
+    const ticketId = searchParams.get("ticket");
+    if (!ticketId || ticketId !== selectedTicketId) {
+      return;
+    }
+
+    const hasTicketData = Boolean(getTicketForModal(ticketId));
+    const awaitingTicketData =
+      loadingTickets || loadingDetails.has(ticketId);
+
+    if (awaitingTicketData) {
+      return;
+    }
+
+    if (!hasTicketData && selectedTicketId === ticketId) {
+      setSelectedTicketId(null);
+    }
+
+    const newSearchParams = new URLSearchParams(searchParams.toString());
+    newSearchParams.delete("ticket");
+    const newUrl = newSearchParams.toString()
+      ? `${window.location.pathname}?${newSearchParams.toString()}`
+      : window.location.pathname;
+    router.replace(newUrl, { scroll: false });
+  }, [
+    showContent,
+    searchParams,
+    selectedTicketId,
+    tickets,
+    ticketDetails,
+    loadingTickets,
+    loadingDetails,
+    router,
+  ]);
 
   const fetchTickets = async () => {
     setLoadingTickets(true);
@@ -1917,6 +1956,10 @@ function SupportTicketsPage() {
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
+
+  if (authLoading) {
+    return null;
+  }
 
   if (user && !user.is_admin) {
     return null;
@@ -3173,9 +3216,15 @@ function SupportTicketsPage() {
         {/* Ticket Conversation Modal */}
         <AnimatePresence>
           {selectedTicketId && (() => {
-            const ticket = tickets.find(t => t.id === selectedTicketId);
-            if (!ticket) return null;
-            
+            const ticket = getTicketForModal(selectedTicketId);
+            const isLoadingTicket =
+              !ticket &&
+              (loadingTickets || loadingDetails.has(selectedTicketId));
+
+            if (!ticket && !isLoadingTicket) {
+              return null;
+            }
+
             return (
               <ModalOverlay
                 initial={{ opacity: 0 }}
@@ -3195,7 +3244,7 @@ function SupportTicketsPage() {
                   <ModalHeader>
                     <ModalTitle>
                       <FaTicketAlt />
-                      {ticket.subject}
+                      {ticket?.subject ?? "Loading ticket..."}
                     </ModalTitle>
                     <CloseButton onClick={closeTicketModal}>
                       <FaTimes />
@@ -3203,7 +3252,7 @@ function SupportTicketsPage() {
                   </ModalHeader>
 
                   <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                    {loadingDetails.has(selectedTicketId) ? (
+                    {isLoadingTicket || loadingDetails.has(selectedTicketId) ? (
                       <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                         <motion.div
                           animate={{ rotate: 360 }}
@@ -3219,7 +3268,7 @@ function SupportTicketsPage() {
                         />
                         Loading conversation...
                       </div>
-                    ) : (
+                    ) : !ticket ? null : (
                       <>
                         <ConversationHeader style={{ padding: '0 1rem 1rem 1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', flexShrink: 0 }}>
                           <ConversationHeaderGrid>

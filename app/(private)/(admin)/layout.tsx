@@ -516,17 +516,20 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [emailCampaignsExpanded, setEmailCampaignsExpanded] = useState(false);
   const [adManagerExpanded, setAdManagerExpanded] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const sidebarRef = useRef<HTMLDivElement>(null);
 
-  // Redirect non-admins to dashboard (is_admin from admins table via AuthContext)
+  // Redirect non-admins to dashboard once auth has finished loading
   useEffect(() => {
+    if (loading) {
+      return;
+    }
     if (user && !user.is_admin) {
       router.push("/dashboard");
     }
-  }, [user, router]);
+  }, [user, loading, router]);
 
   const user_display_name = useMemo(() => {
     if (!user) return "Guest";
@@ -620,6 +623,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       transition: { delay: i * 0.1, duration: 0.3 },
     }),
   };
+
+  if (loading) {
+    return (
+      <LayoutContainer
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "50vh",
+          color: "var(--text-secondary)",
+        }}
+      >
+        Loading admin...
+      </LayoutContainer>
+    );
+  }
 
   if (!user || !user.is_admin) {
     return null;

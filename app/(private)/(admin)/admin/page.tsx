@@ -18,21 +18,13 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 
 import {
-  getTotalUsers,
-  getActiveSubscriptions,
-  getLifetimeCustomers,
-  getMonthlyRevenue,
-  getMRR,
-  getTrialUsers,
-  getTrialUsersByType,
-  getChurnRate,
-  getAdminUsers,
+  getAdminDashboardSummaryStats,
   getRecentActivity,
-  getAverageSubscriptionLifespan,
-  getYTDSales,
   getAnalyticsTimeSeries,
   AdminActivity,
+  AdminDashboardSummaryStats,
 } from "@/utils/stripe/admin-analytics";
+import { useRouter } from "next/navigation";
 import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
 import { getRecentSupportTicketMessagesAdmin } from "@/app/actions/user-management";
 import Link from "next/link";
@@ -539,26 +531,10 @@ const NotificationBadge = styled.span<{ $status: string }>`
 `;
 
 export default function AdminDashboard() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<'summaries' | 'analytics' | 'notifications'>('summaries');
-  
-  // Individual stat states
-  const [totalUsersData, setTotalUsersData] = useState<{ totalUsers: number; freeUsers: number; activeSubscriptions: number } | null>(null);
-  const [activeSubscriptionsData, setActiveSubscriptionsData] = useState<{ activeSubscriptions: number; monthlySubscribers: number; annualSubscribers: number } | null>(null);
-  const [lifetimeCustomers, setLifetimeCustomers] = useState<number | null>(null);
-  const [monthlyRevenue, setMonthlyRevenue] = useState<number | null>(null);
-  const [ytdSales, setYtdSales] = useState<number | null>(null);
-  const [mrr, setMrr] = useState<number | null>(null);
-  const [trialUsers, setTrialUsers] = useState<number | null>(null);
-  const [trialUsersByType, setTrialUsersByType] = useState<{ 
-    sevenDayTrials: number; 
-    fourteenDayTrials: number;
-    sevenDayConversionRate: number;
-    fourteenDayConversionRate: number;
-  } | null>(null);
-  const [churnRate, setChurnRate] = useState<number | null>(null);
-  const [adminUsers, setAdminUsers] = useState<number | null>(null);
-  const [averageSubscriptionLifespan, setAverageSubscriptionLifespan] = useState<number | null>(null);
+  const [summaryStats, setSummaryStats] = useState<AdminDashboardSummaryStats | null>(null);
+  const [loadingSummaryStats, setLoadingSummaryStats] = useState(true);
   const [recentActivity, setRecentActivity] = useState<AdminActivity[]>([]);
   const [supportNotifications, setSupportNotifications] = useState<Array<{
     id: string;
@@ -572,169 +548,56 @@ export default function AdminDashboard() {
     created_at: string;
     message_count: number;
   }>>([]);
-  
-  // Individual loading states
-  const [loadingTotalUsers, setLoadingTotalUsers] = useState(true);
-  const [loadingActiveSubscriptions, setLoadingActiveSubscriptions] = useState(true);
-  const [loadingLifetimeCustomers, setLoadingLifetimeCustomers] = useState(true);
-  const [loadingMonthlyRevenue, setLoadingMonthlyRevenue] = useState(true);
-  const [loadingYtdSales, setLoadingYtdSales] = useState(true);
-  const [loadingMrr, setLoadingMrr] = useState(true);
-  const [loadingTrialUsers, setLoadingTrialUsers] = useState(true);
-  const [loadingTrialUsersByType, setLoadingTrialUsersByType] = useState(true);
-  const [loadingChurnRate, setLoadingChurnRate] = useState(true);
-  const [loadingAdminUsers, setLoadingAdminUsers] = useState(true);
-  const [loadingAverageSubscriptionLifespan, setLoadingAverageSubscriptionLifespan] = useState(true);
-  const [loadingRecentActivity, setLoadingRecentActivity] = useState(true);
-  const [loadingSupportNotifications, setLoadingSupportNotifications] = useState(true);
-  
+  const [loadingRecentActivity, setLoadingRecentActivity] = useState(false);
+  const [loadingSupportNotifications, setLoadingSupportNotifications] = useState(false);
   const [activityFilter, setActivityFilter] = useState<AdminActivity['type'] | 'all'>('all');
 
-  // Fetch individual stats
   useEffect(() => {
-    const fetchTotalUsers = async () => {
+    let cancelled = false;
+
+    const fetchSummaryStats = async () => {
       try {
-        setLoadingTotalUsers(true);
-        const data = await getTotalUsers();
-        setTotalUsersData(data);
+        setLoadingSummaryStats(true);
+        const data = await getAdminDashboardSummaryStats();
+        if (!cancelled) {
+          setSummaryStats(data);
+        }
       } catch (err) {
-        console.error("Error fetching total users:", err);
+        console.error("Error fetching admin dashboard summary stats:", err);
       } finally {
-        setLoadingTotalUsers(false);
+        if (!cancelled) {
+          setLoadingSummaryStats(false);
+        }
       }
     };
 
-    const fetchActiveSubscriptions = async () => {
-      try {
-        setLoadingActiveSubscriptions(true);
-        const data = await getActiveSubscriptions();
-        setActiveSubscriptionsData(data);
-      } catch (err) {
-        console.error("Error fetching active subscriptions:", err);
-      } finally {
-        setLoadingActiveSubscriptions(false);
-      }
-    };
+    fetchSummaryStats();
 
-    const fetchLifetimeCustomers = async () => {
-      try {
-        setLoadingLifetimeCustomers(true);
-        const data = await getLifetimeCustomers();
-        setLifetimeCustomers(data);
-      } catch (err) {
-        console.error("Error fetching lifetime customers:", err);
-      } finally {
-        setLoadingLifetimeCustomers(false);
-      }
+    return () => {
+      cancelled = true;
     };
+  }, []);
 
-    const fetchMonthlyRevenue = async () => {
-      try {
-        setLoadingMonthlyRevenue(true);
-        const data = await getMonthlyRevenue();
-        setMonthlyRevenue(data);
-      } catch (err) {
-        console.error("Error fetching monthly revenue:", err);
-      } finally {
-        setLoadingMonthlyRevenue(false);
-      }
-    };
+  useEffect(() => {
+    if (activeTab !== "notifications") {
+      return;
+    }
 
-    const fetchYTDSales = async () => {
-      try {
-        setLoadingYtdSales(true);
-        const data = await getYTDSales();
-        setYtdSales(data);
-      } catch (err) {
-        console.error("Error fetching YTD sales:", err);
-      } finally {
-        setLoadingYtdSales(false);
-      }
-    };
-
-    const fetchMRR = async () => {
-      try {
-        setLoadingMrr(true);
-        const data = await getMRR();
-        console.log("MRR calculated:", data, "Type:", typeof data);
-        setMrr(data);
-      } catch (err) {
-        console.error("Error fetching MRR:", err);
-        setMrr(0); // Set to 0 on error so it still displays
-      } finally {
-        setLoadingMrr(false);
-      }
-    };
-
-    const fetchTrialUsers = async () => {
-      try {
-        setLoadingTrialUsers(true);
-        const data = await getTrialUsers();
-        setTrialUsers(data);
-      } catch (err) {
-        console.error("Error fetching trial users:", err);
-      } finally {
-        setLoadingTrialUsers(false);
-      }
-    };
-
-    const fetchTrialUsersByType = async () => {
-      try {
-        setLoadingTrialUsersByType(true);
-        const data = await getTrialUsersByType();
-        setTrialUsersByType(data);
-      } catch (err) {
-        console.error("Error fetching trial users by type:", err);
-      } finally {
-        setLoadingTrialUsersByType(false);
-      }
-    };
-
-    const fetchChurnRate = async () => {
-      try {
-        setLoadingChurnRate(true);
-        const data = await getChurnRate();
-        setChurnRate(data);
-      } catch (err) {
-        console.error("Error fetching churn rate:", err);
-      } finally {
-        setLoadingChurnRate(false);
-      }
-    };
-
-    const fetchAdminUsers = async () => {
-      try {
-        setLoadingAdminUsers(true);
-        const data = await getAdminUsers();
-        setAdminUsers(data);
-      } catch (err) {
-        console.error("Error fetching admin users:", err);
-      } finally {
-        setLoadingAdminUsers(false);
-      }
-    };
-
-    const fetchAverageSubscriptionLifespan = async () => {
-      try {
-        setLoadingAverageSubscriptionLifespan(true);
-        const data = await getAverageSubscriptionLifespan();
-        setAverageSubscriptionLifespan(data);
-      } catch (err) {
-        console.error("Error fetching average subscription lifespan:", err);
-      } finally {
-        setLoadingAverageSubscriptionLifespan(false);
-      }
-    };
+    let cancelled = false;
 
     const fetchRecentActivity = async () => {
       try {
         setLoadingRecentActivity(true);
         const data = await getRecentActivity();
-        setRecentActivity(data);
+        if (!cancelled) {
+          setRecentActivity(data);
+        }
       } catch (err) {
         console.error("Error fetching recent activity:", err);
       } finally {
-        setLoadingRecentActivity(false);
+        if (!cancelled) {
+          setLoadingRecentActivity(false);
+        }
       }
     };
 
@@ -742,38 +605,34 @@ export default function AdminDashboard() {
       try {
         setLoadingSupportNotifications(true);
         const result = await getRecentSupportTicketMessagesAdmin(5);
-        if (result.messages) {
+        if (!cancelled && result.messages) {
           setSupportNotifications(result.messages);
         }
       } catch (err) {
         console.error("Error fetching support notifications:", err);
       } finally {
-        setLoadingSupportNotifications(false);
+        if (!cancelled) {
+          setLoadingSupportNotifications(false);
+        }
       }
     };
 
-    // Fetch all stats independently
-    fetchTotalUsers();
-    fetchActiveSubscriptions();
-    fetchLifetimeCustomers();
-    fetchMonthlyRevenue();
-    fetchYTDSales();
-    fetchMRR();
-    fetchTrialUsers();
-    fetchTrialUsersByType();
-    fetchChurnRate();
-    fetchAdminUsers();
-    fetchAverageSubscriptionLifespan();
     fetchRecentActivity();
     fetchSupportNotifications();
 
-    // Poll for new support notifications every 30 seconds
     const notificationInterval = setInterval(() => {
-      fetchSupportNotifications();
+      void fetchSupportNotifications();
     }, 30000);
 
-    return () => clearInterval(notificationInterval);
-  }, []);
+    return () => {
+      cancelled = true;
+      clearInterval(notificationInterval);
+    };
+  }, [activeTab]);
+
+  if (authLoading) {
+    return null;
+  }
 
   if (!user || !user.is_admin) {
     return null;
@@ -932,17 +791,21 @@ export default function AdminDashboard() {
               <StatContent>
                 <StatLabel>Total Users</StatLabel>
                 <StatValue>
-                  {loadingTotalUsers ? (
+                  {loadingSummaryStats ? (
                     <StatLoadingSpinner size={20} />
                   ) : (
-                    totalUsersData?.totalUsers.toLocaleString() ?? "0"
+                    summaryStats?.totalUsers.toLocaleString() ?? "0"
                   )}
                 </StatValue>
                 <StatDetail>
-                  {loadingTotalUsers ? (
+                  {loadingSummaryStats ? (
                     <StatLoadingSpinner size={12} />
                   ) : (
-                    `${totalUsersData?.freeUsers ?? 0} free, ${totalUsersData?.activeSubscriptions ?? 0} paid`
+                    `${summaryStats?.freeUsers ?? 0} free, ${summaryStats?.activeSubscriptions ?? 0} subscribed${
+                      (summaryStats?.lifetimeCustomers ?? 0) > 0
+                        ? `, ${summaryStats?.lifetimeCustomers} lifetime`
+                        : ""
+                    }`
                   )}
                 </StatDetail>
               </StatContent>
@@ -955,12 +818,12 @@ export default function AdminDashboard() {
               <StatContent>
                 <StatLabel>Active Subscriptions</StatLabel>
                 <StatValue>
-                  {loadingActiveSubscriptions ? (
+                  {loadingSummaryStats ? (
                     <StatLoadingSpinner size={20} />
                   ) : (
                     <>
-                      {activeSubscriptionsData?.activeSubscriptions ?? 0}
-                      {!loadingMrr && typeof mrr === 'number' && (
+                      {summaryStats?.activeSubscriptions ?? 0}
+                      {!loadingSummaryStats && typeof summaryStats?.mrr === 'number' && (
                         <span style={{ 
                           fontSize: '0.5em', 
                           color: 'white', 
@@ -969,17 +832,17 @@ export default function AdminDashboard() {
                           opacity: 0.9,
                           WebkitTextFillColor: 'white'
                         } as React.CSSProperties}>
-                          (MRR: {formatCurrency(mrr)})
+                          (MRR: {formatCurrency(summaryStats.mrr)})
                         </span>
                       )}
                     </>
                   )}
                 </StatValue>
                 <StatDetail>
-                  {loadingActiveSubscriptions ? (
+                  {loadingSummaryStats ? (
                     <StatLoadingSpinner size={12} />
                   ) : (
-                    `${activeSubscriptionsData?.monthlySubscribers ?? 0} monthly, ${activeSubscriptionsData?.annualSubscribers ?? 0} annual`
+                    `${summaryStats?.monthlySubscribers ?? 0} monthly, ${summaryStats?.annualSubscribers ?? 0} annual`
                   )}
                 </StatDetail>
               </StatContent>
@@ -992,10 +855,10 @@ export default function AdminDashboard() {
               <StatContent>
                 <StatLabel>Lifetime Customers</StatLabel>
                 <StatValue>
-                  {loadingLifetimeCustomers ? (
+                  {loadingSummaryStats ? (
                     <StatLoadingSpinner size={20} />
                   ) : (
-                    lifetimeCustomers ?? 0
+                    summaryStats?.lifetimeCustomers ?? 0
                   )}
                 </StatValue>
                 <StatDetail>
@@ -1011,10 +874,10 @@ export default function AdminDashboard() {
               <StatContent>
                 <StatLabel>Monthly Revenue</StatLabel>
                 <StatValue>
-                  {loadingMonthlyRevenue ? (
+                  {loadingSummaryStats ? (
                     <StatLoadingSpinner size={20} />
                   ) : (
-                    formatCurrency(monthlyRevenue ?? 0)
+                    formatCurrency(summaryStats?.monthlyRevenue ?? 0)
                   )}
                 </StatValue>
                 <StatDetail>
@@ -1032,15 +895,15 @@ export default function AdminDashboard() {
               <StatContent>
                 <StatLabel>7-Day Trials</StatLabel>
                 <StatValue>
-                  {loadingTrialUsersByType ? (
+                  {loadingSummaryStats ? (
                     <StatLoadingSpinner size={20} />
                   ) : (
-                    trialUsersByType?.sevenDayTrials ?? 0
+                    summaryStats?.sevenDayTrials ?? 0
                   )}
                 </StatValue>
                 <StatDetail>
                   Active 7-day trials
-                  {!loadingTrialUsersByType && typeof trialUsersByType?.sevenDayConversionRate === 'number' && (
+                  {!loadingSummaryStats && typeof summaryStats?.sevenDayConversionRate === 'number' && (
                     <span style={{ 
                       display: 'block', 
                       marginTop: '0.5rem', 
@@ -1048,7 +911,7 @@ export default function AdminDashboard() {
                       color: 'var(--primary)',
                       fontWeight: '600'
                     }}>
-                      {trialUsersByType.sevenDayConversionRate.toFixed(1)}% conversion rate
+                      {summaryStats.sevenDayConversionRate.toFixed(1)}% conversion rate
                     </span>
                   )}
                 </StatDetail>
@@ -1062,15 +925,15 @@ export default function AdminDashboard() {
               <StatContent>
                 <StatLabel>14-Day Trials</StatLabel>
                 <StatValue>
-                  {loadingTrialUsersByType ? (
+                  {loadingSummaryStats ? (
                     <StatLoadingSpinner size={20} />
                   ) : (
-                    trialUsersByType?.fourteenDayTrials ?? 0
+                    summaryStats?.fourteenDayTrials ?? 0
                   )}
                 </StatValue>
                 <StatDetail>
                   Active 14-day trials
-                  {!loadingTrialUsersByType && typeof trialUsersByType?.fourteenDayConversionRate === 'number' && (
+                  {!loadingSummaryStats && typeof summaryStats?.fourteenDayConversionRate === 'number' && (
                     <span style={{ 
                       display: 'block', 
                       marginTop: '0.5rem', 
@@ -1078,7 +941,7 @@ export default function AdminDashboard() {
                       color: 'var(--primary)',
                       fontWeight: '600'
                     }}>
-                      {trialUsersByType.fourteenDayConversionRate.toFixed(1)}% conversion rate
+                      {summaryStats.fourteenDayConversionRate.toFixed(1)}% conversion rate
                     </span>
                   )}
                 </StatDetail>
@@ -1092,12 +955,12 @@ export default function AdminDashboard() {
               <StatContent>
                 <StatLabel>Avg. Sub Lifespan</StatLabel>
                 <StatValue>
-                  {loadingAverageSubscriptionLifespan ? (
+                  {loadingSummaryStats ? (
                     <StatLoadingSpinner size={20} />
                   ) : (
-                    averageSubscriptionLifespan !== null && averageSubscriptionLifespan > 0
+                    summaryStats?.averageSubscriptionLifespan !== undefined && summaryStats.averageSubscriptionLifespan > 0
                       ? (() => {
-                          const formatted = formatLifespan(averageSubscriptionLifespan);
+                          const formatted = formatLifespan(summaryStats.averageSubscriptionLifespan);
                           return (
                             <>
                               {formatted.value}
@@ -1144,10 +1007,10 @@ export default function AdminDashboard() {
               <StatContent>
                 <StatLabel>Churn Rate</StatLabel>
                 <StatValue>
-                  {loadingChurnRate ? (
+                  {loadingSummaryStats ? (
                     <StatLoadingSpinner size={20} />
                   ) : (
-                    `${(churnRate ?? 0).toFixed(1)}%`
+                    `${(summaryStats?.churnRate ?? 0).toFixed(1)}%`
                   )}
                 </StatValue>
                 <StatDetail>
@@ -1163,10 +1026,10 @@ export default function AdminDashboard() {
               <StatContent>
                 <StatLabel>YTD Sales</StatLabel>
                 <StatValue>
-                  {loadingYtdSales ? (
+                  {loadingSummaryStats ? (
                     <StatLoadingSpinner size={20} />
                   ) : (
-                    formatCurrency(ytdSales ?? 0)
+                    formatCurrency(summaryStats?.ytdSales ?? 0)
                   )}
                 </StatValue>
                 <StatDetail>
@@ -1181,14 +1044,6 @@ export default function AdminDashboard() {
 
         {activeTab === 'analytics' && (
           <AnalyticsTab 
-            totalUsersData={totalUsersData}
-            activeSubscriptionsData={activeSubscriptionsData}
-            monthlyRevenue={monthlyRevenue}
-            mrr={mrr}
-            trialUsersByType={trialUsersByType}
-            churnRate={churnRate}
-            averageSubscriptionLifespan={averageSubscriptionLifespan}
-            ytdSales={ytdSales}
             formatCurrency={formatCurrency}
             formatCurrencyWholeDollars={formatCurrencyWholeDollars}
             formatCurrencyForChart={formatCurrencyForChart}
@@ -1219,14 +1074,6 @@ export default function AdminDashboard() {
 
 // Analytics Tab Component
 interface AnalyticsTabProps {
-  totalUsersData: { totalUsers: number; freeUsers: number; activeSubscriptions: number } | null;
-  activeSubscriptionsData: { activeSubscriptions: number; monthlySubscribers: number; annualSubscribers: number } | null;
-  monthlyRevenue: number | null;
-  mrr: number | null;
-  trialUsersByType: { sevenDayTrials: number; fourteenDayTrials: number; sevenDayConversionRate: number; fourteenDayConversionRate: number } | null;
-  churnRate: number | null;
-  averageSubscriptionLifespan: number | null;
-  ytdSales: number | null;
   formatCurrency: (amount: number) => string;
   formatCurrencyWholeDollars: (amount: number) => string;
   formatCurrencyForChart: (amount: number) => string;
@@ -1410,14 +1257,6 @@ const ProjectionsButton = styled.button<{ $active: boolean }>`
 `;
 
 function AnalyticsTab({
-  totalUsersData,
-  activeSubscriptionsData,
-  monthlyRevenue,
-  mrr,
-  trialUsersByType,
-  churnRate,
-  averageSubscriptionLifespan,
-  ytdSales,
   formatCurrency,
   formatCurrencyWholeDollars,
   formatCurrencyForChart,
@@ -1982,6 +1821,7 @@ function NotificationsTab({
   formatCurrency,
   fadeIn,
 }: NotificationsTabProps) {
+  const router = useRouter();
   return (
     <>
       <Header>
@@ -2013,7 +1853,7 @@ function NotificationsTab({
                   key={notification.id}
                   variants={fadeIn}
                   custom={index}
-                  onClick={() => window.location.href = `/admin/support-tickets?ticket=${notification.ticket_id}`}
+                  onClick={() => router.push(`/admin/support-tickets?ticket=${notification.ticket_id}`)}
                 >
                   <NotificationIcon>
                     <FaTicketAlt />

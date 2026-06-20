@@ -973,6 +973,441 @@ export async function getChurnRate(): Promise<number> {
   }
 }
 
+/** Profile fields used by batched admin dashboard aggregation */
+type AdminDashboardProfileRow = {
+  subscription: string | null;
+  customer_id: string | null;
+  trial_expiration: string | null;
+};
+
+/**
+ * Aggregated admin dashboard summary metrics returned by a single server action.
+ */
+export interface AdminDashboardSummaryStats {
+  totalUsers: number;
+  freeUsers: number;
+  activeSubscriptions: number;
+  monthlySubscribers: number;
+  annualSubscribers: number;
+  lifetimeCustomers: number;
+  monthlyRevenue: number;
+  ytdSales: number;
+  mrr: number;
+  sevenDayTrials: number;
+  fourteenDayTrials: number;
+  sevenDayConversionRate: number;
+  fourteenDayConversionRate: number;
+  churnRate: number;
+  averageSubscriptionLifespan: number;
+}
+
+/**
+ * @brief Derives user/subscription counts from a profiles snapshot.
+ * @param profiles - Profile rows with subscription data.
+ * @returns Counts for dashboard user cards.
+ */
+function computeProfileDashboardStats(
+  profiles: AdminDashboardProfileRow[],
+): Pick<
+  AdminDashboardSummaryStats,
+  | "totalUsers"
+  | "freeUsers"
+  | "activeSubscriptions"
+  | "monthlySubscribers"
+  | "annualSubscribers"
+  | "lifetimeCustomers"
+> {
+  const subscriptionCounts = profiles.reduce(
+    (acc, profile) => {
+      const sub = profile.subscription || "none";
+      acc[sub] = (acc[sub] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+
+  const freeUsers = subscriptionCounts.none || 0;
+  const monthlySubscribers = subscriptionCounts.monthly || 0;
+  const annualSubscribers = subscriptionCounts.annual || 0;
+  const lifetimeCustomers = subscriptionCounts.lifetime || 0;
+  const activeSubscriptions = monthlySubscribers + annualSubscribers;
+
+  return {
+    totalUsers: profiles.length,
+    freeUsers,
+    activeSubscriptions,
+    monthlySubscribers,
+    annualSubscribers,
+    lifetimeCustomers,
+  };
+}
+
+/**
+ * @brief Computes Stripe subscription metrics in one paginated scan.
+ * @param profiles - Profile rows used to reconcile active trials not found in Stripe.
+ * @returns MRR, churn, trial breakdown, and average lifespan.
+ */
+async function computeStripeDashboardStats(
+  profiles: AdminDashboardProfileRow[],
+): Promise<
+  Pick<
+    AdminDashboardSummaryStats,
+    | "mrr"
+    | "sevenDayTrials"
+    | "fourteenDayTrials"
+    | "sevenDayConversionRate"
+    | "fourteenDayConversionRate"
+    | "churnRate"
+    | "averageSubscriptionLifespan"
+  >
+> {
+  const now = Math.floor(Date.now() / 1000);
+  let totalMrr = 0;
+  let activeCount = 0;
+  let canceledCount = 0;
+  const lifespans: number[] = [];
+
+  const sevenDayTrials = new Set<string>();
+  const fourteenDayTrials = new Set<string>();
+  const sevenDayConversions = new Set<string>();
+  const fourteenDayConversions = new Set<string>();
+  const allSevenDayTrialUsers = new Set<string>();
+  const allFourteenDayTrialUsers = new Set<string>();
+
+  let hasMore = true;
+  let startingAfter: string | undefined = undefined;
+
+  while (hasMore) {
+    const subscriptions: Awaited<
+      ReturnType<typeof stripe.subscriptions.list>
+    > = await stripe.subscriptions.list({
+      limit: 100,
+      starting_after: startingAfter,
+      status: "all",
+    });
+
+    for (const subscription of subscriptions.data) {
+      if (
+        subscription.status === "active" &&
+        !subscription.cancel_at_period_end
+      ) {
+        const item = subscription.items.data[0];
+        const price = item?.price;
+        if (price) {
+          const amount = (price.unit_amount || 0) / 100;
+          const interval = price.recurring?.interval;
+          if (interval === "month") {
+            totalMrr += amount;
+          } else if (interval === "year") {
+            totalMrr += amount / 12;
+          }
+        }
+      }
+
+      if (!subscription.trial_end || subscription.trial_end <= now) {
+        if (
+          subscription.status === "active" &&
+          !subscription.cancel_at_period_end
+        ) {
+          activeCount++;
+        } else if (
+          subscription.status === "canceled" ||
+          subscription.status === "unpaid" ||
+          (subscription.status === "active" &&
+            subscription.cancel_at_period_end)
+        ) {
+          canceledCount++;
+        }
+      }
+
+      if (subscription.trial_end && subscription.trial_end > now) {
+        continue;
+      }
+
+      const subscriptionStart =
+        subscription.trial_end && subscription.trial_end <= now
+          ? subscription.trial_end
+          : subscription.created;
+
+      let subscriptionEnd: number | null = null;
+      if (
+        subscription.status === "active" ||
+        subscription.status === "trialing"
+      ) {
+        subscriptionEnd = now;
+      } else if (subscription.canceled_at) {
+        subscriptionEnd = subscription.canceled_at;
+      } else if (subscription.ended_at) {
+        subscriptionEnd = subscription.ended_at;
+      }
+
+      if (subscriptionEnd !== null) {
+        const lifespanDays = Math.round(
+          (subscriptionEnd - subscriptionStart) / (60 * 60 * 24),
+        );
+        if (lifespanDays > 0) {
+          lifespans.push(lifespanDays);
+        }
+      }
+
+      if (subscription.trial_start && subscription.trial_end) {
+        const customerId = subscription.customer as string;
+        if (!customerId) {
+          continue;
+        }
+
+        const daysDiff =
+          (subscription.trial_end - subscription.trial_start) /
+          (60 * 60 * 24);
+        const isSevenDay = daysDiff >= 6.5 && daysDiff <= 8.5;
+
+        if (isSevenDay) {
+          allSevenDayTrialUsers.add(customerId);
+        } else {
+          allFourteenDayTrialUsers.add(customerId);
+        }
+
+        const isActiveTrial =
+          subscription.status === "trialing" &&
+          subscription.trial_start <= now &&
+          subscription.trial_end > now;
+
+        if (isActiveTrial) {
+          if (isSevenDay) {
+            sevenDayTrials.add(customerId);
+          } else {
+            fourteenDayTrials.add(customerId);
+          }
+        }
+
+        const trialHasEnded =
+          subscription.trial_end && subscription.trial_end <= now;
+        const isActive = subscription.status === "active";
+        const periodStart = (
+          subscription as { current_period_start?: number }
+        ).current_period_start;
+        const hasPaidAfterTrial =
+          periodStart != null &&
+          subscription.trial_end != null &&
+          periodStart > subscription.trial_end;
+        const isConverted =
+          isActive && trialHasEnded && hasPaidAfterTrial;
+
+        if (isConverted) {
+          if (isSevenDay) {
+            sevenDayConversions.add(customerId);
+          } else {
+            fourteenDayConversions.add(customerId);
+          }
+        }
+      }
+    }
+
+    hasMore = subscriptions.has_more;
+    if (subscriptions.data.length > 0) {
+      startingAfter = subscriptions.data[subscriptions.data.length - 1].id;
+    } else {
+      hasMore = false;
+    }
+  }
+
+  const activeTrialProfiles = profiles.filter(
+    (profile) =>
+      profile.trial_expiration &&
+      new Date(profile.trial_expiration) > new Date() &&
+      profile.subscription === "none",
+  );
+
+  for (const profile of activeTrialProfiles) {
+    if (!profile.customer_id) {
+      continue;
+    }
+
+    if (
+      sevenDayTrials.has(profile.customer_id) ||
+      fourteenDayTrials.has(profile.customer_id)
+    ) {
+      continue;
+    }
+
+    try {
+      const customerSubscriptions = await stripe.subscriptions.list({
+        customer: profile.customer_id,
+        status: "trialing",
+        limit: 1,
+      });
+
+      if (customerSubscriptions.data.length > 0) {
+        const subscription = customerSubscriptions.data[0];
+        if (subscription.trial_start && subscription.trial_end) {
+          const daysDiff =
+            (subscription.trial_end - subscription.trial_start) /
+            (60 * 60 * 24);
+          const isSevenDay = daysDiff >= 6.5 && daysDiff <= 8.5;
+
+          if (isSevenDay) {
+            sevenDayTrials.add(profile.customer_id);
+          } else {
+            fourteenDayTrials.add(profile.customer_id);
+          }
+        }
+      }
+    } catch (error) {
+      console.error(
+        `Error fetching subscription for customer ${profile.customer_id}:`,
+        error,
+      );
+    }
+  }
+
+  const totalSubscriptions = activeCount + canceledCount;
+  const churnRate =
+    totalSubscriptions === 0
+      ? 0
+      : Math.round((canceledCount / totalSubscriptions) * 1000) / 10;
+
+  const averageSubscriptionLifespan =
+    lifespans.length === 0
+      ? 0
+      : Math.round(
+          (lifespans.reduce((sum, days) => sum + days, 0) / lifespans.length) *
+            10,
+        ) / 10;
+
+  const allSevenDayCount = allSevenDayTrialUsers.size;
+  const allFourteenDayCount = allFourteenDayTrialUsers.size;
+  const sevenDayConversionRate =
+    allSevenDayCount > 0
+      ? Math.round(
+          (sevenDayConversions.size / allSevenDayCount) * 1000,
+        ) / 10
+      : 0;
+  const fourteenDayConversionRate =
+    allFourteenDayCount > 0
+      ? Math.round(
+          (fourteenDayConversions.size / allFourteenDayCount) * 1000,
+        ) / 10
+      : 0;
+
+  return {
+    mrr: Math.round(totalMrr * 100) / 100,
+    sevenDayTrials: sevenDayTrials.size,
+    fourteenDayTrials: fourteenDayTrials.size,
+    sevenDayConversionRate,
+    fourteenDayConversionRate,
+    churnRate,
+    averageSubscriptionLifespan,
+  };
+}
+
+/**
+ * @brief Computes monthly (last 30 days) and YTD revenue in one Stripe scan.
+ * @returns Monthly and year-to-date charge revenue in USD.
+ */
+async function computeCombinedRevenueStats(): Promise<{
+  monthlyRevenue: number;
+  ytdSales: number;
+}> {
+  const now = Date.now();
+  const thirtyDaysAgo = Math.floor((now - 30 * 24 * 60 * 60 * 1000) / 1000);
+  const yearStart = new Date(new Date(now).getFullYear(), 0, 1);
+  const yearStartTimestamp = Math.floor(yearStart.getTime() / 1000);
+
+  let monthlyRevenueCents = 0;
+  let ytdRevenueCents = 0;
+  let hasMore = true;
+  let startingAfter: string | undefined = undefined;
+
+  while (hasMore) {
+    const balanceTransactions: Stripe.Response<
+      Stripe.ApiList<Stripe.BalanceTransaction>
+    > = await stripe.balanceTransactions.list({
+      created: { gte: yearStartTimestamp },
+      limit: 100,
+      starting_after: startingAfter,
+    });
+
+    for (const transaction of balanceTransactions.data) {
+      if (transaction.type === "charge" && transaction.amount > 0) {
+        ytdRevenueCents += transaction.amount;
+        if (transaction.created >= thirtyDaysAgo) {
+          monthlyRevenueCents += transaction.amount;
+        }
+      }
+    }
+
+    hasMore = balanceTransactions.has_more;
+    if (balanceTransactions.data.length > 0) {
+      startingAfter =
+        balanceTransactions.data[balanceTransactions.data.length - 1].id;
+    } else {
+      hasMore = false;
+    }
+  }
+
+  return {
+    monthlyRevenue: Math.round((monthlyRevenueCents / 100) * 100) / 100,
+    ytdSales: Math.round((ytdRevenueCents / 100) * 100) / 100,
+  };
+}
+
+/**
+ * @brief Fetches all admin dashboard summary metrics in one batched server action.
+ * @returns Aggregated dashboard statistics with shared Supabase/Stripe queries.
+ * @note Replaces multiple parallel stat fetches on the admin dashboard page.
+ */
+export async function getAdminDashboardSummaryStats(): Promise<AdminDashboardSummaryStats> {
+  try {
+    const supabase = await createSupabaseServiceRole();
+
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("subscription, customer_id, trial_expiration");
+
+    if (profilesError) {
+      console.error(
+        "Error fetching profiles for admin dashboard summary:",
+        profilesError,
+      );
+      throw profilesError;
+    }
+
+    const profileStats = computeProfileDashboardStats(profiles ?? []);
+
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.warn(
+        "STRIPE_SECRET_KEY not set, returning zeroed Stripe dashboard stats",
+      );
+      return {
+        ...profileStats,
+        monthlyRevenue: 0,
+        ytdSales: 0,
+        mrr: 0,
+        sevenDayTrials: 0,
+        fourteenDayTrials: 0,
+        sevenDayConversionRate: 0,
+        fourteenDayConversionRate: 0,
+        churnRate: 0,
+        averageSubscriptionLifespan: 0,
+      };
+    }
+
+    const [stripeStats, revenueStats] = await Promise.all([
+      computeStripeDashboardStats(profiles ?? []),
+      computeCombinedRevenueStats(),
+    ]);
+
+    return {
+      ...profileStats,
+      ...stripeStats,
+      ...revenueStats,
+    };
+  } catch (error) {
+    console.error("Error fetching admin dashboard summary stats:", error);
+    throw error;
+  }
+}
+
 /**
  * Fetches admin users count
  */
