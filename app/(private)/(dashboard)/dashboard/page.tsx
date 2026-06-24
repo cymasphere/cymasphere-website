@@ -16,7 +16,7 @@ import {
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboard } from "@/contexts/DashboardContext";
-import { capitalize, formatUserName } from "@/utils/stringUtils";
+import { capitalize } from "@/utils/stringUtils";
 import { useRouter } from "next/navigation";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import { useTranslation } from "react-i18next";
@@ -571,22 +571,23 @@ function DashboardPage() {
           {(() => {
             const welcomeText = t(
               "dashboard.main.welcome",
-              "Welcome back, {{name}}!",
+              "Welcome back {{name}}!",
               {
-                name: formatUserName(
-                  user.profile.first_name,
-                  user.profile.last_name
-                ),
+                name:
+                  user.profile.first_name?.trim() ||
+                  user.profile.last_name?.trim() ||
+                  "Guest",
               }
             );
-            // On mobile, add line break after "Welcome back,"
+            // On mobile, add line break after "Welcome back"
             if (isMobile) {
-              const parts = welcomeText.split(", ");
-              if (parts.length === 2) {
+              const backIndex = welcomeText.indexOf(" back ");
+              if (backIndex >= 0) {
                 return (
                   <>
-                    {parts[0]},<br />
-                    {parts[1]}
+                    {welcomeText.slice(0, backIndex + 5)}
+                    <br />
+                    {welcomeText.slice(backIndex + 6)}
                   </>
                 );
               }
@@ -598,7 +599,7 @@ function DashboardPage() {
           {user
             ? t(
                 "dashboard.main.welcomeSubtitle",
-                "Here's an overview of your CYMASPHERE account"
+                "Here's an overview of your Cymasphere account"
               )
             : t(
                 "dashboard.main.pleaseSignIn",

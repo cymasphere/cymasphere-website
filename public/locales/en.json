@@ -601,8 +601,8 @@
       "emailLabel": "{{email}}"
     },
     "main": {
-      "welcome": "Welcome back, {{name}}!",
-      "welcomeSubtitle": "Here's an overview of your CYMASPHERE account",
+      "welcome": "Welcome back {{name}}!",
+      "welcomeSubtitle": "Here's an overview of your Cymasphere account",
       "pleaseSignIn": "Please sign in to access your dashboard",
       "deviceConnections": "Device Connections",
       "activeDevices": "Active device connections",
