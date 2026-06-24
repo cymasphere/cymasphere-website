@@ -1188,7 +1188,6 @@ export default function GettingStartedWizard() {
                       {
                         id: "cymasphere",
                         name: "Cymasphere",
-                        subtitle: "All-in-one · CymaSynth auto-loads",
                         os: "both" as const,
                         comingSoon: false,
                         recommended: true,
@@ -1244,13 +1243,17 @@ export default function GettingStartedWizard() {
                   comingSoon: false,
                   recommended: false,
                 },
-                {
-                  id: "other",
-                  name: "Other",
-                  os: "both",
-                  comingSoon: true,
-                  recommended: false,
-                },
+                ...(installationType !== "standalone"
+                  ? [
+                      {
+                        id: "other",
+                        name: "Other",
+                        os: "both" as const,
+                        comingSoon: true,
+                        recommended: false,
+                      },
+                    ]
+                  : []),
               ].map((dawOption) => {
                 const isDisabled =
                   dawOption.comingSoon ||
