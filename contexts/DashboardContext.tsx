@@ -10,6 +10,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { fetchUserSessions } from '@/utils/supabase/actions';
+import { createClient } from '@/utils/supabase/client';
 
 /**
  * @brief Type definitions for dashboard data
@@ -76,7 +77,7 @@ interface DashboardContextType {
   deviceCount: number;
   devices: Device[];
   isLoadingDevices: boolean;
-  refreshDevices: () => Promise<void>;
+  refreshDevices: (options?: { silent?: boolean }) => Promise<void>;
 
   // Upcoming invoice
   upcomingInvoice: UpcomingInvoice;
@@ -129,6 +130,62 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [devices, setDevices] = useState<Device[]>([]);
   const [isLoadingDevices, setIsLoadingDevices] = useState(false);
   const hasFetchedDevicesRef = useRef(false);
+  const devicesFetchInFlightRef = useRef(false);
+
+  /**
+   * @brief Maps Cymasphere session rows into dashboard device cards.
+   * @param sessions Raw Cymasphere app sessions from `fetchUserSessions`.
+   * @returns Device list for the Active Devices UI.
+   */
+  const mapSessionsToDevices = useCallback((sessions: Awaited<ReturnType<typeof fetchUserSessions>>["sessions"]): Device[] => {
+    if (!sessions || sessions.length === 0) {
+      return [];
+    }
+
+    return sessions.map((sessionData) => {
+      let deviceType: "mobile" | "tablet" | "desktop" = "desktop";
+      const deviceName = sessionData.device_name;
+
+      if (
+        deviceName.includes("Mobile") ||
+        deviceName.includes("Android") ||
+        deviceName.includes("iPhone")
+      ) {
+        deviceType = "mobile";
+      } else if (
+        deviceName.includes("iPad") ||
+        deviceName.includes("Tablet")
+      ) {
+        deviceType = "tablet";
+      }
+
+      const lastUsed = new Date(sessionData.last_used);
+      const now = new Date();
+      const diffMs = now.getTime() - lastUsed.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      let formattedTime = "";
+      if (diffMins < 1) {
+        formattedTime = "Just now";
+      } else if (diffMins < 60) {
+        formattedTime = `${diffMins} minute${diffMins !== 1 ? "s" : ""} ago`;
+      } else if (diffHours < 24) {
+        formattedTime = `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
+      } else {
+        formattedTime = `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`;
+      }
+
+      return {
+        name: deviceName,
+        type: deviceType,
+        location: sessionData.ip || "Unknown",
+        lastActive: formattedTime,
+        userAgent: sessionData.user_agent,
+      };
+    });
+  }, []);
 
   // Upcoming invoice state
   const [upcomingInvoice, setUpcomingInvoice] = useState<UpcomingInvoice>({
@@ -226,11 +283,17 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   /**
    * Fetch device count and sessions
    */
-  const refreshDevices = useCallback(async () => {
-    if (!user?.id || isLoadingDevices) return; // Prevent duplicate calls
-    
-    setIsLoadingDevices(true);
-    
+  const refreshDevices = useCallback(async (options?: { silent?: boolean }) => {
+    if (!user?.id || devicesFetchInFlightRef.current) return;
+
+    const silent = options?.silent ?? false;
+    const showLoading = !silent && !hasFetchedDevicesRef.current;
+
+    devicesFetchInFlightRef.current = true;
+    if (showLoading) {
+      setIsLoadingDevices(true);
+    }
+
     try {
       const { sessions, error } = await fetchUserSessions();
 
@@ -241,66 +304,17 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
       const count = sessions?.length || 0;
       setDeviceCount(count);
-
-      // Transform sessions to devices
-      if (sessions && sessions.length > 0) {
-        const deviceData: Device[] = sessions.map((sessionData) => {
-          let deviceType: "mobile" | "tablet" | "desktop" = "desktop";
-          const deviceName = sessionData.device_name;
-
-          if (
-            deviceName.includes("Mobile") ||
-            deviceName.includes("Android") ||
-            deviceName.includes("iPhone")
-          ) {
-            deviceType = "mobile";
-          } else if (
-            deviceName.includes("iPad") ||
-            deviceName.includes("Tablet")
-          ) {
-            deviceType = "tablet";
-          }
-
-          // Format last active time
-          const lastUsed = new Date(sessionData.last_used);
-          const now = new Date();
-          const diffMs = now.getTime() - lastUsed.getTime();
-          const diffMins = Math.floor(diffMs / 60000);
-          const diffHours = Math.floor(diffMs / 3600000);
-          const diffDays = Math.floor(diffMs / 86400000);
-
-          let formattedTime = "";
-          if (diffMins < 1) {
-            formattedTime = "Just now";
-          } else if (diffMins < 60) {
-            formattedTime = `${diffMins} minute${diffMins !== 1 ? "s" : ""} ago`;
-          } else if (diffHours < 24) {
-            formattedTime = `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
-          } else {
-            formattedTime = `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`;
-          }
-
-          return {
-            name: deviceName,
-            type: deviceType,
-            location: sessionData.ip || "Unknown",
-            lastActive: formattedTime,
-            userAgent: sessionData.user_agent,
-          };
-        });
-
-        setDevices(deviceData);
-      } else {
-        setDevices([]);
-      }
-      
+      setDevices(mapSessionsToDevices(sessions));
       hasFetchedDevicesRef.current = true;
     } catch (err) {
       console.error("Error in fetchDeviceCount:", err);
     } finally {
-      setIsLoadingDevices(false);
+      devicesFetchInFlightRef.current = false;
+      if (showLoading) {
+        setIsLoadingDevices(false);
+      }
     }
-  }, [user?.id, isLoadingDevices]);
+  }, [user?.id, mapSessionsToDevices]);
 
   /**
    * Fetch upcoming invoice
@@ -418,15 +432,85 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   // Auto-fetch devices on mount if user is available (only once per user)
   useEffect(() => {
-    if (user?.id && !hasFetchedDevicesRef.current && !isLoadingDevices) {
-      refreshDevices();
+    if (user?.id && !hasFetchedDevicesRef.current && !devicesFetchInFlightRef.current) {
+      void refreshDevices();
     }
-  }, [user?.id, isLoadingDevices, refreshDevices]);
-  
+  }, [user?.id, refreshDevices]);
+
   // Reset fetch flag when user changes
   useEffect(() => {
     hasFetchedDevicesRef.current = false;
   }, [user?.id]);
+
+  // Live updates when Cymasphere app sessions are created, refreshed, or revoked.
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const supabase = createClient();
+    let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const scheduleRefresh = () => {
+      if (refreshTimeout) {
+        clearTimeout(refreshTimeout);
+      }
+
+      refreshTimeout = setTimeout(() => {
+        void refreshDevices({ silent: true });
+      }, 300);
+    };
+
+    const channel = supabase
+      .channel(`user_sessions:${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "user_sessions",
+          filter: `user_id=eq.${user.id}`,
+        },
+        scheduleRefresh,
+      )
+      .subscribe();
+
+    return () => {
+      if (refreshTimeout) {
+        clearTimeout(refreshTimeout);
+      }
+      void supabase.removeChannel(channel);
+    };
+  }, [user?.id, refreshDevices]);
+
+  // Refresh when the browser tab becomes visible again.
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void refreshDevices({ silent: true });
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [user?.id, refreshDevices]);
+
+  // Poll while the tab is open so "last active" labels stay fresh.
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        void refreshDevices({ silent: true });
+      }
+    }, 15000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [user?.id, refreshDevices]);
 
   const value = useMemo(
     () => ({

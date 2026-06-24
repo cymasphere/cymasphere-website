@@ -497,6 +497,11 @@ function Settings() {
     refreshUser();
   }, [refreshUser]);
 
+  /** @brief Keep Active Devices in sync when opening settings (no manual refresh). */
+  useEffect(() => {
+    void refreshDevices({ silent: true });
+  }, [refreshDevices]);
+
   /** @brief Keep name fields in sync when the loaded profile updates. */
   useEffect(() => {
     if (user?.profile) {
