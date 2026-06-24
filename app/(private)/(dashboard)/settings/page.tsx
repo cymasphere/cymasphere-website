@@ -267,6 +267,80 @@ const TwoColumnGrid = styled.div`
   }
 `;
 
+const ProfileSettingsRow = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+  }
+
+  & > div > div {
+    margin-bottom: 0;
+  }
+`;
+
+const ProfileSettingsColumn = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  height: 100%;
+  min-height: 0;
+
+  @media (min-width: 768px) {
+    justify-content: space-between;
+    gap: 0;
+  }
+`;
+
+const ProfileLeftCardShell = styled.div`
+  display: flex;
+  flex-direction: column;
+
+  & > div > div {
+    margin-bottom: 0;
+    padding: 1rem 1.25rem;
+  }
+`;
+
+const ProfileSettingsEmailShell = styled.div`
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+
+  & > div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  & > div > div {
+    margin-bottom: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+`;
+
+const CompactCardTitle = styled(CardTitle)`
+  font-size: 1.05rem;
+  margin-bottom: 0.625rem;
+
+  svg {
+    margin-right: 0.5rem;
+  }
+`;
+
+const CompactTwoColumnGrid = styled(TwoColumnGrid)`
+  gap: 0.75rem;
+`;
+
 const ProfileFieldInput = styled.input`
   width: 100%;
   background-color: rgba(30, 30, 46, 0.5);
@@ -359,6 +433,53 @@ const ProfileFieldLabel = styled.label`
   @media (max-width: 768px) {
     font-size: 0.85rem;
   }
+`;
+
+const CompactFormGroup = styled(ProfileFormGroup)`
+  margin-bottom: 0.625rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const CompactProfileFieldInput = styled(ProfileFieldInput)`
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+`;
+
+const CompactProfileFieldLabel = styled(ProfileFieldLabel)`
+  margin-bottom: 0.35rem;
+  font-size: 0.85rem;
+`;
+
+const CompactProfileButton = styled(Button)`
+  width: 100%;
+  justify-content: center;
+  box-sizing: border-box;
+  margin-top: 0.625rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+`;
+
+const EmailCardContent = styled(CardContent)`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+`;
+
+const EmailChangeForm = styled.form`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+`;
+
+const ProfileRowButton = styled(Button)`
+  width: 100%;
+  justify-content: center;
+  box-sizing: border-box;
 `;
 
 // Modal components
@@ -980,97 +1101,191 @@ function Settings() {
         </ProfileFlashRow>
       ) : null}
 
-      <AnimatedCard
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <CardTitle>
-          <FaUser />{" "}
-          {t("dashboard.profile.personalInfo", "Personal Information")}
-        </CardTitle>
-        <CardContent>
-          <form onSubmit={handleSavePersonalInfo}>
-            <TwoColumnGrid>
-              <ProfileFormGroup>
-                <ProfileFieldLabel>
-                  {t("dashboard.profile.firstName", "First Name")}
-                </ProfileFieldLabel>
-                <ProfileFieldInput
-                  type="text"
-                  value={personalInfoForm.first_name}
-                  onChange={(e) =>
-                    handlePersonalInfoFieldChange(e, "first_name")
-                  }
-                  required
+      <ProfileSettingsRow>
+        <ProfileSettingsColumn>
+          <ProfileLeftCardShell>
+            <AnimatedCard
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              <CompactCardTitle>
+                <FaUser />{" "}
+                {t("dashboard.profile.personalInfo", "Personal Information")}
+              </CompactCardTitle>
+              <CardContent>
+                <form onSubmit={handleSavePersonalInfo}>
+                  <CompactTwoColumnGrid>
+                    <CompactFormGroup>
+                      <CompactProfileFieldLabel>
+                        {t("dashboard.profile.firstName", "First Name")}
+                      </CompactProfileFieldLabel>
+                      <CompactProfileFieldInput
+                        type="text"
+                        value={personalInfoForm.first_name}
+                        onChange={(e) =>
+                          handlePersonalInfoFieldChange(e, "first_name")
+                        }
+                        required
+                      />
+                    </CompactFormGroup>
+                    <CompactFormGroup>
+                      <CompactProfileFieldLabel>
+                        {t("dashboard.profile.lastName", "Last Name")}
+                      </CompactProfileFieldLabel>
+                      <CompactProfileFieldInput
+                        type="text"
+                        value={personalInfoForm.last_name}
+                        onChange={(e) =>
+                          handlePersonalInfoFieldChange(e, "last_name")
+                        }
+                        required
+                      />
+                    </CompactFormGroup>
+                  </CompactTwoColumnGrid>
+                  <CompactProfileButton
+                    type="submit"
+                    as={motion.button}
+                    whileHover="hover"
+                    whileTap="tap"
+                    variants={profileActionButtonVariants}
+                  >
+                    <FaSave style={{ marginRight: "0.5rem" }} />
+                    {t("dashboard.profile.saveChanges", "Save Changes")}
+                  </CompactProfileButton>
+                </form>
+              </CardContent>
+            </AnimatedCard>
+          </ProfileLeftCardShell>
+
+          <ProfileLeftCardShell>
+            <AnimatedCard
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.08 }}
+            >
+              <CompactCardTitle>
+                <FaLock />{" "}
+                {t("dashboard.profile.passwordSection", "Change Password")}
+              </CompactCardTitle>
+              <CardContent>
+                <CompactProfileButton
+                  type="button"
+                  onClick={handleSendPasswordResetEmail}
+                  as={motion.button}
+                  whileHover="hover"
+                  whileTap="tap"
+                  variants={profileActionButtonVariants}
+                  style={{ marginTop: 0 }}
+                >
+                  <FaLock style={{ marginRight: "0.5rem" }} />
+                  {t(
+                    "dashboard.profile.sendResetEmail",
+                    "Send Password Reset Email",
+                  )}
+                </CompactProfileButton>
+              </CardContent>
+            </AnimatedCard>
+          </ProfileLeftCardShell>
+        </ProfileSettingsColumn>
+
+        <ProfileSettingsEmailShell>
+          <AnimatedCard
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.08 }}
+          >
+          <CardTitle>
+            <FaEnvelope />{" "}
+            {t("dashboard.settings.emailAddressSection", "Email address")}
+          </CardTitle>
+          <EmailCardContent>
+            {user?.new_email ? (
+              <div
+                style={{
+                  padding: "0.75rem 1rem",
+                  marginBottom: "1rem",
+                  backgroundColor: "rgba(108, 99, 255, 0.12)",
+                  border: "1px solid rgba(108, 99, 255, 0.35)",
+                  borderRadius: "6px",
+                  fontSize: "0.9rem",
+                  color: "var(--text)",
+                }}
+              >
+                <FaInfoCircle
+                  style={{
+                    marginRight: "0.5rem",
+                    verticalAlign: "middle",
+                    color: "var(--primary)",
+                  }}
                 />
-              </ProfileFormGroup>
-              <ProfileFormGroup>
-                <ProfileFieldLabel>
-                  {t("dashboard.profile.lastName", "Last Name")}
-                </ProfileFieldLabel>
-                <ProfileFieldInput
-                  type="text"
-                  value={personalInfoForm.last_name}
-                  onChange={(e) =>
-                    handlePersonalInfoFieldChange(e, "last_name")
-                  }
-                  required
-                />
-              </ProfileFormGroup>
-            </TwoColumnGrid>
+                {t(
+                  "dashboard.settings.emailChangePending",
+                  "Confirmation pending for {{email}}. Check that inbox and use the link we sent.",
+                  { email: user.new_email },
+                )}
+              </div>
+            ) : null}
             <ProfileFormGroup>
               <ProfileFieldLabel>
-                {t("dashboard.profile.email", "Email Address")}
+                {t("dashboard.settings.currentEmailLabel", "Current email")}
               </ProfileFieldLabel>
               <ProfileFieldReadOnly
                 type="email"
-                value={user?.email || ""}
+                value={user?.email ?? ""}
                 readOnly
                 disabled
                 aria-readonly
               />
             </ProfileFormGroup>
-            <Button
-              type="submit"
-              as={motion.button}
-              whileHover="hover"
-              whileTap="tap"
-              variants={profileActionButtonVariants}
-            >
-              <FaSave style={{ marginRight: "0.5rem" }} />
-              {t("dashboard.profile.saveChanges", "Save Changes")}
-            </Button>
-          </form>
-        </CardContent>
-      </AnimatedCard>
-
-      <AnimatedCard
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.08 }}
-      >
-        <CardTitle>
-          <FaLock />{" "}
-          {t("dashboard.profile.passwordSection", "Change Password")}
-        </CardTitle>
-        <CardContent>
-          <Button
-            type="button"
-            onClick={handleSendPasswordResetEmail}
-            as={motion.button}
-            whileHover="hover"
-            whileTap="tap"
-            variants={profileActionButtonVariants}
-          >
-            <FaLock style={{ marginRight: "0.5rem" }} />
-            {t(
-              "dashboard.profile.sendResetEmail",
-              "Send Password Reset Email",
-            )}
-          </Button>
-        </CardContent>
-      </AnimatedCard>
+            <EmailChangeForm onSubmit={handleEmailChangeSubmit}>
+              <ProfileFormGroup>
+                <ProfileFieldLabel htmlFor="settingsNewEmail">
+                  {t("dashboard.settings.newEmailLabel", "New email address")}
+                </ProfileFieldLabel>
+                <ProfileFieldInput
+                  id="settingsNewEmail"
+                  type="email"
+                  autoComplete="email"
+                  value={newEmailInput}
+                  onChange={(e) => {
+                    setNewEmailInput(e.target.value);
+                    if (emailChangeError) setEmailChangeError(null);
+                  }}
+                  disabled={isEmailChangeSubmitting}
+                />
+              </ProfileFormGroup>
+              {emailChangeError ? (
+                <div
+                  style={{
+                    color: "var(--error)",
+                    fontSize: "0.85rem",
+                    marginBottom: "1rem",
+                  }}
+                >
+                  {emailChangeError}
+                </div>
+              ) : null}
+              <ProfileRowButton
+                type="submit"
+                disabled={isEmailChangeSubmitting}
+                style={{
+                  marginTop: "auto",
+                  opacity: isEmailChangeSubmitting ? 0.7 : 1,
+                  cursor: isEmailChangeSubmitting ? "not-allowed" : "pointer",
+                }}
+              >
+                <FaEnvelope style={{ marginRight: "0.5rem" }} />
+                {t(
+                  "dashboard.settings.sendEmailConfirmation",
+                  "Send confirmation email",
+                )}
+              </ProfileRowButton>
+            </EmailChangeForm>
+          </EmailCardContent>
+        </AnimatedCard>
+        </ProfileSettingsEmailShell>
+      </ProfileSettingsRow>
 
       <AnimatedCard
         initial={{ opacity: 0, y: 20 }}
@@ -1156,10 +1371,10 @@ function Settings() {
             </DeviceCounter>
           </DeviceCount>
 
-          <Button onClick={handleLogout}>
+          <ProfileRowButton type="button" onClick={handleLogout}>
             <FaSignOutAlt style={{ marginRight: "0.5rem" }} />
             {t("dashboard.settings.logoutAll", "Logout from All Other Devices")}
-          </Button>
+          </ProfileRowButton>
         </CardContent>
       </AnimatedCard>
 
@@ -1167,127 +1382,6 @@ function Settings() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.24 }}
-      >
-        <CardTitle>
-          <FaEnvelope />{" "}
-          {t("dashboard.settings.emailAddressSection", "Email address")}
-        </CardTitle>
-        <CardContent>
-          {user?.new_email ? (
-            <div
-              style={{
-                padding: "0.75rem 1rem",
-                marginBottom: "1rem",
-                backgroundColor: "rgba(108, 99, 255, 0.12)",
-                border: "1px solid rgba(108, 99, 255, 0.35)",
-                borderRadius: "6px",
-                fontSize: "0.9rem",
-                color: "var(--text)",
-              }}
-            >
-              <FaInfoCircle
-                style={{
-                  marginRight: "0.5rem",
-                  verticalAlign: "middle",
-                  color: "var(--primary)",
-                }}
-              />
-              {t(
-                "dashboard.settings.emailChangePending",
-                "Confirmation pending for {{email}}. Check that inbox and use the link we sent.",
-                { email: user.new_email },
-              )}
-            </div>
-          ) : null}
-          <div style={{ marginBottom: "0.75rem" }}>
-            <div
-              style={{
-                fontSize: "0.85rem",
-                color: "var(--text-secondary)",
-                marginBottom: "0.35rem",
-              }}
-            >
-              {t("dashboard.settings.currentEmailLabel", "Current email")}
-            </div>
-            <div
-              style={{
-                padding: "0.75rem",
-                backgroundColor: "rgba(30, 30, 46, 0.5)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
-                color: "var(--text-secondary)",
-                borderRadius: "6px",
-                fontSize: "0.95rem",
-              }}
-            >
-              {user?.email ?? "—"}
-            </div>
-          </div>
-          <form onSubmit={handleEmailChangeSubmit}>
-            <label
-              htmlFor="settingsNewEmail"
-              style={{
-                display: "block",
-                marginBottom: "0.5rem",
-                fontSize: "0.9rem",
-                color: "var(--text)",
-              }}
-            >
-              {t("dashboard.settings.newEmailLabel", "New email address")}
-            </label>
-            <input
-              id="settingsNewEmail"
-              type="email"
-              autoComplete="email"
-              value={newEmailInput}
-              onChange={(e) => {
-                setNewEmailInput(e.target.value);
-                if (emailChangeError) setEmailChangeError(null);
-              }}
-              disabled={isEmailChangeSubmitting}
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                marginBottom: emailChangeError ? "0.5rem" : "1rem",
-                backgroundColor: "rgba(30, 30, 46, 0.5)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
-                color: "var(--text)",
-                borderRadius: "6px",
-              }}
-            />
-            {emailChangeError ? (
-              <div
-                style={{
-                  color: "var(--error)",
-                  fontSize: "0.85rem",
-                  marginBottom: "1rem",
-                }}
-              >
-                {emailChangeError}
-              </div>
-            ) : null}
-            <Button
-              type="submit"
-              disabled={isEmailChangeSubmitting}
-              style={{
-                marginTop: 0,
-                opacity: isEmailChangeSubmitting ? 0.7 : 1,
-                cursor: isEmailChangeSubmitting ? "not-allowed" : "pointer",
-              }}
-            >
-              <FaEnvelope style={{ marginRight: "0.5rem" }} />
-              {t(
-                "dashboard.settings.sendEmailConfirmation",
-                "Send confirmation email",
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </AnimatedCard>
-
-      <AnimatedCard
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.32 }}
       >
         <CardTitle>
           <FaTrash style={{ color: "var(--error)" }} />{" "}
@@ -1361,15 +1455,14 @@ function Settings() {
                   }}
                 />
               </div>
-              <Button
+              <ProfileRowButton
                 type="submit"
                 style={{
                   background: "var(--error)",
-                  width: "100%",
                 }}
               >
                 {t("dashboard.settings.deleteAccount", "Delete My Account")}
-              </Button>
+              </ProfileRowButton>
             </form>
           </div>
         </CardContent>
