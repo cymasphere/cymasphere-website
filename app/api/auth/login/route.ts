@@ -15,6 +15,9 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { Profile } from "@/utils/supabase/types";
 import { checkRateLimit, getClientIp } from "@/utils/rate-limit";
+import {
+  extractCymasphereDeviceHost,
+} from "@/utils/supabase/cymasphere-device";
 import { createServerClient } from "@supabase/ssr";
 import { Database } from "@/database.types";
 
@@ -267,39 +270,43 @@ export async function POST(
 
     // Proceed only if we have a valid session and user with email
     if (session && user && user.email) {
-      // Check for maximum devices (mobile app only - user agents starting with "cymasphere:")
-      // Web browsers are not subject to device limits
-      const { data: userSessions, error: sessionsError } = await supabase
-        .from("user_sessions")
-        .select("*")
-        .eq("user_id", user.id);
+      // Enforce the 3-device limit only for Cymasphere app logins.
+      // Count by stable device host (same logic as Settings → Active Devices).
+      const isCymasphereAppLogin = userAgent.startsWith("cymasphere:");
 
-      if (sessionsError) {
-        // Handle session fetch error silently - don't block login if we can't check devices
-      } else {
-        // Filter sessions to only count mobile app sessions (user agent starts with "cymasphere:")
-        const cymasphereUserAgents =
-          userSessions
-            ?.filter(
-              (session) =>
-                session.user_agent &&
-                session.user_agent.startsWith("cymasphere:")
-            )
-            .map((session) => session.user_agent) || [];
+      if (isCymasphereAppLogin) {
+        const { data: userSessions, error: sessionsError } = await supabase
+          .from("user_sessions")
+          .select("user_agent")
+          .eq("user_id", user.id);
 
-        // Get unique user agents to count unique devices
-        // Same device with different sessions still counts as one device
-        const uniqueUserAgents = [...new Set(cymasphereUserAgents)];
-        const deviceCount = uniqueUserAgents.length;
+        if (sessionsError) {
+          // Handle session fetch error silently - don't block login if we can't check devices
+        } else {
+          const cymasphereUserAgents =
+            userSessions
+              ?.map((session) => session.user_agent)
+              .filter(
+                (sessionUserAgent): sessionUserAgent is string =>
+                  !!sessionUserAgent && sessionUserAgent.startsWith("cymasphere:"),
+              ) ?? [];
 
-        // Enforce maximum of 3 devices for mobile app users
-        // If device count exceeds limit, sign out and return error
-        if (deviceCount > 3) {
-          await supabase.auth.signOut();
-          return err(
-            "maximum_devices",
-            "Maximum number of devices already logged in"
+          const currentDeviceHost = extractCymasphereDeviceHost(userAgent);
+          const uniqueDeviceHosts = new Set(
+            cymasphereUserAgents.map((sessionUserAgent) =>
+              extractCymasphereDeviceHost(sessionUserAgent),
+            ),
           );
+          const isExistingDevice = uniqueDeviceHosts.has(currentDeviceHost);
+
+          // Block only when this login would register a fourth distinct device.
+          if (!isExistingDevice && uniqueDeviceHosts.size >= 3) {
+            await supabase.auth.signOut();
+            return err(
+              "maximum_devices",
+              "Maximum number of devices already logged in"
+            );
+          }
         }
       }
 
