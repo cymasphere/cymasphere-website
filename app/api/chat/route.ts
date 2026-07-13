@@ -340,7 +340,7 @@ const SALES_RESPONSES: Record<string, Record<string, { keywords: string[], respo
       response: "To learn about trial options, please check the Cymasphere website. What are you hoping to test out?"
     },
     upgrade: {
-      keywords: ['upgrade', 'premium', 'pro', 'studio', 'paid'],
+      keywords: ['upgrade', 'premium', 'pro plan', 'pro version', 'paid plan', 'paid'],
       response: "For upgrade options and premium features, please visit the pricing section on the Cymasphere website. What features are you most interested in?"
     },
     pricing_concerns: {
@@ -354,7 +354,7 @@ const SALES_RESPONSES: Record<string, Record<string, { keywords: string[], respo
       response: "Para obtener más información sobre opciones de prueba, consulte el sitio web de Cymasphere. ¿Qué esperas probar ?"
     },
     upgrade: {
-      keywords: ['actualizar', 'premium', 'pro', 'estudio', 'pagado'],
+      keywords: ['actualizar', 'premium', 'plan pro', 'versión pro', 'pagado'],
       response: "Para opciones de actualización y funciones premium, visite la sección de precios en el sitio web de Cymasphere. ¿Cuáles son las características que más te interesan ?"
     },
     pricing_concerns: {
@@ -368,7 +368,7 @@ const SALES_RESPONSES: Record<string, Record<string, { keywords: string[], respo
       response: "Pour en savoir plus sur les options d'essai, veuillez consulter le site Web de Cymasphere. Que voulez-vous tester ?"
     },
     upgrade: {
-      keywords: ['mise à niveau', 'premium', 'pro', 'studio', 'payant'],
+      keywords: ['mise à niveau', 'premium', 'plan pro', 'version pro', 'payant'],
       response: "Pour les options de mise à niveau et les fonctionnalités premium, veuillez consulter la section tarifaire du site Web de Cymasphere. Quelles fonctionnalités vous intéressent le plus ?"
     },
     pricing_concerns: {
@@ -382,7 +382,7 @@ const SALES_RESPONSES: Record<string, Record<string, { keywords: string[], respo
       response: "Informationen zu Testoptionen finden Sie auf der Cymasphere-Website. Was möchtest du testen ?"
     },
     upgrade: {
-      keywords: ['update', 'premium', 'pro', 'studio', 'bezahlt'],
+      keywords: ['upgrade', 'premium', 'pro-plan', 'pro version', 'bezahlt'],
       response: "Weitere Informationen zu Upgrade-Optionen und Premium-Funktionen finden Sie im Bereich Preise auf der Cymasphere-Website. Welche Funktionen interessieren dich am meisten ?"
     },
     pricing_concerns: {
@@ -396,7 +396,7 @@ const SALES_RESPONSES: Record<string, Record<string, { keywords: string[], respo
       response: "Para saber mais sobre as opções de teste, visite o site da Cymasphere. O que você espera testar ?"
     },
     upgrade: {
-      keywords: ['atualizar', 'premium', 'pro', 'estúdio', 'pago'],
+      keywords: ['atualizar', 'premium', 'plano pro', 'versão pro', 'pago'],
       response: "Para opções de atualização e recursos premium, visite a seção de preços no site da Cymasphere. Quais recursos mais te interessam ?"
     },
     pricing_concerns: {
@@ -424,7 +424,7 @@ const SALES_RESPONSES: Record<string, Record<string, { keywords: string[], respo
       response: "Per ulteriori informazioni sulle opzioni di prova, consulta il sito Web di Cymasphere. Cosa speriamo di testare ?"
     },
     upgrade: {
-      keywords: ['aggiornamento', 'premium', 'pro', 'studio', 'pagato'],
+      keywords: ['aggiornamento', 'premium', 'piano pro', 'versione pro', 'pagato'],
       response: "Per le opzioni di aggiornamento e le funzioni premium, consulta la sezione Prezzi nel sito Web di Cymasphere. Quali funzioni ti interessano di più ?"
     },
     pricing_concerns: {
@@ -438,7 +438,7 @@ const SALES_RESPONSES: Record<string, Record<string, { keywords: string[], respo
       response: "Deneme seçenekleri hakkında bilgi almak için lütfen Cymasphere web sitesini ziyaret edin. Ne test etmeyi umuyorsunuz ?"
     },
     upgrade: {
-      keywords: ['yükseltme', 'premium', 'pro', 'stüdyo', 'ücretli'],
+      keywords: ['yükseltme', 'premium', 'pro plan', 'pro sürüm', 'ücretli'],
       response: "Yükseltme seçenekleri ve premium özellikler için lütfen Cymasphere web sitesindeki fiyatlandırma bölümünü ziyaret edin. Hangi özellikler sizi en fazla ilgilendiriyor ?"
     },
     pricing_concerns: {
@@ -462,25 +462,45 @@ const SALES_RESPONSES: Record<string, Record<string, { keywords: string[], respo
   }
 };
 
-function detectIntent(message: string, language: string = 'en'): string | null {
+/**
+ * @brief Match keywords as whole tokens so "pro" does not hit "progression".
+ */
+function matchesKeyword(message: string, keyword: string): boolean {
   const lowerMessage = message.toLowerCase();
+  const lowerKeyword = keyword.toLowerCase();
+  if (!lowerKeyword) return false;
+
+  // Multi-word phrases: require contiguous phrase match with token edges
+  const escaped = lowerKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  if (/[a-z0-9]/i.test(lowerKeyword)) {
+    // Word-boundary style for Latin keywords (avoids "pro" in "progression")
+    return new RegExp(`(?:^|[^a-z0-9])${escaped}(?:$|[^a-z0-9])`, 'i').test(
+      lowerMessage
+    );
+  }
+
+  // Non-Latin / CJK: substring match is appropriate
+  return lowerMessage.includes(lowerKeyword);
+}
+
+function detectIntent(message: string, language: string = 'en'): string | null {
   const faqResponses = FAQ_RESPONSES[language] || FAQ_RESPONSES['en'];
   const salesResponses = SALES_RESPONSES[language] || SALES_RESPONSES['en'];
-  
-  // Check for sales intents first
-  for (const [intent, data] of Object.entries(salesResponses)) {
-    if (data.keywords.some(keyword => lowerMessage.includes(keyword))) {
-      return intent;
-    }
-  }
-  
-  // Then check FAQ intents
+
+  // Prefer product/how-to FAQ intents before sales, so "chord progression"
+  // never loses to upgrade keyword "pro".
   for (const [intent, data] of Object.entries(faqResponses)) {
-    if (data.keywords.some(keyword => lowerMessage.includes(keyword))) {
+    if (data.keywords.some((keyword) => matchesKeyword(message, keyword))) {
       return intent;
     }
   }
-  
+
+  for (const [intent, data] of Object.entries(salesResponses)) {
+    if (data.keywords.some((keyword) => matchesKeyword(message, keyword))) {
+      return intent;
+    }
+  }
+
   return null;
 }
 
