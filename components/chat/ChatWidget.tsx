@@ -561,17 +561,29 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
   const chatWindowRef = useRef<HTMLDivElement>(null);
 
   // Initialize greeting message based on language
+  const makeGreeting = (): Message => ({
+    id: "1",
+    text:
+      t("chat.greeting") ||
+      "Hi! I'm your Cymasphere assistant. I can help you with questions about our music production tools, pricing, features, and more. What would you like to know?",
+    isUser: false,
+    timestamp: new Date(),
+  });
+
   useEffect(() => {
-    const initialGreeting: Message = {
-      id: "1",
-      text:
-        t("chat.greeting") ||
-        "Hi! I'm your Cymasphere assistant. I can help you with questions about our music production tools, pricing, features, and more. What would you like to know?",
-      isUser: false,
-      timestamp: new Date(),
-    };
-    setMessages([initialGreeting]);
+    setMessages([makeGreeting()]);
   }, [i18n.language, t]);
+
+  const resetChatHistory = () => {
+    setMessages([makeGreeting()]);
+    setInputValue("");
+    setIsTyping(false);
+  };
+
+  const closeChat = () => {
+    setIsOpen(false);
+    resetChatHistory();
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -765,7 +777,7 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
       // Add a small delay to prevent immediate closing when chat opens
       if (emailModalJustOpened && isOpen) {
         setTimeout(() => {
-          setIsOpen(false);
+          closeChat();
         }, 100);
       }
     };
@@ -860,7 +872,8 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
         },
         body: JSON.stringify({
           message: userMessage.text,
-          conversationHistory: messages.slice(-5), // Send last 5 messages for context
+          // Full in-memory history (server enforces size caps); cleared on close/refresh
+          conversationHistory: messages,
           language: i18n.language, // Pass current language code (e.g., 'en', 'es', 'fr')
         }),
       });
@@ -924,7 +937,7 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
             <FaRobot />
             {t("chat.title") || "Cymasphere Assistant"}
           </ChatTitle>
-          <CloseButton onClick={() => setIsOpen(false)}>
+          <CloseButton onClick={closeChat}>
             <FaTimes />
           </CloseButton>
         </ChatHeader>
@@ -992,13 +1005,14 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
           $isOpen={isOpen}
           $attention={showAttention}
           onClick={() => {
-            setIsOpen(!isOpen);
-            // Play sound when manually opening chat
-            if (!isOpen) {
-              playSound().catch(() => {
-                console.log("Audio not available for manual chat open");
-              });
+            if (isOpen) {
+              closeChat();
+              return;
             }
+            setIsOpen(true);
+            playSound().catch(() => {
+              console.log("Audio not available for manual chat open");
+            });
           }}
           aria-label={
             isOpen

@@ -2,19 +2,22 @@
  * @fileoverview AI chat assistant API endpoint
  * 
  * This endpoint provides an AI-powered chat assistant for Cymasphere using
- * OpenAI GPT with RAG (Retrieval Augmented Generation) for context-aware
- * responses. Supports multiple languages and includes keyword-based fallback
- * responses when OpenAI is unavailable. Uses multilingual FAQ responses for
- * common questions.
+ * OpenAI with a fixed system prompt that includes compiled UserManual knowledge.
+ * Supports multiple languages and includes keyword-based fallback responses
+ * when OpenAI is unavailable.
  * 
  * @module api/chat
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { cymasphereRAG } from '@/lib/rag';
+import { buildChatSystemPrompt } from '@/lib/chat-knowledge';
 import { CHAT_PRICING_RESPONSES } from '@/lib/pricing';
 import { checkRateLimit, getClientIp } from '@/utils/rate-limit';
+
+const MAX_MESSAGE_CHARS = 2000;
+const MAX_HISTORY_MESSAGES = 30;
+const MAX_HISTORY_CHARS = 16_000;
 
 /**
  * Chat message interface
@@ -482,54 +485,46 @@ function detectIntent(message: string, language: string = 'en'): string | null {
 }
 
 /**
- * @brief Generates AI response using RAG (Retrieval Augmented Generation)
- * 
- * Uses a three-layer RAG system to generate context-aware responses:
- * 1. Retrieves relevant context from knowledge base
- * 2. Generates response with retrieved context
- * 3. Verifies response accuracy against context
- * 
- * Falls back to keyword-based responses if OpenAI is unavailable or RAG fails.
- * 
- * @param message User's message/query
- * @param conversationHistory Array of previous messages in the conversation
- * @param language Language code for response (default: 'en')
- * @returns AI-generated response string
- * @note Uses cymasphereRAG for context retrieval and response generation
- * @note Falls back to generateFallbackResponse if RAG fails
- * 
- * @example
- * ```typescript
- * const response = await generateAIResponse("What is Cymasphere?", [], "en");
- * // Returns: "Cymasphere is a complete song creation suite..."
- * ```
+ * @brief Generates AI response with full UserManual knowledge in the system prompt
+ *
+ * Uses OpenAI chat completions (no RAG/embeddings). Falls back to keyword
+ * responses if OpenAI is unavailable or the request fails.
  */
-async function generateAIResponse(message: string, conversationHistory: ChatMessage[], language: string = 'en'): Promise<string> {
-  // Check if OpenAI is available
+async function generateAIResponse(
+  message: string,
+  conversationHistory: ChatMessage[],
+  language: string = 'en'
+): Promise<string> {
   if (!openai) {
     console.log('OpenAI API key not configured, using fallback responses');
     return generateFallbackResponse(message, language);
   }
 
   try {
-    // Layer 1: RAG - Retrieve relevant context from knowledge base
-    const context = await cymasphereRAG.retrieveRelevantContext(message);
-    
-    // Layer 2: Generate response with retrieved context
-    const response = await cymasphereRAG.generateResponse(message, conversationHistory);
-    
-    // Layer 3: Verification - Fact-check the response against context
-    const isVerified = await cymasphereRAG.verifyResponse(response, context);
-    
-    if (!isVerified) {
-      console.log('Response failed verification, using fallback');
+    const history = Array.isArray(conversationHistory) ? conversationHistory : [];
+    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+      { role: 'system', content: buildChatSystemPrompt() },
+      ...history.map((msg) => ({
+        role: (msg.isUser ? 'user' : 'assistant') as 'user' | 'assistant',
+        content: String(msg.text ?? ''),
+      })),
+      { role: 'user', content: message },
+    ];
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      temperature: 0.35,
+      messages,
+    });
+
+    const text = completion.choices[0]?.message?.content?.trim();
+    if (!text) {
+      console.log('Empty OpenAI response, using fallback');
       return generateFallbackResponse(message, language);
     }
-    
-    return response;
+    return text;
   } catch (error) {
-    console.error('RAG system error:', error);
-    // Fallback to keyword-based responses if RAG fails
+    console.error('Chat OpenAI error:', error);
     return generateFallbackResponse(message, language);
   }
 }
@@ -579,8 +574,8 @@ function generateFallbackResponse(message: string, language: string = 'en'): str
       bye: "Thanks for chatting! Feel free to come back anytime if you have more questions.",
       struggles: "I totally get that feeling - every musician has been there! The good news is that Cymasphere is designed to help you create musically satisfying results even when you're feeling stuck. It guides you toward chord progressions and melodies that work together harmonically. What's the main thing that's frustrating you right now - getting started, or feeling like your ideas don't sound right?",
       stuck: "Creative blocks are so common! Cymasphere can help break you out of that rut by suggesting new harmonic possibilities and chord progressions you might not have considered. The Harmony Palette lets you explore different musical directions visually. What type of music are you trying to create - are you working on chord progressions, melodies, or full arrangements?",
-      theory: "You don't need to know music theory to use Cymasphere! That's actually one of its biggest strengths - it handles all the complex theory behind the scenes while you focus on creating. The visual interfaces help you understand musical relationships intuitively as you work. What would you like to create - chord progressions, melodies, or full songs?",
-      general: "I don't know that information. Cymasphere helps producers, composers, songwriters, students, and educators with chords, melody patterns, and voice-led progressions—and every plan includes CymaSynth, a $149 wavetable synth value (VST3 & AU), included free. What feels most challenging right now—chord progressions, melodies, sound design, or arranging your song?"
+      theory: "Totally normal—lots of great music starts before theory feels solid. In plain terms: chords are stacks of notes (major sounds brighter, minor darker), and a progression is how those chords move over time—often from home (tonic) toward tension (dominant) and back. Cymasphere turns that into practice: pick a key in PALETTE, build or generate a short progression, then shape playable notes in VOICING with voice count, spacing, and voice leading so changes feel smooth. Want a simple starter loop, or help turning a progression into a melody pattern?",
+      general: "Happy to help. Cymasphere is a harmonic composition workstation for chords, voice-led progressions, and melody patterns—and every plan includes CymaSynth ($149 value as VST3 & AU) free. I can explain music ideas in plain language and show how they map to PALETTE, VOICING, Track editors, or CymaSynth. What are you working on—chords, melody, sound design, or arranging?"
     },
     es: {
       hello: "¡Hola! Estoy aquí para ayudarte a explorar Cymasphere—herramientas para armonía, melodía y arreglo que se integran con tu DAW. ¿Cuál es el resultado principal que esperas crear en este momento?",
@@ -589,8 +584,8 @@ function generateFallbackResponse(message: string, language: string = 'en'): str
       bye: "¡Gracias por chatear! Siéntete libre de volver en cualquier momento si tienes más preguntas.",
       struggles: "¡Entiendo totalmente ese sentimiento! La buena noticia es que Cymasphere está diseñado para ayudarte a crear resultados musicalmente satisfactorios incluso cuando te sientes atrapado. Te guía hacia progresiones de acordes y melodías que funcionan juntas armónicamente. ¿Cuál es la principal cosa que te frustrada ahora mismo: comenzar o sentir que tus ideas no suenan bien?",
       stuck: "¡Los bloqueos creativos son muy comunes! Cymasphere puede ayudarte a salir de esa rutina sugiriendo nuevas posibilidades armónicas y progresiones de acordes que quizás no hayas considerado. La Paleta de Armonía te permite explorar visualmente diferentes direcciones musicales. ¿Qué tipo de música intentas crear: estás trabajando en progresiones, melodías o arreglos completos?",
-      theory: "¡No necesitas conocer teoría musical para usar Cymasphere! Ese es en realidad uno de sus mayores fortalezas: maneja toda la teoría compleja detrás de escenas mientras tú te enfocas en crear. Las interfaces visuales te ayudan a entender las relaciones musicales intuitivamente mientras trabajas. ¿Qué te gustaría crear: progresiones de acordes, melodías o canciones completas?",
-      general: "No sé esa información. Cymasphere ayuda a productores, compositores, compositores de canciones, estudiantes y educadores con acordes, patrones de melodía y progresiones con conducción de voces. ¿Qué se siente más desafiante en este momento: progresiones de acordes, melodías o arreglando tu canción?"
+      theory: "Es muy normal—mucha buena música empieza antes de dominar la teoría. En simple: los acordes son notas apiladas (mayor suena más brillante, menor más oscuro), y una progresión es cómo se mueven en el tiempo—a menudo de reposo (tónica) a tensión (dominante) y de vuelta. Cymasphere lo vuelve práctica: elige tonalidad en PALETTE, arma o genera una progresión corta, y da forma en VOICING con cantidad de voces, espaciado y conducción de voces. ¿Quieres un loop inicial simple o pasar de progresión a un patrón melódico?",
+      general: "Con gusto te ayudo. Cymasphere es una estación de composición armónica para acordes, progresiones con conducción de voces y patrones melódicos—y cada plan incluye CymaSynth gratis. Puedo explicar ideas musicales en lenguaje claro y conectarlas con PALETTE, VOICING, editores de pista o CymaSynth. ¿En qué estás: acordes, melodía, diseño de sonido o arreglo?"
     },
     // Add more languages as needed, or fall back to English
   };
@@ -629,10 +624,31 @@ function generateFallbackResponse(message: string, language: string = 'en'): str
     return langDefaults.stuck;
   }
 
-  if (message.toLowerCase().includes('theory') && 
-      (message.toLowerCase().includes('don\'t know') || 
-       message.toLowerCase().includes('confused') ||
-       message.toLowerCase().includes('hard'))) {
+  const lowerMsg = message.toLowerCase();
+  const theoryOrChords =
+    lowerMsg.includes('theory') ||
+    lowerMsg.includes('chord') ||
+    lowerMsg.includes('harmony') ||
+    lowerMsg.includes('scale') ||
+    lowerMsg.includes('interval') ||
+    lowerMsg.includes('voicing');
+  const theoryStruggle =
+    lowerMsg.includes("don't know") ||
+    lowerMsg.includes('dont know') ||
+    lowerMsg.includes('not the best') ||
+    lowerMsg.includes('bad at') ||
+    lowerMsg.includes('weak at') ||
+    lowerMsg.includes('confused') ||
+    lowerMsg.includes('hard') ||
+    lowerMsg.includes('struggle') ||
+    lowerMsg.includes('beginner') ||
+    lowerMsg.includes('learn');
+
+  if (theoryOrChords && theoryStruggle) {
+    return langDefaults.theory;
+  }
+
+  if (theoryOrChords) {
     return langDefaults.theory;
   }
 
@@ -640,88 +656,75 @@ function generateFallbackResponse(message: string, language: string = 'en'): str
 }
 
 /**
- * @brief POST endpoint to generate AI chat assistant response
- * 
- * Processes user messages and generates AI-powered responses using RAG
- * (Retrieval Augmented Generation) with fallback to keyword-based responses.
- * Supports multiple languages and maintains conversation context.
- * 
- * Request body (JSON):
- * - message: User's message/query (required)
- * - conversationHistory: Array of previous chat messages (optional)
- * - language: Language code for response - "en", "es", "fr", etc. (optional, default: "en")
- * 
- * Responses:
- * 
- * 200 OK - Success:
- * ```json
- * {
- *   "response": "AI-generated response text",
- *   "timestamp": "2024-01-01T00:00:00.000Z",
- *   "language": "en"
- * }
- * ```
- * 
- * 400 Bad Request - Missing message:
- * ```json
- * {
- *   "error": "Message is required"
- * }
- * ```
- * 
- * 500 Internal Server Error:
- * ```json
- * {
- *   "error": "Internal server error"
- * }
- * ```
- * 
- * @param request Next.js request object containing JSON body with message and context
- * @returns NextResponse with AI-generated response or error
- * @note Uses RAG system for context-aware responses
- * @note Falls back to keyword-based responses if RAG unavailable
- * @note Supports multiple languages with language-specific responses
- * 
- * @example
- * ```typescript
- * // POST /api/chat
- * // Body: { message: "What is Cymasphere?", conversationHistory: [], language: "en" }
- * // Returns: { response: "...", timestamp: "...", language: "en" }
- * ```
+ * @brief POST endpoint for the public AI chat assistant
+ *
+ * Uses a fixed system prompt containing the compiled UserManual knowledge
+ * (OpenAI prompt-cache friendly). Client sends conversation history with each
+ * request. Enforces per-IP rate limits and prompt size limits.
  */
 export async function POST(request: NextRequest) {
   try {
     const clientIp = getClientIp(request);
-    if (!checkRateLimit(clientIp, 20, 60)) {
+    if (!checkRateLimit(`chat:min:${clientIp}`, 20, 60)) {
       return NextResponse.json(
         { error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      );
+    }
+    if (!checkRateLimit(`chat:hour:${clientIp}`, 60, 3600)) {
+      return NextResponse.json(
+        { error: 'Hourly chat limit reached. Please try again later.' },
         { status: 429 }
       );
     }
 
     const body: ChatRequest = await request.json();
     const { message, conversationHistory, language } = body;
-    
+
     if (!message || typeof message !== 'string') {
       return NextResponse.json(
         { error: 'Message is required' },
         { status: 400 }
       );
     }
-    
-    // Use provided language or default to English
+
+    if (message.length > MAX_MESSAGE_CHARS) {
+      return NextResponse.json(
+        { error: `Message too long (max ${MAX_MESSAGE_CHARS} characters).` },
+        { status: 400 }
+      );
+    }
+
+    const history = Array.isArray(conversationHistory) ? conversationHistory : [];
+    if (history.length > MAX_HISTORY_MESSAGES) {
+      return NextResponse.json(
+        { error: `Conversation history too long (max ${MAX_HISTORY_MESSAGES} messages).` },
+        { status: 400 }
+      );
+    }
+
+    const historyChars = history.reduce(
+      (sum, msg) => sum + String(msg?.text ?? '').length,
+      0
+    );
+    if (historyChars > MAX_HISTORY_CHARS) {
+      return NextResponse.json(
+        { error: `Conversation history too large (max ${MAX_HISTORY_CHARS} characters).` },
+        { status: 400 }
+      );
+    }
+
     const chatLanguage = language || 'en';
     console.log(`[chat-api] Processing message in language: ${chatLanguage}`);
-    
-    // Generate AI response
-    const response = await generateAIResponse(message, conversationHistory, chatLanguage);
-    
+
+    const response = await generateAIResponse(message, history, chatLanguage);
+
     return NextResponse.json({
       response,
       timestamp: new Date().toISOString(),
       language: chatLanguage
     });
-    
+
   } catch (error) {
     console.error('Chat API error:', error);
     return NextResponse.json(

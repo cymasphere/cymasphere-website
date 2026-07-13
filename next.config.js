@@ -53,6 +53,10 @@ const nextConfig = {
       'cymasphere/svg_conv/**/*',
     ],
   },
+  // Ensure compiled chat knowledge ships with serverless / traced API routes
+  outputFileTracingIncludes: {
+    '/api/chat': ['./content/chat-knowledge/SYSTEM_KNOWLEDGE.md'],
+  },
 };
 
 module.exports = nextConfig;
