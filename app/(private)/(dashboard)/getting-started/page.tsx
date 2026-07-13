@@ -1182,79 +1182,90 @@ export default function GettingStartedWizard() {
                 : "Choose your digital audio workstation for specific setup instructions."}
             </StepDescription>
             <DAWGrid>
-              {[
-                ...(installationType === "standalone"
-                  ? [
-                      {
-                        id: "cymasphere",
-                        name: "Cymasphere",
-                        os: "both" as const,
-                        comingSoon: false,
-                        recommended: true,
-                      },
-                    ]
-                  : []),
-                {
-                  id: "logic",
-                  name: "Logic Pro",
-                  os: "macos",
-                  comingSoon: false,
-                  recommended: false,
-                },
-                {
-                  id: "ableton",
-                  name: "Ableton Live",
-                  os: "both",
-                  comingSoon: false,
-                  recommended: false,
-                },
-                {
-                  id: "flstudio",
-                  name: "FL Studio",
-                  os: "both",
-                  comingSoon: true,
-                  recommended: false,
-                },
-                {
-                  id: "protools",
-                  name: "Pro Tools",
-                  os: "both",
-                  comingSoon: true,
-                  recommended: false,
-                },
-                {
-                  id: "cubase",
-                  name: "Cubase",
-                  os: "both",
-                  comingSoon: true,
-                  recommended: false,
-                },
-                {
-                  id: "reaper",
-                  name: "Reaper",
-                  os: "both",
-                  comingSoon: true,
-                  recommended: false,
-                },
-                {
-                  id: "studioone",
-                  name: "Studio One",
-                  os: "both",
-                  comingSoon: false,
-                  recommended: false,
-                },
-                ...(installationType !== "standalone"
-                  ? [
-                      {
-                        id: "other",
-                        name: "Other",
-                        os: "both" as const,
-                        comingSoon: true,
-                        recommended: false,
-                      },
-                    ]
-                  : []),
-              ].map((dawOption) => {
+              {(
+                [
+                  ...(installationType === "standalone"
+                    ? [
+                        {
+                          id: "cymasphere",
+                          name: "Cymasphere",
+                          os: "both" as const,
+                          comingSoon: false,
+                          recommended: true,
+                          subtitle:
+                            "Built-in mixer · CymaSynth auto-loads on every track",
+                        },
+                      ]
+                    : []),
+                  {
+                    id: "logic",
+                    name: "Logic Pro",
+                    os: "macos" as const,
+                    comingSoon: false,
+                    recommended: false,
+                  },
+                  {
+                    id: "ableton",
+                    name: "Ableton Live",
+                    os: "both" as const,
+                    comingSoon: false,
+                    recommended: false,
+                  },
+                  {
+                    id: "flstudio",
+                    name: "FL Studio",
+                    os: "both" as const,
+                    comingSoon: true,
+                    recommended: false,
+                  },
+                  {
+                    id: "protools",
+                    name: "Pro Tools",
+                    os: "both" as const,
+                    comingSoon: true,
+                    recommended: false,
+                  },
+                  {
+                    id: "cubase",
+                    name: "Cubase",
+                    os: "both" as const,
+                    comingSoon: true,
+                    recommended: false,
+                  },
+                  {
+                    id: "reaper",
+                    name: "Reaper",
+                    os: "both" as const,
+                    comingSoon: true,
+                    recommended: false,
+                  },
+                  {
+                    id: "studioone",
+                    name: "Studio One",
+                    os: "both" as const,
+                    comingSoon: false,
+                    recommended: false,
+                  },
+                  ...(installationType !== "standalone"
+                    ? [
+                        {
+                          id: "other",
+                          name: "Other",
+                          os: "both" as const,
+                          comingSoon: true,
+                          recommended: false,
+                        },
+                      ]
+                    : []),
+                ] as const satisfies ReadonlyArray<{
+                  id: string;
+                  name: string;
+                  os: "macos" | "both" | "windows";
+                  comingSoon: boolean;
+                  recommended: boolean;
+                  subtitle?: string;
+                }>
+              ).map((dawOption) => {
                 const isDisabled =
                   dawOption.comingSoon ||
                   (dawOption.os === "macos" && os === "windows");
@@ -1270,13 +1281,13 @@ export default function GettingStartedWizard() {
                     {dawOption.comingSoon && (
                       <ComingSoonBadge>Coming Soon</ComingSoonBadge>
                     )}
-                    {"recommended" in dawOption && dawOption.recommended && (
+                    {dawOption.recommended && (
                       <RecommendedBadge>Recommended</RecommendedBadge>
                     )}
                     <DAWName>{dawOption.name}</DAWName>
-                    {"subtitle" in dawOption && dawOption.subtitle && (
+                    {dawOption.subtitle ? (
                       <DAWSubtitle>{dawOption.subtitle}</DAWSubtitle>
-                    )}
+                    ) : null}
                   </DAWCard>
                 );
               })}
