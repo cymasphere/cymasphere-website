@@ -30,23 +30,32 @@ interface ToolResult {
   error?: string;
 }
 
+interface ToolCallResponse {
+  id: string;
+  name: string;
+  arguments: Record<string, unknown>;
+}
+
+interface ToolTranscriptTurn {
+  assistantToolCalls: ToolCallResponse[];
+  toolResults: ToolResult[];
+}
+
 interface AppAssistantRequest {
   message: string;
   conversationHistory: ChatMessage[];
   language?: string;
   appContext?: AppAssistantContext;
-  /** Echoed from the prior response when submitting toolResults. */
+  /** Full multi-round tool chain (preferred). */
+  toolTranscript?: ToolTranscriptTurn[];
+  /** Echoed from the prior response when submitting toolResults (legacy single batch). */
   assistantToolCalls?: ToolCallResponse[];
   toolResults?: ToolResult[];
   /** When true, respond with text/event-stream (SSE token deltas). */
   stream?: boolean;
 }
 
-interface ToolCallResponse {
-  id: string;
-  name: string;
-  arguments: Record<string, unknown>;
-}
+const MAX_TOOL_ROUNDS = 5;
 
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
@@ -178,6 +187,56 @@ function parseToolArguments(raw: string): Record<string, unknown> {
   }
 }
 
+function normalizeToolTranscript(
+  body: AppAssistantRequest
+): ToolTranscriptTurn[] {
+  if (Array.isArray(body.toolTranscript) && body.toolTranscript.length > 0) {
+    return body.toolTranscript.filter(
+      (turn) =>
+        Array.isArray(turn?.assistantToolCalls) &&
+        turn.assistantToolCalls.length > 0 &&
+        Array.isArray(turn?.toolResults) &&
+        turn.toolResults.length > 0
+    );
+  }
+
+  const toolResults = Array.isArray(body.toolResults) ? body.toolResults : [];
+  const assistantToolCalls = Array.isArray(body.assistantToolCalls)
+    ? body.assistantToolCalls
+    : [];
+  if (toolResults.length > 0 && assistantToolCalls.length > 0) {
+    return [{ assistantToolCalls, toolResults }];
+  }
+  return [];
+}
+
+function appendToolTurn(
+  messages: OpenAI.Chat.ChatCompletionMessageParam[],
+  turn: ToolTranscriptTurn
+) {
+  messages.push({
+    role: "assistant",
+    content: null,
+    tool_calls: turn.assistantToolCalls.map((tc) => ({
+      id: tc.id,
+      type: "function" as const,
+      function: {
+        name: tc.name,
+        arguments: JSON.stringify(tc.arguments ?? {}),
+      },
+    })),
+  });
+  for (const tr of turn.toolResults) {
+    messages.push({
+      role: "tool",
+      tool_call_id: tr.toolCallId,
+      content: tr.error
+        ? JSON.stringify({ error: tr.error })
+        : JSON.stringify(tr.result ?? null),
+    });
+  }
+}
+
 function buildOpenAiMessages(
   body: AppAssistantRequest,
   language: string
@@ -185,10 +244,7 @@ function buildOpenAiMessages(
   const history = Array.isArray(body.conversationHistory)
     ? body.conversationHistory
     : [];
-  const toolResults = Array.isArray(body.toolResults) ? body.toolResults : [];
-  const assistantToolCalls = Array.isArray(body.assistantToolCalls)
-    ? body.assistantToolCalls
-    : [];
+  const transcript = normalizeToolTranscript(body);
 
   const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
     {
@@ -201,43 +257,12 @@ function buildOpenAiMessages(
     })),
   ];
 
-  if (toolResults.length > 0 && assistantToolCalls.length > 0) {
-    if (body.message) {
-      messages.push({ role: "user", content: body.message });
-    }
-    messages.push({
-      role: "assistant",
-      content: null,
-      tool_calls: assistantToolCalls.map((tc) => ({
-        id: tc.id,
-        type: "function" as const,
-        function: {
-          name: tc.name,
-          arguments: JSON.stringify(tc.arguments ?? {}),
-        },
-      })),
-    });
-    for (const tr of toolResults) {
-      messages.push({
-        role: "tool",
-        tool_call_id: tr.toolCallId,
-        content: tr.error
-          ? JSON.stringify({ error: tr.error })
-          : JSON.stringify(tr.result ?? null),
-      });
-    }
-  } else if (toolResults.length > 0) {
-    for (const tr of toolResults) {
-      messages.push({
-        role: "tool",
-        tool_call_id: tr.toolCallId,
-        content: tr.error
-          ? JSON.stringify({ error: tr.error })
-          : JSON.stringify(tr.result ?? null),
-      });
-    }
-  } else if (body.message) {
+  if (body.message) {
     messages.push({ role: "user", content: body.message });
+  }
+
+  for (const turn of transcript) {
+    appendToolTurn(messages, turn);
   }
 
   return messages;
@@ -339,21 +364,40 @@ function createAssistantSseStream(
 
         const tools = getAppAssistantTools();
         const messages = buildOpenAiMessages(body, language);
+        const transcript = normalizeToolTranscript(body);
 
-        // Tool rounds stay on the JSON path; stream only plain completions for now.
-        if (tools.length > 0 || (body.toolResults?.length ?? 0) > 0) {
+        // When tools are available (or we are mid tool-round), use a non-stream
+        // completion so tool_calls are reliable; stream text as buffered deltas.
+        if (tools.length > 0 || transcript.length > 0) {
           const { response, toolCalls } = await generateAssistantResponse(
             body,
             language
           );
-          if (response)
-            send({ type: "delta", text: response });
+          if (toolCalls && toolCalls.length > 0) {
+            // Tool round: no fake text deltas — client will execute and continue.
+            send({
+              type: "done",
+              response: response || "",
+              timestamp: new Date().toISOString(),
+              language,
+              toolCalls,
+            });
+            controller.close();
+            return;
+          }
+
+          if (response) {
+            // Final text after tools (or plain completion with tools registered).
+            const chunkSize = 24;
+            for (let i = 0; i < response.length; i += chunkSize) {
+              send({ type: "delta", text: response.slice(i, i + chunkSize) });
+            }
+          }
           send({
             type: "done",
-            response,
+            response: response || "",
             timestamp: new Date().toISOString(),
             language,
-            ...(toolCalls && toolCalls.length > 0 ? { toolCalls } : {}),
           });
           controller.close();
           return;
@@ -431,8 +475,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body: AppAssistantRequest = await request.json();
-    const toolResults = Array.isArray(body.toolResults) ? body.toolResults : [];
-    const hasToolResults = toolResults.length > 0;
+    const transcript = normalizeToolTranscript(body);
+    const hasToolResults = transcript.length > 0;
+
+    if (transcript.length > MAX_TOOL_ROUNDS) {
+      return NextResponse.json(
+        {
+          error: `Tool execution limit reached (max ${MAX_TOOL_ROUNDS} rounds).`,
+        },
+        { status: 400 }
+      );
+    }
 
     if (!hasToolResults) {
       if (!body.message || typeof body.message !== "string") {
