@@ -37,6 +37,8 @@ interface AppAssistantRequest {
   /** Echoed from the prior response when submitting toolResults. */
   assistantToolCalls?: ToolCallResponse[];
   toolResults?: ToolResult[];
+  /** When true, respond with text/event-stream (SSE token deltas). */
+  stream?: boolean;
 }
 
 interface ToolCallResponse {
@@ -302,8 +304,107 @@ async function generateAssistantResponse(
   }
 }
 
+function sseEncode(payload: unknown): Uint8Array {
+  return new TextEncoder().encode(`data: ${JSON.stringify(payload)}\n\n`);
+}
+
+/**
+ * @brief Streams OpenAI tokens as SSE events (industry-standard for chat UIs).
+ * Events: { type: "delta", text }, { type: "done", response, ... }, { type: "error", error }
+ */
+function createAssistantSseStream(
+  body: AppAssistantRequest,
+  language: string
+): ReadableStream<Uint8Array> {
+  return new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (payload: unknown) => {
+        controller.enqueue(sseEncode(payload));
+      };
+
+      try {
+        if (!openai) {
+          const fallback = generateHelpFallback(body.message || "", language);
+          send({ type: "delta", text: fallback });
+          send({
+            type: "done",
+            response: fallback,
+            timestamp: new Date().toISOString(),
+            language,
+          });
+          controller.close();
+          return;
+        }
+
+        const tools = getAppAssistantTools();
+        const messages = buildOpenAiMessages(body, language);
+
+        // Tool rounds stay on the JSON path; stream only plain completions for now.
+        if (tools.length > 0 || (body.toolResults?.length ?? 0) > 0) {
+          const { response, toolCalls } = await generateAssistantResponse(
+            body,
+            language
+          );
+          if (response)
+            send({ type: "delta", text: response });
+          send({
+            type: "done",
+            response,
+            timestamp: new Date().toISOString(),
+            language,
+            ...(toolCalls && toolCalls.length > 0 ? { toolCalls } : {}),
+          });
+          controller.close();
+          return;
+        }
+
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          temperature: 0.35,
+          messages,
+          stream: true,
+        });
+
+        let full = "";
+        for await (const chunk of completion) {
+          const delta = chunk.choices[0]?.delta?.content;
+          if (delta) {
+            full += delta;
+            send({ type: "delta", text: delta });
+          }
+        }
+
+        const response = full.trim() || generateHelpFallback(body.message || "", language);
+        if (!full.trim()) {
+          send({ type: "delta", text: response });
+        }
+
+        send({
+          type: "done",
+          response,
+          timestamp: new Date().toISOString(),
+          language,
+        });
+        controller.close();
+      } catch (error) {
+        console.error("[app-assistant] SSE error:", error);
+        const fallback = generateHelpFallback(body.message || "", language);
+        send({ type: "delta", text: fallback });
+        send({
+          type: "done",
+          response: fallback,
+          timestamp: new Date().toISOString(),
+          language,
+        });
+        controller.close();
+      }
+    },
+  });
+}
+
 /**
  * @brief POST — in-app help assistant (Cymasphere clients only).
+ * Set body.stream=true (or Accept: text/event-stream) for SSE token streaming.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -373,6 +474,21 @@ export async function POST(request: NextRequest) {
     }
 
     const chatLanguage = body.language || "en";
+    const wantsStream =
+      body.stream === true ||
+      (request.headers.get("accept") ?? "").includes("text/event-stream");
+
+    if (wantsStream) {
+      return new Response(createAssistantSseStream(body, chatLanguage), {
+        headers: {
+          "Content-Type": "text/event-stream; charset=utf-8",
+          "Cache-Control": "no-cache, no-transform",
+          Connection: "keep-alive",
+          "X-Accel-Buffering": "no",
+        },
+      });
+    }
+
     const { response, toolCalls } = await generateAssistantResponse(
       body,
       chatLanguage
