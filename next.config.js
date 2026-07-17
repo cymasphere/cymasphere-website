@@ -56,6 +56,7 @@ const nextConfig = {
   // Ensure compiled chat knowledge ships with serverless / traced API routes
   outputFileTracingIncludes: {
     '/api/chat': ['./content/chat-knowledge/SYSTEM_KNOWLEDGE.md'],
+    '/api/app-assistant/chat': ['./content/chat-knowledge/SYSTEM_KNOWLEDGE.md'],
   },
 };
 
