@@ -684,7 +684,7 @@ export const ExportNotationGuide = memo(function ExportNotationGuide() {
 
 
  Generation settings can bias what Cymasphere chooses. Bank weights influence which harmonic banks appear in 
- PALETTE. Voicing weights influence which musical behaviors are
+ PALETTE — using the **default bank template names** listed under Default Bank Templates (e.g. MODES OF MAJOR, COMPOSITE MINOR, SECONDARY DOMINANT). Voicing weights influence which musical behaviors are
  favored. Use high weights for material you want more often and low weights for material that should remain rare.
 
 
@@ -2407,6 +2407,225 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
 
+### Default Bank Templates
+
+
+ When you **Spawn Bank** in PALETTE (or add a bank from a template), Cymasphere offers built-in **default bank templates**. Each template defines **twelve voicing-button slots** aligned to fixed scale degrees.
+
+
+ **How the twelve slots work**
+
+ - Every bank uses the same degree layout. Slot root pitch = palette key + semitone offset for that degree.
+
+ - **I** (0 semitones), **#I / bII** (1), **II** (2), **#II / bIII** (3), **III** (4), **IV** (5), **#IV / bV** (6), **V** (7), **#V / bVI** (8), **VI** (9), **#VI / bVII** (10), **VII** (11).
+
+ - A slot with **no scale** (blank) is an empty voicing button until you assign one.
+
+ - Performance hotkeys for the active bank: **A, W, S, E, D, F, T, G, Y, H, U, J** (one key per slot).
+
+
+ **Template types**
+
+ - **Family** — modes of a parent scale (major, harmonic minor, melodic minor, harmonic major).
+
+ - **Functional** — chords with a specific harmonic job (secondary dominants, tritone subs, passing/auxiliary diminished).
+
+ - **Composite** — curated multi-scale collections for a key area (e.g. composite minor, sec/sub dominant pairs).
+
+ - **Custom** — blank starting point.
+
+
+ **All default bank names (12 templates)**
+
+
+ | Bank name | Type | Purpose |
+ |-----------|------|---------|
+ | EMPTY | Custom | Twelve blank slots; build your own bank from scratch. |
+ | MODES OF MAJOR | Family | Seven modes of the major scale on diatonic degrees. |
+ | COMPOSITE MINOR | Composite | Curated minor-key scales across twelve degrees. |
+ | DIMINISHED | Composite | Symmetrical diminished on every slot. |
+ | PASSING DIMINISHED | Functional | Passing dim7 connectors between diatonic chords (chromatic voice leading). |
+ | AUXILIARY DIMINISHED | Functional | Neighbor dim7 chords that embellish and return to the same harmony. |
+ | SEC/SUB DOMINANT | Composite | Alternating secondary dominants and tritone substitutes (teaches their relationship). |
+ | SECONDARY DOMINANT | Functional | V7/x dominants on the most common target degrees. |
+ | SUBSTITUTE DOMINANT | Functional | Tritone-substitute dominants (Lydian b7) on flat degrees. |
+ | HARMONIC MINOR | Family | Modes of harmonic minor. |
+ | MELODIC MINOR | Family | Modes of melodic minor (jazz minor). |
+ | HARMONIC MAJOR | Family | Modes of harmonic major. |
+
+
+ **EMPTY** — all twelve slots blank.
+
+
+ **MODES OF MAJOR** — seven modes on diatonic degrees; other slots blank.
+
+ - **I** — Ionian
+
+ - **II** — Dorian
+
+ - **III** — Phrygian
+
+ - **IV** — Lydian
+
+ - **V** — Mixolydian
+
+ - **VI** — Aeolian
+
+ - **VII** — Locrian
+
+
+ **COMPOSITE MINOR** — minor-key collection; blank slots at #I/bII, #II/bIII, #IV/bV, #V/bVI.
+
+ - **I** — Aeolian
+
+ - **II** — Locrian
+
+ - **bIII** — Ionian
+
+ - **IV** — Dorian
+
+ - **V** — Mixolydian ♭9♭13
+
+ - **bVI** — Lydian
+
+ - **VI** — Locrian ♮9
+
+ - **bVII** — Mixolydian
+
+ - **VII** — Locrian ♭♭7♭4
+
+
+ **DIMINISHED** — Sym. Diminished on all twelve slots (auxiliary and passing diminished vocabulary in one bank).
+
+
+ **PASSING DIMINISHED** — Sym. Diminished only on chromatic passing degrees; all other slots blank.
+
+ - **#I / bII** — passing I to II
+
+ - **#II / bIII** — passing II to III
+
+ - **#IV / bV** — passing IV to V (most common passing diminished)
+
+ - **#V / bVI** — passing V to VI
+
+ - **#VI / bVII** — passing VI to VII or chromatically back to I
+
+
+ **AUXILIARY DIMINISHED** — Sym. Diminished on tonic-function degrees; chromatic-degree slots blank.
+
+ - **I, II, III, IV, V, VI, VII** — auxiliary diminished (neighbor tension returning to the same harmony)
+
+
+ **SEC/SUB DOMINANT** — alternating Mixolydian-family secondary dominants and Lydian ♭7 tritone subs on every slot.
+
+ - **I** — Mixolydian (V7/IV)
+
+ - **bII** — Lydian ♭7 (subV7)
+
+ - **II** — Mixolydian (V7/V)
+
+ - **bIII** — Lydian ♭7 (subV7/II)
+
+ - **III** — Mixolydian ♭9♭13 (V7/VI)
+
+ - **IV** — Lydian ♭7 (subV7/IV)
+
+ - **bV** — Lydian ♭7 (subV7/IV, enharmonic with #IV)
+
+ - **V** — Mixolydian (primary V7)
+
+ - **bVI** — Lydian ♭7 (subV7/V)
+
+ - **VI** — Mixolydian ♭13 (V7/II)
+
+ - **bVII** — Lydian ♭7 (subV7/VI)
+
+ - **VII** — Mixolydian ♭9♭13 (V7/III)
+
+
+ **SECONDARY DOMINANT** — dominant scales only where a secondary V7 is typical; other slots blank.
+
+ - **I** — Mixolydian (V7/IV)
+
+ - **II** — Mixolydian (V7/V)
+
+ - **III** — Mixolydian ♭9♭13 (V7/VI)
+
+ - **VI** — Mixolydian ♭13 (V7/II)
+
+ - **VII** — Mixolydian ♭9♭13 (V7/III)
+
+
+ **SUBSTITUTE DOMINANT** — Lydian ♭7 tritone subs on flat degrees; other slots blank.
+
+ - **bII** — Lydian ♭7 (subV7)
+
+ - **bIII** — Lydian ♭7 (subV7/II)
+
+ - **bV** — Lydian b7 (subV7/IV)
+
+ - **bVI** — Lydian ♭7 (subV7/V)
+
+ - **bVII** — Lydian ♭7 (subV7/VI)
+
+
+ **HARMONIC MINOR** — modes of harmonic minor; blank at #I/bII, #II/bIII, #IV/bV, #V/bVI, #VI/bVII.
+
+ - **I** — Harmonic Minor
+
+ - **II** — Locrian ♮6
+
+ - **bIII** — Ionian ♯5
+
+ - **IV** — Dorian ♯4
+
+ - **V** — Mixolydian ♭9♭13 (Phrygian dominant / V7 in minor)
+
+ - **bVI** — Lydian ♯2
+
+ - **VII** — Locrian ♭♭7♭4
+
+
+ **MELODIC MINOR** — modes of melodic minor; blank at #I/bII, #II/bIII, #IV/bV, #V/bVI, #VI/bVII.
+
+ - **I** — Melodic Minor
+
+ - **II** — Dorian ♭2
+
+ - **bIII** — Lydian ♯5
+
+ - **IV** — Lydian ♭7 (Lydian dominant)
+
+ - **V** — Mixolydian ♭13
+
+ - **VI** — Locrian ♮9
+
+ - **VII** — Altered
+
+
+ **HARMONIC MAJOR** — modes of harmonic major; blank at #I/bII, #II/bIII, #IV/bV, #V/bVI, #VI/bVII.
+
+ - **I** — Harmonic Major
+
+ - **II** — Dorian ♭5
+
+ - **III** — Phrygian ♭4
+
+ - **IV** — Lydian ♭3
+
+ - **V** — Mixolydian ♭9
+
+ - **bVI** — Lydian ♯5♯2
+
+ - **VII** — Locrian ♭♭7
+
+
+ **Generate Progression note:** EMPTY is omitted from the Default Banks list in Generate Progression. Bank weights in generation presets refer to these template names when biasing harmonic material.
+
+
+
+
+
 ### Rotation Concepts
 
 
@@ -3215,7 +3434,7 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
  - 
- **Spawn Bank:** Choose a bank template and insert a new bank into the current 
+ **Spawn Bank:** Choose one of the **default bank templates** (see Default Bank Templates under PALETTE View) and insert a new bank into the current 
  PALETTE context.
 
 
