@@ -258,7 +258,7 @@ async function generateAssistantResponse(
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      temperature: 0.35,
+      temperature: 0.2,
       messages,
       ...(tools.length > 0 ? { tools, tool_choice: "auto" as const } : {}),
     });
@@ -360,7 +360,7 @@ function createAssistantSseStream(
 
         const completion = await openai.chat.completions.create({
           model: "gpt-4o-mini",
-          temperature: 0.35,
+          temperature: 0.2,
           messages,
           stream: true,
         });
