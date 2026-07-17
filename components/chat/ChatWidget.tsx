@@ -16,6 +16,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
+import { trimConversationHistory } from "@/lib/chat-limits";
 
 // Import audio utilities dynamically to avoid SSR issues
 const playSound = async () => {
@@ -922,8 +923,7 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
         },
         body: JSON.stringify({
           message: userMessage.text,
-          // Full in-memory history (server enforces size caps); cleared on close/refresh
-          conversationHistory: messages,
+          conversationHistory: trimConversationHistory(messages),
           language: i18n.language, // Pass current language code (e.g., 'en', 'es', 'fr')
         }),
       });

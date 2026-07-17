@@ -10,10 +10,11 @@ import {
 } from "@/lib/app-assistant-knowledge";
 import { getAppAssistantTools } from "@/lib/app-assistant-tools";
 import { checkRateLimit, getClientIp } from "@/utils/rate-limit";
-
-const MAX_MESSAGE_CHARS = 2000;
-const MAX_HISTORY_MESSAGES = 30;
-const MAX_HISTORY_CHARS = 16_000;
+import {
+  MAX_HISTORY_CHARS,
+  MAX_HISTORY_MESSAGES,
+  MAX_MESSAGE_CHARS,
+} from "@/lib/chat-limits";
 
 interface ChatMessage {
   id: string;

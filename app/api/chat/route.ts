@@ -14,10 +14,11 @@ import OpenAI from 'openai';
 import { buildChatSystemPrompt } from '@/lib/chat-knowledge';
 import { CHAT_PRICING_RESPONSES } from '@/lib/pricing';
 import { checkRateLimit, getClientIp } from '@/utils/rate-limit';
-
-const MAX_MESSAGE_CHARS = 2000;
-const MAX_HISTORY_MESSAGES = 30;
-const MAX_HISTORY_CHARS = 16_000;
+import {
+  MAX_HISTORY_CHARS,
+  MAX_HISTORY_MESSAGES,
+  MAX_MESSAGE_CHARS,
+} from '@/lib/chat-limits';
 
 /**
  * Chat message interface
