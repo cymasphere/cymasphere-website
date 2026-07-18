@@ -36,24 +36,30 @@ const trackRef = {
   trackIndex: { type: "integer", description: "0-based track index on the active song." },
 };
 
+/** Read-only tools: call these instead of asking the user for the same data in chat. */
+const inspect = (description: string) =>
+  `${description} Call this tool instead of asking the user for this information.`;
+
 export const APP_ASSISTANT_TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
   // --- Read-only ---
-  tool("get_app_info", "Get app version, platform, current view, and locale."),
+  tool("get_app_info", inspect("Get app version, platform, current view, and locale.")),
   tool(
     "get_current_view",
-    "Get the currently active main view (Song, Track, Palette, Voicing, or Mixer)."
+    inspect("Get the currently active main view (Song, Track, Palette, Voicing, or Mixer).")
   ),
-  tool("get_selected_track", "Get the currently selected track id, name, and type."),
+  tool("get_selected_track", inspect("Get the currently selected track id, name, and type.")),
   tool(
     "get_musical_context",
-    "Get live musical context: active key, palette/bank names and rotations, and active voicing button scale."
+    inspect(
+      "Get live musical context: active key, palette/bank names and rotations, and active voicing button scale."
+    )
   ),
-  tool("get_modal_top", "Get the topmost modal/dialog currently open in the app, if any."),
+  tool("get_modal_top", inspect("Get the topmost modal/dialog currently open in the app, if any.")),
 
   // --- Plan mode (client-handled) ---
   tool(
     "ask_user_question",
-    "Ask clarifying questions before drafting a workspace plan. Blocking UI with options + free text. Prefer this over free-chat A/B when requirements are ambiguous.",
+    "Ask clarifying questions about subjective taste or creative direction only (mood, genre feel, arrangement goals). NEVER for factual project data — use get_* / list_* first (songs, palettes, banks, tracks, key, presets, instruments, FX, templates). Blocking UI with options + free text.",
     {
       title: { type: "string", description: "Optional card title." },
       questions: {
@@ -197,32 +203,37 @@ export const APP_ASSISTANT_TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
   ),
 
   // --- Lists ---
-  tool("list_songs", "List all songs with id, name, and which is active."),
-  tool("list_palettes", "List palettes on the active song."),
-  tool("list_banks", "List banks on the active palette."),
+  tool("list_songs", inspect("List all songs with id, name, and which is active.")),
+  tool("list_palettes", inspect("List palettes on the active song.")),
+  tool("list_banks", inspect("List banks on the active palette.")),
   tool(
     "list_bank_templates",
-    "List default and custom bank templates (name, type, isDefault). Always query before proposing create_bank."
+    inspect(
+      "List default and custom bank templates (name, type, isDefault). Query before proposing create_bank."
+    )
   ),
-  tool("list_tracks", "List tracks on the active song."),
-  tool("list_progressions", "List progressions on the active palette."),
-  tool("list_progression_presets", "List progression generation presets."),
-  tool("list_sequencer_templates", "List sequencer templates."),
-  tool("list_groove_templates", "List groove templates."),
-  tool("list_instruments", "List available instrument plugins (id + name)."),
-  tool("list_track_fx", "List FX and MIDI-FX slot identifiers on a track.", trackRef),
+  tool(
+    "list_tracks",
+    inspect("List tracks on the active song (id, name, type, index, active).")
+  ),
+  tool("list_progressions", inspect("List progressions on the active palette.")),
+  tool("list_progression_presets", inspect("List progression generation presets.")),
+  tool("list_sequencer_templates", inspect("List sequencer templates.")),
+  tool("list_groove_templates", inspect("List groove templates.")),
+  tool("list_instruments", inspect("List available instrument plugins (id + name).")),
+  tool("list_track_fx", inspect("List FX and MIDI-FX slot identifiers on a track."), trackRef),
   tool(
     "list_cymasynth_preset_categories",
-    "List CymaSynth factory preset categories (bass, pad, keys, lead, strings, pluck, drums, …)."
+    inspect("List CymaSynth factory preset categories (bass, pad, keys, lead, strings, pluck, drums, …).")
   ),
   tool(
     "list_cymasynth_presets",
-    "List CymaSynth factory presets; optional category filter.",
+    inspect("List CymaSynth factory presets; optional category filter."),
     { category: { type: "string", description: "e.g. pad, bass, pluck" } }
   ),
   tool(
     "recommend_cymasynth_preset",
-    "Recommend 1–3 CymaSynth factory categories/presets for a track type and optional style. No Confirm.",
+    "Recommend 1–3 CymaSynth factory categories/presets for a track type and optional style. Resolve trackType from list_tracks — never ask the user. No Confirm.",
     {
       trackType: {
         type: "string",
@@ -451,7 +462,7 @@ export const APP_ASSISTANT_TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
   }),
   tool(
     "apply_cymasynth_preset",
-    "Apply or guide loading a CymaSynth factory preset on a track (no deep synth/mod editing).",
+    "Apply a CymaSynth factory preset on a track. Resolve track and preset via list_tracks / list_cymasynth_presets / recommend_cymasynth_preset — never ask the user to supply inspectable data.",
     {
       ...trackRef,
       preset: { type: "string", description: "Preset stem e.g. pad-012" },
