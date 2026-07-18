@@ -106,6 +106,28 @@ export const APP_ASSISTANT_TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
 
   // --- Musical actions ---
   tool(
+    "create_song",
+    "Create a new song, make it active, and switch to Song view. Optional name (default like SONG N). The app requires Confirm in chat before this runs. Prefer this over switch_view when the user asks for a new song.",
+    {
+      name: {
+        type: "string",
+        description: "Optional display name for the new song.",
+      },
+    }
+  ),
+  tool(
+    "list_songs",
+    "List all songs with id, name, and which is active."
+  ),
+  tool(
+    "switch_song",
+    "Switch the active song by id or name (does not create a song).",
+    {
+      id: { type: "string", description: "Song id from list_songs." },
+      name: { type: "string", description: "Song display name (case-insensitive)." },
+    }
+  ),
+  tool(
     "create_bank",
     "Create a bank in the active palette from a default bank template name (e.g. MODES OF MAJOR, COMPOSITE MINOR). The app requires the user to Confirm in chat before this runs.",
     {

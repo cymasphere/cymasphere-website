@@ -337,6 +337,7 @@ function sseEncode(payload: unknown): Uint8Array {
 /**
  * @brief Streams OpenAI tokens as SSE events (industry-standard for chat UIs).
  * Events: { type: "delta", text }, { type: "done", response, ... }, { type: "error", error }
+ * Always uses stream:true (with tools when registered) so text arrives as real token deltas.
  */
 function createAssistantSseStream(
   body: AppAssistantRequest,
@@ -364,62 +365,75 @@ function createAssistantSseStream(
 
         const tools = getAppAssistantTools();
         const messages = buildOpenAiMessages(body, language);
-        const transcript = normalizeToolTranscript(body);
-
-        // When tools are available (or we are mid tool-round), use a non-stream
-        // completion so tool_calls are reliable; stream text as buffered deltas.
-        if (tools.length > 0 || transcript.length > 0) {
-          const { response, toolCalls } = await generateAssistantResponse(
-            body,
-            language
-          );
-          if (toolCalls && toolCalls.length > 0) {
-            // Tool round: no fake text deltas — client will execute and continue.
-            send({
-              type: "done",
-              response: response || "",
-              timestamp: new Date().toISOString(),
-              language,
-              toolCalls,
-            });
-            controller.close();
-            return;
-          }
-
-          if (response) {
-            // Final text after tools (or plain completion with tools registered).
-            const chunkSize = 24;
-            for (let i = 0; i < response.length; i += chunkSize) {
-              send({ type: "delta", text: response.slice(i, i + chunkSize) });
-            }
-          }
-          send({
-            type: "done",
-            response: response || "",
-            timestamp: new Date().toISOString(),
-            language,
-          });
-          controller.close();
-          return;
-        }
 
         const completion = await openai.chat.completions.create({
           model: "gpt-4o-mini",
           temperature: 0.2,
           messages,
           stream: true,
+          ...(tools.length > 0 ? { tools, tool_choice: "auto" as const } : {}),
         });
 
         let full = "";
+        type AccToolCall = {
+          id: string;
+          name: string;
+          arguments: string;
+        };
+        const toolAcc = new Map<number, AccToolCall>();
+
         for await (const chunk of completion) {
-          const delta = chunk.choices[0]?.delta?.content;
-          if (delta) {
-            full += delta;
-            send({ type: "delta", text: delta });
+          const choice = chunk.choices[0];
+          if (!choice) continue;
+
+          const delta = choice.delta;
+          if (delta?.content) {
+            full += delta.content;
+            send({ type: "delta", text: delta.content });
+          }
+
+          if (delta?.tool_calls) {
+            for (const tc of delta.tool_calls) {
+              const index = typeof tc.index === "number" ? tc.index : 0;
+              let acc = toolAcc.get(index);
+              if (!acc) {
+                acc = { id: "", name: "", arguments: "" };
+                toolAcc.set(index, acc);
+              }
+              if (tc.id) acc.id = tc.id;
+              if (tc.function?.name) acc.name += tc.function.name;
+              if (tc.function?.arguments) acc.arguments += tc.function.arguments;
+            }
           }
         }
 
-        const response = full.trim() || generateHelpFallback(body.message || "", language);
+        const toolCalls: ToolCallResponse[] = [];
+        const sortedIndexes = [...toolAcc.keys()].sort((a, b) => a - b);
+        for (const index of sortedIndexes) {
+          const acc = toolAcc.get(index);
+          if (!acc || !acc.name) continue;
+          toolCalls.push({
+            id: acc.id || `call_${index}`,
+            name: acc.name,
+            arguments: parseToolArguments(acc.arguments),
+          });
+        }
+
+        if (toolCalls.length > 0) {
+          // Tool round: client executes tools and continues (no fake text).
+          send({
+            type: "done",
+            response: full.trim(),
+            timestamp: new Date().toISOString(),
+            language,
+            toolCalls,
+          });
+          controller.close();
+          return;
+        }
+
+        const response =
+          full.trim() || generateHelpFallback(body.message || "", language);
         if (!full.trim()) {
           send({ type: "delta", text: response });
         }
@@ -433,15 +447,46 @@ function createAssistantSseStream(
         controller.close();
       } catch (error) {
         console.error("[app-assistant] SSE error:", error);
-        const fallback = generateHelpFallback(body.message || "", language);
-        send({ type: "delta", text: fallback });
-        send({
-          type: "done",
-          response: fallback,
-          timestamp: new Date().toISOString(),
-          language,
-        });
-        controller.close();
+        try {
+          // Fallback: non-stream completion if streaming with tools fails.
+          const { response, toolCalls } = await generateAssistantResponse(
+            body,
+            language
+          );
+          if (toolCalls && toolCalls.length > 0) {
+            send({
+              type: "done",
+              response: response || "",
+              timestamp: new Date().toISOString(),
+              language,
+              toolCalls,
+            });
+            controller.close();
+            return;
+          }
+          if (response) {
+            send({ type: "delta", text: response });
+          }
+          send({
+            type: "done",
+            response: response || "",
+            timestamp: new Date().toISOString(),
+            language,
+          });
+          controller.close();
+          return;
+        } catch (fallbackError) {
+          console.error("[app-assistant] SSE fallback error:", fallbackError);
+          const fallback = generateHelpFallback(body.message || "", language);
+          send({ type: "delta", text: fallback });
+          send({
+            type: "done",
+            response: fallback,
+            timestamp: new Date().toISOString(),
+            language,
+          });
+          controller.close();
+        }
       }
     },
   });
