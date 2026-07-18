@@ -107,7 +107,7 @@ export const APP_ASSISTANT_TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
   // --- Musical actions ---
   tool(
     "create_song",
-    "Create a new song, make it active, and switch to Song view. Optional name (default like SONG N). The app requires Confirm in chat before this runs. Prefer this over switch_view when the user asks for a new song.",
+    "Create a new song, make it active, and switch to Song view. Optional name (default like SONG N). Requires Confirm. When setting up a workspace, call this BEFORE create_bank / set_key / set_scale. Prefer this over switch_view when the user asks for a new song.",
     {
       name: {
         type: "string",
@@ -129,7 +129,7 @@ export const APP_ASSISTANT_TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
   ),
   tool(
     "create_bank",
-    "Create a bank in the active palette from a default bank template name (e.g. MODES OF MAJOR, COMPOSITE MINOR). The app requires the user to Confirm in chat before this runs.",
+    "Create a bank in the active palette from a default bank template name (e.g. MODES OF MAJOR, COMPOSITE MINOR). Requires Confirm. When setting up a new workspace, call create_song first so the bank is added to the new song. Prefer this over spawn_bank_ui when applying a plan for the user.",
     {
       templateName: {
         type: "string",
