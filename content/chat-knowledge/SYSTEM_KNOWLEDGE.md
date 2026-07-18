@@ -1197,10 +1197,22 @@ export const ExportNotationGuide = memo(function ExportNotationGuide() {
 
 
 
- Layers organize context. A song can contain palette, bank, voicing button, and expression-level
- settings. The active layer determines which settings you are hearing and editing. Use the Layer
- selector for quick switching and the Layer Manager (see 
+ Settings follow one containment and inheritance chain — always top-down:
+
+ **Song → Palette → Bank → Voicing button (Cymatic) → Expression**
+
+ A song owns palettes; a palette owns banks; a bank owns twelve voicing buttons; a voicing button
+ owns expression variations. The active layer determines which settings you are hearing and
+ editing. Views (SONG, PALETTE, VOICING, TRACK, MIXER) are where you work on that chain — they
+ are not a second hierarchy.
+
+ Use the Layer selector for quick switching and the Layer Manager (see
  Secondary Windows Reference) for deeper navigation.
+
+ When setting up a workspace for a style of music, create or select in that same order: song
+ first (new songs include a DEFAULT palette), then palette context (key and other Song/Palette
+ settings), then banks, then voicing-button scales and performance shaping, then expressions if
+ needed.
 
 
 
@@ -1217,24 +1229,25 @@ export const ExportNotationGuide = memo(function ExportNotationGuide() {
 
 
 
-
  Song layer	
- Broad context for the song and its active progression/palette state.	
+ Project container: arrangement, tracks, song-level settings, and Song/Palette shared settings
+ such as key, voice leading, sustain, and strum.	
  
 
 
  Palette layer	
- Context for a palette collection and its banks.	
+ A harmonic collection inside a song: banks, progressions, and palette settings that can inherit
+ from or override the song.	
  
 
 
  Bank layer	
- Context for one bank of voicing buttons.	
+ One bank of twelve related voicing buttons, with bank-level voicing settings.	
  
 
 
  Voicing button layer	
- Context for one playable harmonic cell.	
+ One playable harmonic cell (cymatic): scale/chord identity and per-slot voicing settings.	
  
 
 
@@ -2323,6 +2336,10 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
 
+ Containment inside PALETTE sits under Song in the full settings chain
+ (Song → Palette → Bank → Voicing button → Expression):
+
+
  
 
 
@@ -2337,7 +2354,7 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
  Palette	
- A collection of related banks.	
+ A collection of related banks (owned by the active song).	
  New, open, rename, save as, show/hide rotation buttons, delete (see Menu & Action Index).	
  
 
@@ -2349,7 +2366,7 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
  Voicing Button	
- One playable harmonic cell or voicing slot.	
+ One playable harmonic cell or voicing slot (cymatic).	
  
  Play, edit in VOICING, copy/paste voicing, clear voicing.
  
@@ -2970,6 +2987,30 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
  Voicing, and 
  Sequencer tracks can start with a usable sound. Open the CymaSynth editor when you need
  sound design.
+
+
+
+### CymaSynth Factory Preset Categories
+
+
+
+ Factory presets use a category prefix in the filename (e.g. pad-012, bass-003). Categories include:
+ 8bit, bass, bell, brass, drums, elemental, exp, init, keys, layered, lead, pad, pluck, strings,
+ synth, texture, and vocal.
+
+ Ask Cyma / workspace guidance by track type:
+
+ - **Voicing tracks:** prefer pad, keys, strings, brass, or layered for harmonic accompaniment.
+ - **Sequencer tracks:** prefer pluck, lead, bass, or synth for arpeggiated / rhythmic note lines.
+ - **Pattern tracks:** prefer keys, lead, drums, or synth for played/edited note parts.
+ - **Groove tracks:** often rhythmic; drums or leave without a melodic instrument when appropriate.
+ - **Aux tracks:** texture or FX-oriented returns; usually not a primary CymaSynth lead.
+
+ New Pattern, Voicing, and Sequencer tracks can auto-assign CymaSynth as the instrument. Load a
+ factory preset from the CymaSynth preset browser (or Ask Cyma recommend/apply tools). Do not expect
+ Ask Cyma to edit CymaSynth oscillators, filters, or the mod matrix — open the CymaSynth editor for
+ deep sound design.
+
 
 
  
@@ -5658,9 +5699,11 @@ export const TrackViewGuide = memo(function TrackViewGuide() {
 
 
 
- Cymasphere settings can inherit through a hierarchy: Song, Palette, Bank, Voicing Button, and Expression. A linked
- setting follows its parent; an overridden setting belongs to the current context. If an edit seems to affect too
- much or too little, check whether that control is linked or overridden before changing the musical value. See 
+ Cymasphere settings can inherit through a hierarchy: Song → Palette → Bank → Voicing Button → Expression.
+ A linked setting follows its parent; an overridden setting belongs to the current context. Song/Palette-only
+ settings (key, voice leading, sustain, strum, chord prefix) live on SP settings — edits made while viewing
+ a bank or voicing still apply at the palette. If an edit seems to affect too much or too little, check
+ whether that control is linked or overridden before changing the musical value. See
  Layers & Expressions.
 
 
