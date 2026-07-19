@@ -243,6 +243,13 @@ export const APP_ASSISTANT_TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
     },
     ["trackType"]
   ),
+  tool(
+    "get_cymasynth_patch_summary",
+    inspect(
+      "Read a compact CymaSynth patch summary on a track (oscillators, filters, envelopes, FX on, mod route count). Prefer before changing sound settings. Not full JSON."
+    ),
+    trackRef
+  ),
 
   // --- set_active ---
   tool("set_active_palette", "Activate a palette by id or name.", {
@@ -471,6 +478,96 @@ export const APP_ASSISTANT_TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
       category: { type: "string" },
     }
   ),
+
+  // --- CymaSynth sound design (Agent; Confirm / plan Build) ---
+  tool(
+    "set_cymasynth_filter",
+    "Set CymaSynth filter parameters on a track (cutoff Hz, resonance, mode, mix). Call get_cymasynth_patch_summary first when adjusting an existing sound.",
+    {
+      ...trackRef,
+      filter: { type: "integer", description: "Filter slot 1–5 (default 1)." },
+      slot: { type: "integer", description: "Alias for filter." },
+      cutoffHz: { type: "number", description: "Cutoff in Hz (20–20000)." },
+      cutoff: { type: "number", description: "Alias for cutoffHz." },
+      resonance: { type: "number", description: "Resonance 0–1." },
+      mode: {
+        type: "string",
+        description: "LP12, LP24, HP12, HP24, BP, Notch, AP (or lowpass/highpass).",
+      },
+      type: { type: "string", description: "Alias for mode." },
+      mix: { type: "number", description: "Filter mix 0–1." },
+    }
+  ),
+  tool(
+    "set_cymasynth_envelope",
+    "Set CymaSynth envelope ADSR(+hold) on a track. Envelope 1 is the amp envelope. Times in seconds; sustain 0–1.",
+    {
+      ...trackRef,
+      envelope: { type: "integer", description: "Envelope slot 1–5 (default 1 = amp)." },
+      slot: { type: "integer", description: "Alias for envelope." },
+      attack: { type: "number" },
+      hold: { type: "number" },
+      decay: { type: "number" },
+      sustain: { type: "number", description: "0–1." },
+      release: { type: "number" },
+    }
+  ),
+  tool(
+    "set_cymasynth_fx",
+    "Enable/adjust a CymaSynth built-in effect (reverb, delay, chorus, distortion, flanger, phaser).",
+    {
+      ...trackRef,
+      fx: {
+        type: "string",
+        description: "reverb | delay | chorus | distortion | flanger | phaser",
+      },
+      effect: { type: "string", description: "Alias for fx." },
+      enabled: { type: "boolean" },
+      mix: { type: "number", description: "Wet mix 0–1." },
+      type: { type: "integer", description: "Reverb/distortion type index." },
+      roomSize: { type: "number" },
+      damping: { type: "number" },
+      time: { type: "number", description: "Delay time in seconds." },
+      feedback: { type: "number" },
+      drive: { type: "number", description: "Distortion drive 0–1." },
+    }
+  ),
+  tool(
+    "add_cymasynth_mod_route",
+    "Add a CymaSynth mod-matrix route using factory-style destination ids (e.g. Filter1_Cutoff, OscA_Level, Reverb_Mix).",
+    {
+      ...trackRef,
+      source: { type: "string", description: "Env or LFO." },
+      sourceIndex: { type: "integer", description: "1–5." },
+      destination: {
+        type: "string",
+        description: "e.g. Filter1_Cutoff, OscA_Level, MasterVolume.",
+      },
+      depth: { type: "number", description: "Depth −1…1 (default 0.5)." },
+    },
+    ["source", "destination"]
+  ),
+  tool(
+    "clear_cymasynth_mod_routes",
+    "Clear all CymaSynth modulation routes on a track.",
+    trackRef
+  ),
+  tool(
+    "brighten_cymasynth",
+    "Raise filter 1 cutoff to brighten the CymaSynth patch on a track.",
+    {
+      ...trackRef,
+      amount: { type: "number", description: "0.05–1 (default 0.25)." },
+    }
+  ),
+  tool(
+    "soften_cymasynth_attack",
+    "Lengthen amp-envelope attack for a softer onset on a CymaSynth track.",
+    {
+      ...trackRef,
+      amount: { type: "number", description: "0.05–1 (default 0.35)." },
+    }
+  ),
 ];
 
 /**
@@ -496,6 +593,7 @@ const CHAT_TOOL_NAMES = new Set([
   "list_cymasynth_preset_categories",
   "list_cymasynth_presets",
   "recommend_cymasynth_preset",
+  "get_cymasynth_patch_summary",
 ]);
 
 /**

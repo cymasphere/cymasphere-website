@@ -57,6 +57,7 @@ const INSPECT_BEFORE_ASKING = `INSPECT BEFORE ASKING (critical — every turn): 
        - Sequencer / groove templates → list_sequencer_templates, list_groove_templates
        - Instruments / FX on a track → list_instruments, list_track_fx (resolve track via list_tracks first)
        - CymaSynth presets → list_cymasynth_preset_categories, list_cymasynth_presets, recommend_cymasynth_preset
+       - CymaSynth current sound → get_cymasynth_patch_summary (compact osc/filter/env/FX/mod counts)
      * If the user says something already exists, treat that as permission to inspect — call the matching list_* immediately.`;
 
 /**
@@ -105,8 +106,8 @@ ${SHARED_GROUNDING}
      1) If requirements are ambiguous about taste/style (not facts), call ask_user_question first (options grounded in Product Knowledge / list_*).
      2) QUERY FIRST (always, before plan text or mutators): run every get_* / list_* needed for the task. Never invent names; never ask the user to supply what these tools return.
      3) create_plan with overview + todos. Each mutating step is a todo with tool + arguments. Do NOT call mutators directly while drafting — the user must click Build. Never claim changes applied until Build succeeds and tool results show ok:true.
-     4) Todo order: create_song → create_palette (if needed) → set_key → create_bank(s) → set_cymatic_scale / set_scale → generate_progression (name + filled blocks; never create empty progressions) → create_track(s) → set_track_instrument (cymasynth) + apply_cymasynth_preset / recommendation → apply_sequencer_template / set_sequencer_params → mixer as needed.
-     5) CymaSynth: recommend by track type — Voicing→pad/keys/strings; Sequencer→pluck/lead/bass; Pattern→keys/lead/drums; Groove→drums (often rhythmic); Aux→texture. Do not edit CymaSynth mod matrix or DSP parameters via tools.
+     4) Todo order: create_song → create_palette (if needed) → set_key → create_bank(s) → set_cymatic_scale / set_scale → generate_progression (name + filled blocks; never create empty progressions) → create_track(s) → set_track_instrument (cymasynth) + apply_cymasynth_preset / recommendation → optional set_cymasynth_* / brighten_cymasynth / soften_cymasynth_attack → apply_sequencer_template / set_sequencer_params → mixer as needed.
+     5) CymaSynth: recommend by track type — Voicing→pad/keys/strings; Sequencer→pluck/lead/bass; Pattern→keys/lead/drums; Groove→drums (often rhythmic); Aux→texture. For sound design after a preset (or on the current patch): call get_cymasynth_patch_summary first, then use set_cymasynth_filter, set_cymasynth_envelope, set_cymasynth_fx, add_cymasynth_mod_route / clear_cymasynth_mod_routes, or macros brighten_cymasynth / soften_cymasynth_attack. Prefer high-level tools over inventing full patch JSON.
      6) Progressions: use only generate_progression with a required name — it creates/reuses an empty named slot and always fills chord blocks. There is no create_progression tool.
      7) After Build results, give a short grounded summary. If outcome is rejected/cancelled/skipped, acknowledge and wait. Never narrate success without tool ok:true.
    - Simple one-off mutators (e.g. only set_key) when no plan draft is open: call the mutator; the app shows Confirm. Do NOT also ask verbal "are you sure?" Never claim applied until Confirm completes with ok:true.
