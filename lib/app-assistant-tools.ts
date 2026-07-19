@@ -358,9 +358,6 @@ export const APP_ASSISTANT_TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
   }, ["index"]),
 
   // --- Progression ---
-  tool("create_progression", "Create a progression on the active palette.", {
-    name: { type: "string" },
-  }),
   tool("delete_progression", "Delete a progression.", {
     name: { type: "string" },
     index: { type: "integer" },
@@ -372,12 +369,17 @@ export const APP_ASSISTANT_TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
   }, ["newName"]),
   tool(
     "generate_progression",
-    "Headless generate into the active progression (clears existing blocks). Prefer in plan todos.",
+    "Create or reuse a named progression on the active palette and fill it with chord blocks. Never leaves an empty progression. Reuses an existing empty progression with the same name if present; otherwise creates a new named progression, activates it, and generates blocks.",
     {
+      name: {
+        type: "string",
+        description: "Progression display name (required).",
+      },
       blockCount: { type: "integer", description: "Number of blocks (default 8)." },
       bars: { type: "integer", description: "Alias for blockCount." },
       presetName: { type: "string", description: "Optional progression preset for weights." },
-    }
+    },
+    ["name"]
   ),
 
   // --- Tracks / sequencer / groove / mixer / plugins ---
@@ -472,8 +474,42 @@ export const APP_ASSISTANT_TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
 ];
 
 /**
- * @brief Returns tool schemas for the OpenAI completion call.
+ * Chat-mode tools: inspect + recommend only (no set_active, nav, plan, or mutators).
  */
-export function getAppAssistantTools(): OpenAI.Chat.ChatCompletionTool[] {
+const CHAT_TOOL_NAMES = new Set([
+  "get_app_info",
+  "get_current_view",
+  "get_selected_track",
+  "get_musical_context",
+  "get_modal_top",
+  "list_songs",
+  "list_palettes",
+  "list_banks",
+  "list_bank_templates",
+  "list_tracks",
+  "list_progressions",
+  "list_progression_presets",
+  "list_sequencer_templates",
+  "list_groove_templates",
+  "list_instruments",
+  "list_track_fx",
+  "list_cymasynth_preset_categories",
+  "list_cymasynth_presets",
+  "recommend_cymasynth_preset",
+]);
+
+/**
+ * @brief Returns tool schemas for the OpenAI completion call.
+ * @param mode chat = read-only inspect/recommend; agent = full catalog (no create_progression).
+ */
+export function getAppAssistantTools(
+  mode: "chat" | "agent" = "chat"
+): OpenAI.Chat.ChatCompletionTool[] {
+  if (mode === "chat") {
+    return APP_ASSISTANT_TOOLS.filter((t) => {
+      if (t.type !== "function") return false;
+      return CHAT_TOOL_NAMES.has(t.function.name);
+    });
+  }
   return APP_ASSISTANT_TOOLS;
 }

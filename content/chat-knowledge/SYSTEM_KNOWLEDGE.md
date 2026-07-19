@@ -169,6 +169,22 @@ Copyright {year} NNAudio. All rights reserved.
  Menu & Action Index and 
  Reference appendix for shortcuts and glossary terms.
 
+
+
+ 
+
+ 
+
+ 
+
+ ({
+ feature: entry.label,
+ featureId: entry.id,
+ sections: [entry.id, 'voicing-settings', 'voicing-view'],
+ purpose: `Parameter reference for the ${entry.label} control in VOICING.`,
+ }))}
+ />
+
 ---
 
 <!-- CoreViews.tsx -->
@@ -270,7 +286,9 @@ Copyright {year} NNAudio. All rights reserved.
 
 
 
- Chord / Scale Window	
+ 
+ Chord / Scale Window
+ 
  
  Choosing harmonic context and pitch vocabulary, with staff or harmony-clock previews. See 
  Harmony & Voicing and 
@@ -323,6 +341,15 @@ Copyright {year} NNAudio. All rights reserved.
  
  Mapping hardware or external MIDI controls to Cymasphere actions. See 
  MIDI & Controller Routing.
+ 
+ 
+
+
+ Rubato	
+ 
+ Song-level pulse breathe (right-click BPM). See 
+ Transport & Progressions and 
+ Secondary Windows.
  
  
 
@@ -684,7 +711,7 @@ export const ExportNotationGuide = memo(function ExportNotationGuide() {
 
 
  Generation settings can bias what Cymasphere chooses. Bank weights influence which harmonic banks appear in 
- PALETTE — using the **default bank template names** listed under Default Bank Templates (e.g. MODES OF MAJOR, COMPOSITE MINOR, SECONDARY DOMINANT). Voicing weights influence which musical behaviors are
+ PALETTE. Voicing weights influence which musical behaviors are
  favored. Use high weights for material you want more often and low weights for material that should remain rare.
 
 
@@ -961,8 +988,9 @@ export const ExportNotationGuide = memo(function ExportNotationGuide() {
 
  - 
  **AUTOMATION:** Eye toggle + parameter dropdown in the header bar (right of
- INSTRUMENT) for pitch bend / CC / aftertouch; the lane stays under the grid (see 
- TRACK View).
+ INSTRUMENT) for pitch bend / CC / aftertouch; the lane stays under the grid. Pencil/Line can grab
+ existing nodes; Erase deletes on mouse up — see 
+ TRACK View.
 
 
 
@@ -1087,8 +1115,9 @@ export const ExportNotationGuide = memo(function ExportNotationGuide() {
 
  Voicing is where Cymasphere turns a chord symbol or voicing button into playable notes. Think of it as the musical
  translator between theory and MIDI: it decides spelling, register, spacing, motion, density, and expression. The
- detailed controls live in VOICING and 
- Voicing Controls In Detail.
+ detailed controls live in VOICING. For every setting and parameter
+ (ranges, modes, resets, link/power behavior), see 
+ Voicing Settings.
 
 
 
@@ -1099,8 +1128,9 @@ export const ExportNotationGuide = memo(function ExportNotationGuide() {
 
 
 
- **Key**, **Scale**, **Chord**, and **Quality** define
- the harmonic identity Cymasphere is working from.
+ , Scale / Chord, and quality
+ define the harmonic identity Cymasphere is working from. Display naming uses 
+ and .
 
 
  
@@ -1110,8 +1140,9 @@ export const ExportNotationGuide = memo(function ExportNotationGuide() {
 
 
 
- **Inversion**, **Bass**, **Octave**, **Spacing**, and
- **Voice Count** control where notes sit and how thick the voicing is.
+ , , , 
+ , and control where notes sit and
+ how thick the voicing is.
 
 
  
@@ -1121,8 +1152,8 @@ export const ExportNotationGuide = memo(function ExportNotationGuide() {
 
 
 
- **Voice Lead** favors smoother movement between chords. Smart Chord helps choose practical
- chord tones for performance.
+ favors smoother movement between chords. 
+ helps choose practical chord tones for performance.
 
 
  
@@ -1132,7 +1163,8 @@ export const ExportNotationGuide = memo(function ExportNotationGuide() {
 
 
 
- **Dynamics**, **Strum**, and **Sustain** make generated notes feel
+ , , 
+ , and make generated notes feel
  performed instead of merely calculated. See Layers & Expressions 
  for expression variations.
 
@@ -1141,22 +1173,45 @@ export const ExportNotationGuide = memo(function ExportNotationGuide() {
  
 
 
+### Compound / Slash / Polychords
+
+
+
+ In the picker, **COMPOUND CHORD** opens the Compound Chord
+ window for slash and polychord constructions (see 
+ Secondary Windows). When compound harmony is active, a compound
+ row appears above the chord list. Rows can show avoid-note badges; the window includes a mini staff preview of
+ the selection.
+
+
+
+
 ### Suggested Workflow
 
 
 
  - 
- Pick the key and scale first in PALETTE so spelling and harmonic
- labels make sense. Open the Chord / Scale picker when you need to browse families; use the staff or clock
- preview there (see Secondary Windows). Full score export is
- separate in Notation.
+ Pick the and scale first in PALETTE so
+ spelling and harmonic labels make sense. Open the picker when you need
+ to browse families; use the staff or clock preview there (see 
+ Secondary Windows). Full score export is separate in 
+ Notation.
 
 
- - Choose chord quality and inversion for the basic sound.
+ - 
+ Choose chord quality and for the basic sound, or use COMPOUND CHORD when
+ you need slash/polychord harmony.
 
- - Set spacing, octave, and voice count to fit the instrument range.
 
- - Adjust voice leading for transitions, then add strum/dynamics for feel.
+ - 
+ Set , , and 
+ to fit the instrument range.
+
+
+ - 
+ Adjust for transitions, then add 
+ / for feel.
+
 
 
 
@@ -1197,22 +1252,10 @@ export const ExportNotationGuide = memo(function ExportNotationGuide() {
 
 
 
- Settings follow one containment and inheritance chain — always top-down:
-
- **Song → Palette → Bank → Voicing button (Cymatic) → Expression**
-
- A song owns palettes; a palette owns banks; a bank owns twelve voicing buttons; a voicing button
- owns expression variations. The active layer determines which settings you are hearing and
- editing. Views (SONG, PALETTE, VOICING, TRACK, MIXER) are where you work on that chain — they
- are not a second hierarchy.
-
- Use the Layer selector for quick switching and the Layer Manager (see
+ Layers organize context. A song can contain palette, bank, voicing button, and expression-level
+ settings. The active layer determines which settings you are hearing and editing. Use the Layer
+ selector for quick switching and the Layer Manager (see 
  Secondary Windows Reference) for deeper navigation.
-
- When setting up a workspace for a style of music, create or select in that same order: song
- first (new songs include a DEFAULT palette), then palette context (key and other Song/Palette
- settings), then banks, then voicing-button scales and performance shaping, then expressions if
- needed.
 
 
 
@@ -1229,25 +1272,24 @@ export const ExportNotationGuide = memo(function ExportNotationGuide() {
 
 
 
+
  Song layer	
- Project container: arrangement, tracks, song-level settings, and Song/Palette shared settings
- such as key, voice leading, sustain, and strum.	
+ Broad context for the song and its active progression/palette state.	
  
 
 
  Palette layer	
- A harmonic collection inside a song: banks, progressions, and palette settings that can inherit
- from or override the song.	
+ Context for a palette collection and its banks.	
  
 
 
  Bank layer	
- One bank of twelve related voicing buttons, with bank-level voicing settings.	
+ Context for one bank of voicing buttons.	
  
 
 
  Voicing button layer	
- One playable harmonic cell (cymatic): scale/chord identity and per-slot voicing settings.	
+ Context for one playable harmonic cell.	
  
 
 
@@ -1268,7 +1310,8 @@ export const ExportNotationGuide = memo(function ExportNotationGuide() {
  Many controls can inherit from a parent context or override it locally. Linked controls follow
  the parent and should be treated as read-only for that context. Overridden controls belong to
  the active layer/expression. If a change seems to affect the wrong scope, check the link state
- before changing the value again. See Voicing Controls In Detail for per-control behavior.
+ before changing the value again. Individual control scopes (Song/Palette vs per-voicing vs per-track) are listed
+ in Voicing Settings.
 
 
 
@@ -1306,8 +1349,10 @@ export const ExportNotationGuide = memo(function ExportNotationGuide() {
  - Create an expression variation.
 
  - 
- Change only the controls that should differ: spacing, bass, dynamics, strum, sustain, or
- spelling (see Harmony & Voicing).
+ Change only the controls that should differ: , 
+ , , , 
+ , or (see 
+ Harmony & Voicing).
 
 
  - Return to PALETTE and perform the voicing button while cycling expressions where appropriate.
@@ -1422,7 +1467,8 @@ export const ExportNotationGuide = memo(function ExportNotationGuide() {
  VIRTUAL MIDI DEVICE	
  Toggle virtual MIDI where supported.	
  
- Plugin/platform dependent. See MIDI & Controller Routing.
+ Toggle (dot = on). Plugin/platform dependent. See 
+ MIDI & Controller Routing.
  
  
 
@@ -1445,9 +1491,9 @@ export const ExportNotationGuide = memo(function ExportNotationGuide() {
 
 
  CPU / RAM METER	
- Watch performance while hosting plugins or dense sessions.	
+ Toggle floating PERFORMANCE panel (Buffer / CPU / RAM).	
  
- Desktop utility. See Plugin Hosting & CymaSynth.
+ Toggle (dot = on). See Settings, Help & Account.
  
  
 
@@ -1455,17 +1501,23 @@ export const ExportNotationGuide = memo(function ExportNotationGuide() {
  HOTKEYS	
  Open platform shortcut reference.	
  
- Desktop only. See Reference.
+ Desktop only (hidden on iOS). See Reference.
  
  
-
-USER MANUAL	Open this manual.	Desktop only.	
 
 
  GLOBAL SETTINGS	
- Open app-wide preferences.	
+ Open app-wide preferences (including Audition track).	
  
  Use carefully; affects global behavior. See Settings, Help & Account.
+ 
+ 
+
+
+ USER MANUAL	
+ Open this manual.	
+ 
+ Available on desktop and iOS. See Settings, Help & Account.
  
  
 
@@ -1499,6 +1551,15 @@ MANAGE ACCOUNT / LOGOUT	Manage or end account session.	Authenticated builds.
 
 
 
+
+
+ BPM (right-click)	
+ Rubato...	
+ 
+ Open song-level pulse breathe settings. See 
+ Transport & Progressions.
+ 
+ 
 
 
  Song menu	
@@ -1707,9 +1768,9 @@ MANAGE ACCOUNT / LOGOUT	Manage or end account session.	Authenticated builds.
 
 
  Strip name / right-click	
- Rename, duplicate, delete, export where supported	
+ Rename, Edit Track, Duplicate, Delete, Export as audio where supported; drag name to reorder	
  
- Manage mixer tracks. See MIXER View.
+ Manage mixer tracks and jump to TRACK. See MIXER View.
  
  
 
@@ -1814,6 +1875,11 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
  - **Destination:** Hosted instrument, virtual MIDI port, DAW route, hardware, or notation/export path.
 
+ - 
+ **Mute / Solo:** Track mute and solo apply to external MIDI outs (plugin out / virtual MIDI) as
+ well as hosted audio, so muted or soloed-out tracks stop sounding externally without leaving hanging notes.
+
+
 
 
 
@@ -1908,8 +1974,9 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
  - 
  Track Automation (eye toggle + parameter dropdown under Instrument, or in the Groove header bar) is separate: it stores pitch bend /
- CC / aftertouch over time on a track and plays them to that track's instrument and MIDI outs.
- Controller Assignments map hardware to Cymasphere UI/transport actions.
+ CC / aftertouch over time on a track and plays them to that track's instrument and MIDI outs. Edit with
+ Select / Pencil / Line / Erase in TRACK View. Controller Assignments
+ map hardware to Cymasphere UI/transport actions.
 
 
 
@@ -2079,13 +2146,17 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
  Track name	
- Rename, right-click actions, and strip identity.	
+ 
+ Rename, Edit Track (opens TRACK editor), Duplicate, Delete, Export as audio where supported. Drag the name
+ to reorder strips.
+ 
  
 
 
  Track controls	
  
- Dynamics, Sequencer, and Matrix buttons where the track type
+ , Sequencer, and Matrix buttons
+ where the track type
  supports them.
  
  
@@ -2132,12 +2203,13 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
  - 
  **Mute (M):** Silences the track in the mix. Soloing a muted track still lets it play (solo
- overrides mute for that track).
+ overrides mute for that track). Mute also silences external MIDI outs (plugin out / virtual MIDI) cleanly,
+ including note-offs on mute edges.
 
 
  - 
  **Solo (S):** Exclusive solo — only one track can be soloed at a time. Other tracks are soft-muted
- unless they are Solo Safe.
+ unless they are Solo Safe. Soloed-out tracks likewise stop external MIDI.
 
 
  - 
@@ -2238,7 +2310,10 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
  - **Labels column:** Explains each strip row (TRACK, MIDI FX, AUDIO FX, INSTRUMENT, SENDS, OUTPUT, PAN, METERS, VOLUME, MUTE/SOLO) and global slot +/- controls.
 
- - **Track strip:** Name, Dynamics/Sequencer/Matrix, plugin slots, sends, output routing, mono/stereo, pan, meters, fader, mute, and solo.
+ - 
+ **Track strip:** Name, 
+ /Sequencer/Matrix, plugin slots, sends, output routing, mono/stereo, pan, meters, fader, mute, and solo.
+
 
  - **Master strip:** Final output level, master FX, routing, and metering.
 
@@ -2336,10 +2411,6 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
 
- Containment inside PALETTE sits under Song in the full settings chain
- (Song → Palette → Bank → Voicing button → Expression):
-
-
  
 
 
@@ -2354,7 +2425,7 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
  Palette	
- A collection of related banks (owned by the active song).	
+ A collection of related banks.	
  New, open, rename, save as, show/hide rotation buttons, delete (see Menu & Action Index).	
  
 
@@ -2366,7 +2437,7 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
  Voicing Button	
- One playable harmonic cell or voicing slot (cymatic).	
+ One playable harmonic cell or voicing slot.	
  
  Play, edit in VOICING, copy/paste voicing, clear voicing.
  
@@ -2408,8 +2479,11 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
  - 
- **Voicing Button NEW / EDIT VOICING:** Opens the active voicing button in VOICING for detailed shaping (see 
- Voicing Controls In Detail).
+ **Voicing Button NEW / EDIT VOICING:** Opens the active voicing button in VOICING for detailed
+ shaping — every setting is listed in 
+ Voicing Settings (
+ , , 
+ , , and more).
 
 
  - 
@@ -2419,225 +2493,6 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
  - **Voicing Button CLEAR VOICING:** Removes the assigned voicing from that slot.
 
  - **Right-click below banks:** Adds a bank when the palette context supports it.
-
-
-
-
-
-### Default Bank Templates
-
-
- When you **Spawn Bank** in PALETTE (or add a bank from a template), Cymasphere offers built-in **default bank templates**. Each template defines **twelve voicing-button slots** aligned to fixed scale degrees.
-
-
- **How the twelve slots work**
-
- - Every bank uses the same degree layout. Slot root pitch = palette key + semitone offset for that degree.
-
- - **I** (0 semitones), **#I / bII** (1), **II** (2), **#II / bIII** (3), **III** (4), **IV** (5), **#IV / bV** (6), **V** (7), **#V / bVI** (8), **VI** (9), **#VI / bVII** (10), **VII** (11).
-
- - A slot with **no scale** (blank) is an empty voicing button until you assign one.
-
- - Performance hotkeys for the active bank: **A, W, S, E, D, F, T, G, Y, H, U, J** (one key per slot).
-
-
- **Template types**
-
- - **Family** — modes of a parent scale (major, harmonic minor, melodic minor, harmonic major).
-
- - **Functional** — chords with a specific harmonic job (secondary dominants, tritone subs, passing/auxiliary diminished).
-
- - **Composite** — curated multi-scale collections for a key area (e.g. composite minor, sec/sub dominant pairs).
-
- - **Custom** — blank starting point.
-
-
- **All default bank names (12 templates)**
-
-
- | Bank name | Type | Purpose |
- |-----------|------|---------|
- | EMPTY | Custom | Twelve blank slots; build your own bank from scratch. |
- | MODES OF MAJOR | Family | Seven modes of the major scale on diatonic degrees. |
- | COMPOSITE MINOR | Composite | Curated minor-key scales across twelve degrees. |
- | DIMINISHED | Composite | Symmetrical diminished on every slot. |
- | PASSING DIMINISHED | Functional | Passing dim7 connectors between diatonic chords (chromatic voice leading). |
- | AUXILIARY DIMINISHED | Functional | Neighbor dim7 chords that embellish and return to the same harmony. |
- | SEC/SUB DOMINANT | Composite | Alternating secondary dominants and tritone substitutes (teaches their relationship). |
- | SECONDARY DOMINANT | Functional | V7/x dominants on the most common target degrees. |
- | SUBSTITUTE DOMINANT | Functional | Tritone-substitute dominants (Lydian b7) on flat degrees. |
- | HARMONIC MINOR | Family | Modes of harmonic minor. |
- | MELODIC MINOR | Family | Modes of melodic minor (jazz minor). |
- | HARMONIC MAJOR | Family | Modes of harmonic major. |
-
-
- **EMPTY** — all twelve slots blank.
-
-
- **MODES OF MAJOR** — seven modes on diatonic degrees; other slots blank.
-
- - **I** — Ionian
-
- - **II** — Dorian
-
- - **III** — Phrygian
-
- - **IV** — Lydian
-
- - **V** — Mixolydian
-
- - **VI** — Aeolian
-
- - **VII** — Locrian
-
-
- **COMPOSITE MINOR** — minor-key collection; blank slots at #I/bII, #II/bIII, #IV/bV, #V/bVI.
-
- - **I** — Aeolian
-
- - **II** — Locrian
-
- - **bIII** — Ionian
-
- - **IV** — Dorian
-
- - **V** — Mixolydian ♭9♭13
-
- - **bVI** — Lydian
-
- - **VI** — Locrian ♮9
-
- - **bVII** — Mixolydian
-
- - **VII** — Locrian ♭♭7♭4
-
-
- **DIMINISHED** — Sym. Diminished on all twelve slots (auxiliary and passing diminished vocabulary in one bank).
-
-
- **PASSING DIMINISHED** — Sym. Diminished only on chromatic passing degrees; all other slots blank.
-
- - **#I / bII** — passing I to II
-
- - **#II / bIII** — passing II to III
-
- - **#IV / bV** — passing IV to V (most common passing diminished)
-
- - **#V / bVI** — passing V to VI
-
- - **#VI / bVII** — passing VI to VII or chromatically back to I
-
-
- **AUXILIARY DIMINISHED** — Sym. Diminished on tonic-function degrees; chromatic-degree slots blank.
-
- - **I, II, III, IV, V, VI, VII** — auxiliary diminished (neighbor tension returning to the same harmony)
-
-
- **SEC/SUB DOMINANT** — alternating Mixolydian-family secondary dominants and Lydian ♭7 tritone subs on every slot.
-
- - **I** — Mixolydian (V7/IV)
-
- - **bII** — Lydian ♭7 (subV7)
-
- - **II** — Mixolydian (V7/V)
-
- - **bIII** — Lydian ♭7 (subV7/II)
-
- - **III** — Mixolydian ♭9♭13 (V7/VI)
-
- - **IV** — Lydian ♭7 (subV7/IV)
-
- - **bV** — Lydian ♭7 (subV7/IV, enharmonic with #IV)
-
- - **V** — Mixolydian (primary V7)
-
- - **bVI** — Lydian ♭7 (subV7/V)
-
- - **VI** — Mixolydian ♭13 (V7/II)
-
- - **bVII** — Lydian ♭7 (subV7/VI)
-
- - **VII** — Mixolydian ♭9♭13 (V7/III)
-
-
- **SECONDARY DOMINANT** — dominant scales only where a secondary V7 is typical; other slots blank.
-
- - **I** — Mixolydian (V7/IV)
-
- - **II** — Mixolydian (V7/V)
-
- - **III** — Mixolydian ♭9♭13 (V7/VI)
-
- - **VI** — Mixolydian ♭13 (V7/II)
-
- - **VII** — Mixolydian ♭9♭13 (V7/III)
-
-
- **SUBSTITUTE DOMINANT** — Lydian ♭7 tritone subs on flat degrees; other slots blank.
-
- - **bII** — Lydian ♭7 (subV7)
-
- - **bIII** — Lydian ♭7 (subV7/II)
-
- - **bV** — Lydian b7 (subV7/IV)
-
- - **bVI** — Lydian ♭7 (subV7/V)
-
- - **bVII** — Lydian ♭7 (subV7/VI)
-
-
- **HARMONIC MINOR** — modes of harmonic minor; blank at #I/bII, #II/bIII, #IV/bV, #V/bVI, #VI/bVII.
-
- - **I** — Harmonic Minor
-
- - **II** — Locrian ♮6
-
- - **bIII** — Ionian ♯5
-
- - **IV** — Dorian ♯4
-
- - **V** — Mixolydian ♭9♭13 (Phrygian dominant / V7 in minor)
-
- - **bVI** — Lydian ♯2
-
- - **VII** — Locrian ♭♭7♭4
-
-
- **MELODIC MINOR** — modes of melodic minor; blank at #I/bII, #II/bIII, #IV/bV, #V/bVI, #VI/bVII.
-
- - **I** — Melodic Minor
-
- - **II** — Dorian ♭2
-
- - **bIII** — Lydian ♯5
-
- - **IV** — Lydian ♭7 (Lydian dominant)
-
- - **V** — Mixolydian ♭13
-
- - **VI** — Locrian ♮9
-
- - **VII** — Altered
-
-
- **HARMONIC MAJOR** — modes of harmonic major; blank at #I/bII, #II/bIII, #IV/bV, #V/bVI, #VI/bVII.
-
- - **I** — Harmonic Major
-
- - **II** — Dorian ♭5
-
- - **III** — Phrygian ♭4
-
- - **IV** — Lydian ♭3
-
- - **V** — Mixolydian ♭9
-
- - **bVI** — Lydian ♯5♯2
-
- - **VII** — Locrian ♭♭7
-
-
- **Generate Progression note:** EMPTY is omitted from the Default Banks list in Generate Progression. Bank weights in generation presets refer to these template names when biasing harmonic material.
 
 
 
@@ -2685,8 +2540,10 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
  - Use A, W, S, E, D, F, T, G, Y, H, U, J for active-bank degree performance.
 
  - 
- Use the Dashboard to change key, scale, chord, expression, spelling, and voicing context (see 
- Harmony & Voicing).
+ Use the Dashboard to change , scale / chord,
+ expression, , and other voicing context (see 
+ Harmony & Voicing and 
+ Voicing Settings).
 
 
  - 
@@ -2777,8 +2634,13 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
  
 
 
- Dynamics	
- Opens track-level velocity variation and swell controls.	
+ 
+ Dynamics
+ 
+ 
+ Opens track-level velocity variation and swell controls (same 
+ Dynamics parameters as in VOICING).
+ 
  
 
 
@@ -2792,10 +2654,11 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
  Automation	
  
- Under Instrument: tiny eye toggle shows/hides the lane; dropdown beside it chooses Pitch Bend,
- Aftertouch, or any CC. Playback goes to
- the instrument and MIDI outs
- (see TRACK View).
+ Under Instrument: eye toggle shows/hides the lane; dropdown chooses Pitch Bend, Aftertouch, or any CC
+ (targets with points stay pinned at the top). Lane tools are Select / Pencil / Line / Erase (hotkeys
+ 1–4). Pencil and Line can still grab and drag existing nodes; Erase clicks or drag-marks nodes and
+ deletes on mouse up — see TRACK View. Playback goes to the
+ instrument and MIDI outs.
  
  
 
@@ -2915,24 +2778,6 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
 
-### Scanning For Plugins
-
-
-
- - Open MIXER in standalone mode.
-
- - Click an instrument or effect selector.
-
- - Run **Scan for Plugins** if the browser is empty, stale, or missing a newly installed plugin.
-
- - Wait for scanning to finish before loading the plugin.
-
- - If Cymasphere reports a crash or blacklist event, restart and scan again.
-
-
-
-
-
 ### Slot Actions
 
 
@@ -2949,8 +2794,16 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
 
+ LOADING	
+ 
+ Slot labels show **LOADING** while a plugin loads asynchronously. Wait for the label to clear
+ before opening the editor or replacing the slot.
+ 
+ 
+
+
  Open	
- Shows the plugin editor window.	
+ Shows the plugin's native editor window.	
  
 
 
@@ -2978,39 +2831,39 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
 
+### Scanning For Plugins
+
+
+
+ - Open MIXER in standalone mode.
+
+ - Click an instrument or effect selector.
+
+ - Run **Scan for Plugins** if the browser is empty, stale, or missing a newly installed plugin.
+
+ - Wait for scanning to finish before loading the plugin.
+
+ - 
+ **RESET** opens **FULL RESET & DEEP SCAN**: clears the plugin library and
+ blacklist, deletes the saved cache, then validates every plugin by opening it. This can take several minutes.
+ On macOS standalone, deep validation may quit and relaunch Cymasphere so mapped plugin memory can be released.
+
+
+ - If Cymasphere reports a crash or blacklist event, restart and scan again.
+
+
+
+
+
 ### CymaSynth Integration
 
 
 
- CymaSynth is included with Cymasphere and is the recommended first instrument. Cymasphere scans for it so new 
- Pattern, 
- Voicing, and 
- Sequencer tracks can start with a usable sound. Open the CymaSynth editor when you need
- sound design.
-
-
-
-### CymaSynth Factory Preset Categories
-
-
-
- Factory presets use a category prefix in the filename (e.g. pad-012, bass-003). Categories include:
- 8bit, bass, bell, brass, drums, elemental, exp, init, keys, layered, lead, pad, pluck, strings,
- synth, texture, and vocal.
-
- Ask Cyma / workspace guidance by track type:
-
- - **Voicing tracks:** prefer pad, keys, strings, brass, or layered for harmonic accompaniment.
- - **Sequencer tracks:** prefer pluck, lead, bass, or synth for arpeggiated / rhythmic note lines.
- - **Pattern tracks:** prefer keys, lead, drums, or synth for played/edited note parts.
- - **Groove tracks:** often rhythmic; drums or leave without a melodic instrument when appropriate.
- - **Aux tracks:** texture or FX-oriented returns; usually not a primary CymaSynth lead.
-
- New Pattern, Voicing, and Sequencer tracks can auto-assign CymaSynth as the instrument. Load a
- factory preset from the CymaSynth preset browser (or Ask Cyma recommend/apply tools). Do not expect
- Ask Cyma to edit CymaSynth oscillators, filters, or the mod matrix — open the CymaSynth editor for
- deep sound design.
-
+ CymaSynth is included with Cymasphere and is the recommended first instrument. On Mac, Cymasphere hosts the
+ CymaSynth Audio Unit ( .component ) and opens its native JUCE editor (not a WebView). Cymasphere scans
+ for CymaSynth so new Pattern, 
+ Voicing, and Sequencer tracks
+ can start with a usable sound. Open the CymaSynth editor when you need sound design.
 
 
  
@@ -3320,9 +3173,12 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
 
- The Chord / Scale window is the harmonic picker behind key, scale, and chord controls. Use it when you need to
- browse scale families, filter harmonic options, audition a chord/scale relationship, or choose a more deliberate
- chord quality than simple cycling provides. See Harmony & Voicing.
+ The Chord / Scale window is the harmonic picker behind , 
+ scale, and 
+ chord controls. Use it when you need to browse scale families,
+ filter harmonic options, audition a chord/scale relationship, or choose a more deliberate chord quality than
+ simple cycling provides. See Harmony & Voicing and 
+ Voicing Settings.
 
 
 
@@ -3330,6 +3186,23 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
  - Browse scale families such as major, minor variants, symmetrical scales, and other collections.
 
  - Filter by interval content or scale size when searching for a specific harmonic color.
+
+ - 
+ Use **clear filters** on the scale side or chord side to reset size/member filters in one click
+ without changing the current selection until you pick another row.
+
+
+ - 
+ Chord list rows may show **avoid-note badges** when tones clash with the current scale. With Smart
+ Chord on, badges become yellowish parentheses for omitted avoid intervals. Hover a badge outside Help mode for
+ the always-on tip.
+
+
+ - 
+ **COMPOUND CHORD** opens the Compound Chord window for slash and polychord constructions. When
+ compound harmony is active, a compound row appears above the standard chord list (also with avoid-note badges
+ when relevant).
+
 
  - 
  Toggle the preview between **staff** (native mini notation) and **clock** (12-semitone
@@ -3341,6 +3214,47 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
  These mini previews are separate from the full Notation window,
  which exports via LilyPond. Mini staff/clock previews use the built-in native renderer for fast in-window
  feedback.
+
+
+
+
+
+
+### Compound Chord Window
+
+
+
+ COMPOUND CHORDS builds multi-part harmony beyond a single chord quality — slash chords and polychords — from the
+ Chord / Scale picker. The window lists upper and lower candidates, shows a mini staff preview of the selection,
+ and can display avoid-note badges on rows that clash with the active scale. Cancel restores the chord from when
+ the window opened; OK applies the construction to the voicing layer.
+
+
+
+
+### Sequencer Window
+
+
+
+ The Sequencer window is the rule editor for Sequencer tracks. TRACK View
+ shows the generated roll; this window edits direction, rhythm, swing, duration, and custom patterns. Open it from
+ a Sequencer track menu or the SEQUENCER button on the track left rail.
+
+
+
+
+ - 
+ **Custom direction:** Shows step count and voice count, Select / Add / Delete tools, and custom
+ preset save/load controls for hand-authored sequences.
+
+
+ - 
+ **Preview vs Live:** Window preview plays the pattern in place; Live follows voicing-button
+ triggers (for example during Ghost Track practice) without waiting for chart playback.
+
+
+ - 
+ The pattern visualizer highlights the active step during playback so you can follow which voice is sounding.
 
 
 
@@ -3372,9 +3286,10 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
 
- Dynamics appears as a VOICING box and as a track-level popup. It
- controls velocity shape: base velocity, deviation, swell depth, swell length, swell position, and whether swell
- behavior is active. Use it to make generated parts feel performed instead of flat.
+ appears as a VOICING box and as a
+ track-level popup. It controls velocity shape: base velocity, deviation, swell depth, swell length, swell position,
+ and whether swell behavior is active. Use it to make generated parts feel performed instead of flat. Full
+ parameter ranges are in Voicing Settings.
 
 
 
@@ -3426,6 +3341,33 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
 
+### Rubato
+
+
+
+ Rubato is a floating song-level window opened from the Songbar: right-click BPM → **Rubato...**.
+ It warps perceived musical time (pulse breathe) without changing host BPM. See 
+ Transport & Progressions for Depth, Length, Position,
+ waveform, and the orange BPM meter.
+
+
+
+
+ - Use the header power button to enable or disable rubato for the whole song.
+
+ - 
+ With Help Mode on, hover Power / Depth / Length / Position / Sine / Triangle for control-specific help.
+
+
+ - 
+ Orange fluctuating BPM appears only while rubato is active with depth above 0% and something is sounding
+ (transport or live).
+
+
+
+
+
+
 ### MIDI Monitor
 
 
@@ -3443,8 +3385,10 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
  The Plugin Selector is used for instruments, MIDI effects, and audio effects. Search or scan, choose a plugin,
- then load it into the current slot. If a scan is still running, Cymasphere may keep the selector alive in the
- background so the scan can complete. See Plugin Hosting & CymaSynth.
+ then load it into the current slot. Slots show **LOADING** during async load. If a scan is still
+ running, Cymasphere may keep the selector alive in the background so the scan can complete. 
+ **RESET** confirms **FULL RESET & DEEP SCAN** (may quit/relaunch standalone on
+ Mac). See Plugin Hosting & CymaSynth.
 
 
 
@@ -3475,7 +3419,7 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
  - 
- **Spawn Bank:** Choose one of the **default bank templates** (see Default Bank Templates under PALETTE View) and insert a new bank into the current 
+ **Spawn Bank:** Choose a bank template and insert a new bank into the current 
  PALETTE context.
 
 
@@ -3513,11 +3457,11 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
 
- TRACK View shows the generated result. The Sequencer window
- (see Secondary Windows Reference) edits the rules.
- Open it from a Sequencer track menu or the SEQUENCER button where available. TRACK View also has the
- shared Automation lane (pitch bend / CC / aftertouch) under the generated roll — same controls as
- Pattern / Voicing / Groove.
+ TRACK View shows the generated result as a read-only roll. The Sequencer
+ window (see Secondary Windows Reference) is the rule editor —
+ direction, note value, tuplets, swing, duration, reset/loop, and custom drawing. Open it from a Sequencer track
+ menu or the SEQUENCER button on the left rail. TRACK View also has the shared Automation lane (pitch bend / CC /
+ aftertouch) under the generated roll — same controls as Pattern / Voicing / Groove.
 
 
 
@@ -3541,6 +3485,14 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
  Pattern / Direction	
  Chooses ordered, reverse, up-down, shuffle, chaos, custom, or related traversal behavior.	
+ 
+
+
+ Custom direction	
+ 
+ Reveals step count and voice count knobs, Select / Add / Delete tools, and custom preset save/load so you
+ can hand-author the sequence.
+ 
  
 
 
@@ -3575,7 +3527,10 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
  Include Bass	
- Includes or excludes the bass note from generated sequencer material.	
+ 
+ Includes or excludes the bass note from generated sequencer
+ material.
+ 
  
 
 
@@ -3600,20 +3555,25 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
  - 
  **Global playback:** Sequencer tracks emit calculated MIDI along the progression timeline (see 
- Transport & Progressions).
+ Transport & Progressions). TRACK shows the resulting
+ roll.
 
 
  - 
- **Realtime preview:** User voicing button triggers from 
- PALETTE can drive sequencer notes without waiting for chart playback.
+ **Window Preview:** Play inside the Sequencer window to hear the pattern without depending on
+ chart position.
 
 
  - 
- **Ghost Track:** Chart sequencer playback is silent, but user-triggered realtime preview can remain active.
+ **Live / realtime:** Voicing-button triggers from 
+ PALETTE can drive sequencer notes (including during Ghost Track)
+ without waiting for chart playback. With Ghost Track on, chart sequencer playback stays silent while
+ user-triggered Live preview can remain active.
 
 
  - 
  **Pattern visualizer:** Shows rows for voices, blocks for note durations, and playhead position.
+ The active step is highlighted during playback so you can follow which voice is sounding.
 
 
 
@@ -3685,6 +3645,17 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
 
+### Profile Menu
+
+
+
+ The profile button opens a glass overlay menu with leading icons and title-case labels. Press Escape or click
+ outside the menu to dismiss it. **Virtual MIDI Device** and **CPU / RAM Meter** are
+ toggles (filled accent dot = on). HOTKEYS is desktop-only; USER MANUAL is available on iOS and desktop.
+
+
+
+
 ### Help Mode
 
 
@@ -3703,7 +3674,8 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
  - 
  **Manual:** Use Profile menu -> USER MANUAL for deeper workflows and 
- Reference tables.
+ Reference tables. Features such as Rubato also expose
+ control-specific help when Help Mode is on (hover Power, Depth, Length, Position, and waveform).
 
 
 
@@ -3733,6 +3705,16 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
 
+ - 
+ **Audition track:** Chooses which track hears Chord / Scale and related audition MIDI. 
+ **ACTIVE TRACK** follows the currently selected track; otherwise pick a named eligible track from
+ the dropdown.
+
+
+
+
+
+
 ### Color Themes
 
 
@@ -3747,10 +3729,12 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
 
- HOTKEYS opens the native shortcut reference. Use it for the current platform's Mac/Windows shortcut labels.
- The Reference chapter also lists the most important shortcuts for playback,
- navigation, Palette performance, and 
- Pattern editing.
+ HOTKEYS opens the native shortcut reference on desktop builds (hidden on iOS). Use it for the current
+ platform's Mac/Windows shortcut labels. The Reference chapter also
+ lists the most important shortcuts for playback, navigation, 
+ Palette performance, and 
+ Pattern editing. On all platforms, open this manual from Profile
+ menu → USER MANUAL.
 
 
 
@@ -3759,10 +3743,31 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
 
- The CPU / RAM meter helps diagnose performance. Use it when 
- plugin hosting, dense arrangements, large effects chains, or low
- buffer sizes cause glitches. If meters spike only after loading a plugin, inspect that plugin before blaming
- Cymasphere's MIDI generation.
+ Toggle **CPU / RAM Meter** from the profile menu (dot = on) to show a floating PERFORMANCE panel.
+ Use it when plugin hosting, dense arrangements, large effects
+ chains, or low buffer sizes cause glitches.
+
+
+
+
+ - 
+ **Buffer total:** Audio callback duty cycle (buffer-size independent).
+
+
+ - 
+ **CPU total:** All threads (closer to Activity Monitor).
+
+
+ - 
+ **RAM total:** Process memory footprint.
+
+
+ - 
+ Expand the panel for per-plugin rows. Plugin RAM polls live footprint; rows share growth/shrink vs load
+ baseline. If meters spike only after loading a plugin, inspect that plugin before blaming Cymasphere's
+ MIDI generation.
+
+
 
 
 
@@ -4081,9 +4086,35 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
  Cymasphere uses music theory as an interface, not as trivia. This appendix defines the concepts you need to use
- the product: degrees, intervals, scales, chord quality, inversions, solfege, voice leading, and low interval
- limits. Apply them in VOICING and 
- PALETTE.
+ the product: pitch, intervals, scales and modes, chord construction, functional harmony, chord–scale thinking,
+ voice leading, rhythm, and common progression shapes. Apply them in VOICING 
+ and PALETTE.
+
+
+
+
+ Material below is rewritten for practical use in Cymasphere. It draws on widely taught Western tonal and modal
+ practice (public-domain pedagogy and standard reference works such as Walter Piston’s _Harmony_, Mark
+ Levine’s jazz pedagogy concepts, and CC BY-SA summaries of common-practice harmony). It is not a copy of any
+ single encyclopedia article.
+
+
+
+
+### Pitch, Octave, And Enharmonic Spelling
+
+
+
+ Pitch is how high or low a note sounds. Western equal temperament divides the octave into twelve semitones
+ (half steps). Letter names A–G plus sharps/flats name those pitches. Enharmonic spellings (e.g. C♯ vs D♭) sound
+ the same in equal temperament but mean different things in a key: choose the spelling that matches the scale or
+ chord you are writing.
+
+
+
+
+ In Cymasphere, key and scale choices drive which pitch classes belong on voicing buttons and in generated
+ material. Prefer spellings that match the active key when reading chord or scale labels.
 
 
 
@@ -4093,7 +4124,7 @@ export const MidiControllerRoutingGuide = memo(function MidiControllerRoutingGui
 
 
  Scale degrees describe notes by their position inside a key or scale. Roman numerals such as I, II, III, IV, V,
- VI, and VII are useful because they stay meaningful when the key changes.
+ VI, and VII stay meaningful when the key changes.
 
 
 
@@ -4129,23 +4160,79 @@ VII	Leading tone	Tension / pull toward tonic
 
 
 
+ In minor keys, the raised leading tone (♯7) often appears in V and vii° chords even when the natural minor
+ scale uses ♭7. Melodic and harmonic minor exist largely to reconcile that pull with a minor tonic.
+
+
+
+
 ### Intervals
 
 
 
- An interval is the distance between two notes. Cymasphere uses intervals in spacing, chord construction,
- inversion, voice leading, and low interval limits. When a voicing sounds muddy, the problem is often an interval
- that is too close in a low register.
+ An interval is the distance between two notes, counted in scale steps (generic size) and quality (major, minor,
+ perfect, diminished, augmented). Perfect intervals: unison, 4th, 5th, octave. Seconds, thirds, sixths, and
+ sevenths are major/minor (or altered). Consonant intervals (unison, 3rds, 5ths, 6ths, octaves) tend to sound
+ stable; dissonant intervals (2nds, 7ths, tritones) create tension that usually wants to resolve.
 
 
 
 
-### Chord Quality
+ Cymasphere uses intervals in spacing, chord construction, inversion, voice leading, and low interval limits.
+ When a voicing sounds muddy, the problem is often an interval that is too close in a low register.
 
 
 
- Chord quality describes the color of a chord: major, minor, diminished, augmented, seventh, suspended, extended,
- and so on. Changing quality changes which tones Cymasphere considers chord tones for voicing, 
+
+### Scales And Modes
+
+
+
+ A scale is an ordered collection of pitch classes. The major (Ionian) scale is W-W-H-W-W-W-H (W = whole step, H
+ = half). Natural minor (Aeolian) is W-H-W-W-H-W-W. Modes of the major scale rotate that pattern:
+
+
+
+
+ - **Ionian (I):** Major; bright, stable.
+
+ - **Dorian (II):** Minor with raised 6th; jazz/folk “cool” minor.
+
+ - **Phrygian (III):** Minor with ♭2; Spanish/dark color.
+
+ - **Lydian (IV):** Major with ♯4; dreamy / filmic lift.
+
+ - **Mixolydian (V):** Major with ♭7; blues/rock dominant color.
+
+ - **Aeolian (VI):** Natural minor.
+
+ - **Locrian (VII):** Diminished feel (♭2 and ♭5); rarely tonicized alone.
+
+
+
+
+
+ Other useful collections: pentatonic major/minor (five-note), blues scale (minor pentatonic + ♭5), whole-tone
+ (six equal whole steps), and octatonic/diminished scales (alternating H/W). Bank templates in Cymasphere often
+ group related modes or chord families so you can explore color without leaving the key center.
+
+
+
+
+### Triads, Sevenths, Extensions, Alterations
+
+
+
+ Stack thirds from a scale degree to build chords. A triad has root, third, and fifth. Quality of the third and
+ fifth yields major, minor, diminished, or augmented. Add another third for a seventh chord: maj7, m7, dominant
+ 7 (♭7 on a major triad), m7♭5 (half-diminished), dim7, etc.
+
+
+
+
+ Extensions (9, 11, 13) add color above the seventh. Alterations (♭9, ♯9, ♯11, ♭13) change those tensions,
+ especially on dominant chords. Suspensions (sus2, sus4) replace the third temporarily. Chord quality in
+ Cymasphere changes which tones count as chord tones for voicing, 
  Sequencer, and 
  Pattern-relative behavior.
 
@@ -4156,9 +4243,10 @@ VII	Leading tone	Tension / pull toward tonic
 
 
 
- Inversion changes which chord tone appears lowest in the upper voicing. Bass controls can add or choose a bass
- note separately. This distinction matters: a chord can have one inversion while the bass follows another musical
- rule. See Voicing Controls In Detail.
+ changes which chord tone appears lowest in the upper voicing. 
+ controls can add or choose a bass note separately. A chord can have one
+ inversion while the bass follows another musical rule (e.g. slash chords). See 
+ Voicing Settings.
 
 
 
@@ -4167,20 +4255,87 @@ VII	Leading tone	Tension / pull toward tonic
 
 
 
- Solfege names scale degrees with syllables such as Do, Re, Mi, Fa, Sol, La, and Ti. Use solfege display when
- relative scale function matters more than note letters.
+ Solfege names scale degrees with syllables such as Do, Re, Mi, Fa, Sol, La, and Ti. Use solfege display (
+ → SOLFEGE) when relative scale function matters more than note letters.
 
 
 
 
-### Voice Leading
+### Functional Harmony And Cadences
 
 
 
- Voice leading is the movement of individual notes from one chord to the next. Smooth voice leading keeps each
- voice moving by small intervals when possible. Use Voice Lead controls in 
- Harmony & Voicing when chord changes sound jumpy or when
- generated parts need to feel playable.
+ Functional harmony describes what chords are doing: resting, preparing, creating tension, or resolving.
+
+
+
+
+ - **Tonic (T):** Stable home (I, often vi or iii as substitutes).
+
+ - **Predominant (PD):** Prepares motion toward the dominant (ii, IV, sometimes iiø in minor).
+
+ - **Dominant (D):** Creates pull toward tonic (V, V7, vii°).
+
+
+
+
+
+ Common cadences: authentic (V→I), plagal (IV→I), half (…→V), deceptive (V→vi). Secondary dominants (V of V, V
+ of ii, etc.) briefly tonicize another degree. Borrowed chords and modal mixture (e.g. ♭VI, iv in major) import
+ color from the parallel minor/major.
+
+
+
+
+ Generate Progression and manual progression editing in 
+ Transport & Progressions are easier when you listen for
+ function, not just chord names.
+
+
+
+
+### Chord–Scale Relationships
+
+
+
+ Chord–scale thinking matches a scale (or mode) to a chord so melodies and extensions agree with the harmony.
+ Rough guide for common jazz/pop chords:
+
+
+
+
+ - Major 7 → Ionian or Lydian (♯11 color).
+
+ - Dominant 7 → Mixolydian; altered dominants → altered / diminished / whole-tone colors.
+
+ - Minor 7 → Dorian (or Aeolian); m7♭5 → Locrian (or Locrian ♮2).
+
+ - Minor-major 7 → Melodic minor.
+
+
+
+
+
+ In Cymasphere, palette banks and voicing-button scales are the practical place to lock chord–scale choices.
+ When a Sequencer or Pattern note clashes, check whether the active scale matches the chord’s intended color.
+
+
+
+
+### Voice Leading And Spacing
+
+
+
+ Voice leading is the movement of individual notes from one chord to the next. Prefer common tones and stepwise
+ motion when you want a smooth texture; larger leaps create drama. Parallel fifths/octaves are often avoided in
+ classical writing but appear freely in rock/pop doubling.
+
+
+
+
+ Use in VOICING when chord
+ changes sound jumpy. and Low Interval Limits keep lower voices farther
+ apart so dense stacks do not turn muddy.
 
 
 
@@ -4190,31 +4345,43 @@ VII	Leading tone	Tension / pull toward tonic
 
 
  Low notes need more space than high notes. Intervals that sound clear in a high register can sound muddy in the
- bass. Low interval limits help prevent dense, low-register clashes by keeping lower voices farther apart.
+ bass. Low Interval Limits (under ) help prevent dense, low-register clashes.
 
 
 
 
-### Functional Harmony
+### Rhythm, Meter, And Groove
 
 
 
- Functional harmony describes what chords are doing: resting, preparing, creating tension, or resolving. 
- Generate Progression and manual progression editing in 
- Transport & Progressions are easier when you listen for
- function, not just chord names.
+ Meter groups beats into measures (e.g. 4/4, 3/4, 6/8). Syncopation accents off-beats or unexpected subdivisions.
+ Swing delays the second eighth of a pair. In Cymasphere, song meter affects progression block lengths and
+ Sequencer/Groove timing. Groove tracks and templates emphasize feel; Sequencer params (swing, deviation)
+ nuance placement without rewriting harmony.
 
 
 
 
- - **Tonic:** Stable home base.
+### Common Progression Shapes
 
- - **Predominant:** Prepares motion toward tension.
 
- - **Dominant:** Creates pull toward resolution.
 
- - **Resolution:** Releases tension or lands in a new area.
+ - **ii–V–I:** Core jazz cadence; also ii–V–i in minor.
 
+ - **I–V–vi–IV / vi–IV–I–V:** Ubiquitous pop loops.
+
+ - **I–IV–V / 12-bar blues:** Blues and rock foundations (often with dominant 7ths).
+
+ - **Modal vamps:** Stay on one mode (e.g. Dorian i–IV) and vary rhythm/texture.
+
+ - **Circle of fifths motion:** Roots descending by fifth (or ascending by fourth) for strong pull.
+
+
+
+
+
+ When Ask Cyma or Generate Progression builds material, these shapes are useful targets for style (“modal jazz,”
+ “ambient vamp,” “blues”) without inventing fake bank names.
 
 
 
@@ -4235,39 +4402,45 @@ VII	Leading tone	Tension / pull toward tonic
 
 
 
- Scale degrees	
+ Scale degrees / modes	
  
  Palette banks, voicing buttons, chord blocks, display formats
  
  
 
 
- Intervals	
+ Intervals / spacing	
  
- Spacing, voice leading, low interval limits, chord quality in 
- VOICING
+ , , Low Interval Limits
  
  
 
 
- Inversion	
+ Inversion / bass	
  
- VOICING inversion, bass behavior, chord display
+ , 
  
  
 
 
  Solfege	
  
- Keyboard labels, chord display, relative naming in PALETTE
+ Keyboard labels, , relative naming in 
+ PALETTE
  
  
 
 
- Function	
+ Function / progressions	
  
- Generate Progression, manual progression editing,
- harmonic analysis
+ Generate Progression, progression timeline, Ask Cyma
+ Agent generate_progression 
+ 
+ 
+
+
+ Rhythm / meter	
+ Song meter, Sequencer/Groove templates and swing
 
 ---
 
@@ -4415,8 +4588,8 @@ VII	Leading tone	Tension / pull toward tonic
  - **Timing:** SNAP TO GRID quantizes note recording; turning it off records raw note timing.
 
  - 
- **Automation:** Optional lane for pitch bend, CC, and aftertouch under the roll — see 
- TRACK View.
+ **Automation:** Optional lane for pitch bend, CC, and aftertouch under the roll — tools and
+ gestures in TRACK View.
 
 
  - 
@@ -4456,7 +4629,10 @@ VII	Leading tone	Tension / pull toward tonic
  **Realtime play:** User voicing button input can trigger voicings even when chart playback is silent.
 
 
- - **Routing:** Bass and upper voices route through Voice / Channel Matrix voices.
+ - 
+ **Routing:** Bass and upper voices route through Voice
+ / Channel Matrix voices.
+
 
  - **Export:** Supports Copy as MIDI, Audio Export, and Notation View.
 
@@ -4803,10 +4979,138 @@ export const TrackViewGuide = memo(function TrackViewGuide() {
  Every Pattern, Voicing, Sequencer, and Groove track can show one automation lane for pitch bend,
  control change, or channel aftertouch. On Pattern / Voicing / Sequencer the eye toggle and
  parameter dropdown sit under Instrument; on Groove they live in the header bar to the right of
- INSTRUMENT (the lane still draws under the grid). Draw with Select / Pencil / Line / Erase in the
- lane gutter, or Record + Play to capture controller input into the Pitch Bend / CC / Aftertouch
- lanes. Recorded or drawn automation plays back to the track's hosted instrument and its MIDI outs.
- Targets that already have points stay pinned at the top of the target list.
+ INSTRUMENT (the lane still draws under the grid). Recorded or drawn automation plays back to the
+ track's hosted instrument and its MIDI outs. Targets that already have points stay pinned at the
+ top of the parameter dropdown.
+
+
+
+
+ Tools live in the keyboard / lane gutter (hotkeys **1–4**). Breakpoint handles enlarge when
+ you hover them; the value readout follows the hovered or selected point.
+
+
+
+
+ 
+
+
+ Tool / Gesture	
+ Behavior	
+ 
+
+
+
+
+
+
+ Select (1)	
+ 
+ Click a node to select and drag it. Drag empty space for marquee multi-select, then drag the
+ selection. Shift toggles points in or out of the selection. Grab cursor appears over nodes.
+ 
+ 
+
+
+ Pencil (2)	
+ 
+ Drag on empty canvas for freehand densified breakpoints (a short click places one point). Hover an
+ existing node to show the grab cursor and drag that node without switching tools.
+ 
+ 
+
+
+ Line (3)	
+ 
+ Drag on empty canvas to place a linear segment between two points. Hover an existing node to grab
+ and move it the same way as with Pencil.
+ 
+ 
+
+
+ Erase (4)	
+ 
+ Click a single node, or drag a selection box around nodes (like the Select marquee) — marked points
+ highlight in red and are removed when you release the mouse. Nothing is deleted until mouse up.
+ 
+ 
+
+
+ Alt-drag segment	
+ Set curve shape on a segment (Select tool).	
+ 
+
+
+ Delete key	
+ Removes selected points (Select tool selection).	
+ 
+
+
+ Double-click	
+ Empty space adds a point; an existing point deletes it.	
+ 
+
+
+ Context menu	
+ Remove (when multi-selected), Clear, or Reset the lane.	
+ 
+
+
+
+
+
+
+ Record + Play in TRACK View captures incoming PB / CC / AT into the Pitch Bend / CC / Aftertouch lanes on
+ Pattern, Voicing, Sequencer, and Groove (not Aux). Automation is separate from live MIDI controller
+ routing — see MIDI & Controller Routing.
+
+
+
+
+### Left-Rail Controls (Voicing And Sequencer)
+
+
+
+ - 
+ **Display Text:** Labels generated notes (note names, intervals, scale degrees, and related
+ modes).
+
+
+ - 
+ **Dynamics / MIDI out / Instrument / Automation:** Shared with Pattern — dynamics popup, Voice /
+ Channel Matrix (or MIDI out), hosted instrument, and the automation eye + parameter dropdown.
+
+
+ - 
+ **Sequencer button:** On Sequencer tracks, opens the Sequencer rule window (TRACK shows the
+ generated roll; the window edits rules).
+
+
+
+
+
+
+### Pinch Zoom
+
+
+
+ - 
+ Pinch on the left settings rail (mute/solo, tools, instrument, etc.) for normal UI zoom — same as pinching
+ elsewhere in the app.
+
+
+ - 
+ Pinch on the vertical piano keyboard for vertical key zoom on Pattern, Voicing, and Sequencer tracks.
+
+
+ - 
+ On Voicing and Sequencer, pinch on the note grid for horizontal timeline zoom.
+
+
+ - 
+ Pattern timeline pinch zoom is currently disabled; use the timeline zoom controls instead.
+
+
 
 
 
@@ -4996,7 +5300,10 @@ export const TrackViewGuide = memo(function TrackViewGuide() {
 
  Count Off	
  Adds a count-in before playback or recording begins.	
- Default CC is 109. Use it when you need time before the first downbeat.	
+ 
+ Default CC is 109. Left-click toggles; right-click chooses 1–4 bars of count-in. Use it when you need time
+ before the first downbeat.
+ 
  
 
 
@@ -5009,6 +5316,85 @@ export const TrackViewGuide = memo(function TrackViewGuide() {
  
 
 
+
+
+
+
+### Tempo, Meter, And Rubato
+
+
+
+
+ The Songbar counter shows bar, beat, BPM, and meter. In standalone builds you can edit BPM and meter
+ directly. Rubato is song-level elastic musical time: it breathes perceived tempo without rewriting the host
+ BPM.
+
+
+
+
+
+ 
+
+
+ Control	
+ Behavior	
+ 
+
+
+
+
+
+
+ BPM	
+ 
+ Song reference tempo. Right-click → **Rubato...** opens the Rubato window.
+ 
+ 
+
+
+ Rubato power	
+ Header power button enables or disables song-level rubato for the whole song.	
+ 
+
+
+ Depth (0–50%)	
+ 
+ How far the pulse speeds up and slows down. At 50%, perceived tempo peaks near 1.5× song BPM.
+ 
+ 
+
+
+ Length	
+ One full breathe cycle in bars. Stolen time is given back each cycle.	
+ 
+
+
+ Position	
+ LFO starting offset (0–360°).	
+ 
+
+
+ Sine / Triangle	
+ Shape of the speed-up / slow-down curve.	
+ 
+
+
+ Orange BPM	
+ 
+ While rubato is on with depth above 0% and something is sounding (transport play or live), BPM turns
+ orange and shows the perceived fluctuating tempo. Idle shows normal song BPM.
+ 
+ 
+
+
+
+
+
+
+
+ Rubato applies song-wide to chart MIDI, live realtime sequencer preview, and metronome musical feel. It is
+ host-safe: Cymasphere does not write host BPM. With Help Mode on, hover Rubato controls (or BPM in the Songbar)
+ for parameter help.
 
 
 
@@ -5291,9 +5677,19 @@ export const TrackViewGuide = memo(function TrackViewGuide() {
  
 
 
+ Slot stuck on LOADING	
+ Async plugin load is still in progress or the plugin hung while opening.	
+ 
+ Wait for the load to finish; if it never clears, remove the slot and try again, or use RESET → FULL RESET
+ & DEEP SCAN (may quit/relaunch standalone on Mac). See 
+ Plugin Hosting & CymaSynth.
+ 
+ 
+
+
  Plugin repeatedly fails	
  Plugin is incompatible, outdated, or unstable in the host.	
- Update/reinstall the plugin or leave it blacklisted.	
+ Update/reinstall the plugin or leave it blacklisted. Prefer CymaSynth's native AU editor path on Mac.	
  
 
 
@@ -5336,6 +5732,34 @@ export const TrackViewGuide = memo(function TrackViewGuide() {
  - 
  If automation reaches MIDI Monitor but not the hosted instrument, confirm the instrument is loaded and
  (for CymaSynth CCs) that a MIDI CC mapping exists for that controller.
+
+
+
+
+
+
+### Tempo Or Rubato Problems
+
+
+
+ - 
+ Orange fluctuating BPM only appears while Rubato is powered on with depth above 0% and something is sounding
+ (transport play or live). Idle always shows the song BPM.
+
+
+ - 
+ Rubato never rewrites host BPM. If the DAW tempo looks unchanged, that is expected—use the Songbar BPM and
+ Rubato window instead.
+
+
+ - 
+ Open Rubato with right-click on BPM → **Rubato...**. Confirm the header power button is on and
+ Depth is above 0%. See Transport & Progressions.
+
+
+ - 
+ If timing still feels rigid with Rubato on, check Length (bars), Position, and waveform (Sine/Triangle), and
+ that chart or live playback is actually running.
 
 
 
@@ -5406,136 +5830,195 @@ export const TrackViewGuide = memo(function TrackViewGuide() {
 
 ---
 
-<!-- VoicingControlsReference.tsx -->
-# Voicing Controls Reference
+<!-- VoicingSettingPage.tsx -->
+# Voicing Setting Page
+
+/**
+ * @fileoverview Single VOICING setting chapter for the left-rail Voicing Settings part.
+ * @module sections/VoicingSettingPage
+ */
+import { memo } from 'react';
+import { ManualLinks } from '../components/ManualLink';
+import type { VoicingControlDetail } from '../data/voicingControlDetails';
+import { RelatedLinks } from './RelatedLinks';
+
+/**
+ * @brief Renders one voicing-setting reference page from catalog data.
+ * @param detail - Plain-language control catalog entry.
+ * @returns JSX for a single Voicing Settings submenu chapter.
+ */
+export function createVoicingSettingPage(detail: VoicingControlDetail) {
+ return memo(function VoicingSettingPage() {
+ return (
+ <>
+
+## {detail.title}
+
+
+{detail.summary}
+
+
+
+ **Scope:** {detail.scope}
+ {detail.power ? (
+ <>
+ 
+ **Power:** {detail.power}
+ 
+ ) : null}
+ {detail.link ? (
+ <>
+ 
+ **Link:** {detail.link}
+ 
+ ) : null}
+
+
+ {detail.defaults ? (
+
+
+ **Defaults:** {detail.defaults}
+
+
+ ) : null}
+
+
+### Parameters
+
+
+
+ 
+
+
+ Parameter	
+ Range / options	
+ Reset	
+ What it does	
+ 
+
+
+
+
+ {detail.params.map((param) => (
+
+
+ {param.label}	
+ {param.range}	
+ {param.reset ?? '—'}	
+ {param.description}	
+ 
+ ))}
+
+
+
+
+
+ {detail.modes && detail.modes.length > 0 ? (
+ <>
+
+### Modes
+
+
+
+ 
+
+
+ Mode	
+ Behavior	
+ 
+
+
+
+
+ {detail.modes.map((mode) => (
+
+
+ {mode.name}	
+ {mode.description}	
+ 
+ ))}
+
+
+
+
+ 
+ ) : null}
+
+
+### How it works
+
+
+
+ {detail.howItWorks.map((item) => (
+ - {item}
+
+ ))}
+
+
+
+
+### Practical tips
+
+
+
+ {detail.tips.map((item) => (
+ - {item}
+
+ ))}
+
+
+
+ {detail.interactsWith.length > 0 ? (
+
+
+ **Works with:** 
+
+
+ ) : null}
+
+ 
+ 
+
+}
+
+---
+
+<!-- VoicingSettingsOverview.tsx -->
+# Voicing Settings Overview
 
 <>
 
-## Voicing Controls In Detail
+## Voicing Settings
 
 
 
- These controls appear in VOICING and, in condensed form, across
- Dashboard/Layer workflows. Each control changes how harmonic material becomes notes. See 
- Harmony & Voicing for workflow context and 
- Theory Appendix for the underlying concepts.
+ This part covers every control in VOICING: what each setting does,
+ ranges, modes, Option+click resets, layer scope, and how settings interact. Open a setting in the Contents
+ sidebar for the full parameter reference. For workflow context see 
+ Harmony & Voicing; for theory terms see 
+ Theory Appendix.
 
 
+
+
+### Settings in this part
+
+
+
+ entry.id)]} />
+
+
+
+
+### Shared behaviors
 
 
 
  
 
 
- Control	
- Subfeatures	
- Use It When...	
- 
-
-
-
-
-
-
- Chord / Scale	
- Chord quality, scale family, compatible harmonic vocabulary.	
- You need to choose what harmony the voicing button represents.	
- 
-
-
- Key	
- Root note, enharmonic naming, linked/overridden key context.	
- 
- You need the same harmonic shape in a different tonal center (see 
- Theory Appendix).
- 
- 
-
-
- Chord Prefix	
- Letter, roman numeral, solfege, and related display modes.	
- 
- The chord should be read by function instead of pitch name, or vice versa (see 
- Theory Appendix).
- 
- 
-
-
- Spelling	
- Sharp/flat enharmonic preference.	
- The displayed note names are musically correct but visually awkward.	
- 
-
-
- Inversion	
- Root position and inversion choices.	
- You want a different chord tone in the lower part of the voicing.	
- 
-
-
- Octave	
- Base octave for upper voices.	
- The voicing is in the wrong register for the instrument.	
- 
-
-
- Bass	
- Normal, pedal, voice-lead modes; bass value; velocity; sustain override.	
- The lower note should follow a different rule than the upper voicing.	
- 
-
-
- Voice Count	
- Number of generated notes, often with enable/power behavior.	
- The part is too thin, too dense, or needs instrument-specific note count.	
- 
-
-
- Spacing	
- Per-voice or global distance between generated notes.	
- The voicing sounds crowded, too open, muddy, or too narrow.	
- 
-
-
- Voice Lead	
- Mode, register range, reverse-on-boundary, low interval limits.	
- 
- Chord changes sound jumpy or low voices collide (see 
- Harmony & Voicing).
- 
- 
-
-
- Smart Chord	
- Scale-vs-chord mode and practical note selection.	
- 
- You want generated notes to avoid awkward or overly dissonant choices (see 
- Harmony & Voicing).
- 
- 
-
-
- Sustain C.T.	
- Common-tone sustain, optional bass inclusion.	
- Shared notes between chords should connect smoothly.	
- 
-
-
- Sustain	
- General note length from short to held.	
- The part needs staccato, legato, or held-note behavior.	
- 
-
-
- Strum	
- Inter-note offset and anticipation.	
- A chord should feel played rather than triggered as one block.	
- 
-
-
- Dynamics	
- Velocity, deviation, swells, depth, length, position.	
- The part needs humanized loudness or phrase-shaped velocity movement.	
+ Behavior	
+ What it means	
  
 
 
@@ -5543,40 +6026,233 @@ export const TrackViewGuide = memo(function TrackViewGuide() {
 
 
 
-### Power, Link, And Override Behavior
+ Power toggle	
+ 
+ Titled on/off modules (
+ , , 
+ , , 
+ , , )
+ keep their values when disabled; only the effect is bypassed.
+ 
+ 
 
 
-
- - **Power toggles:** Some modules can be enabled or disabled without forgetting their settings.
-
- - 
- **Linked controls:** Follow the parent context and avoid unnecessary local variation. See 
+ Link toggle	
+ 
+ New linked settings start following the parent. Editing while linked copies the parent value locally,
+ unlinks, and shows an override toast (except at Song). Key, Voice Lead, Sustain, and Strum may toast as
+ Palette when edited from Bank or Voicing. See 
  Layers & Expressions.
+ 
+ 
 
 
- - **Overrides:** Store a local value for the current layer, bank, voicing button, or expression.
-
- - **Auto-unlink:** Editing a linked control may create a local override so the change has somewhere to live.
-
-
-
-
-
-### Recommended Adjustment Order
+ Option+click reset	
+ 
+ Documented per control. Key, Chord Prefix, Voice Count encoder, Voice Lead, Spelling, and Spacing have no
+ Option+click reset.
+ 
+ 
 
 
+ Play Voicing	
+ Auditions the current voicing from the VOICING top bar without leaving the editor.	
+ 
 
- - Set Chord / Scale, Key, and Spelling.
 
- - Set Inversion, Bass, Octave, Voice Count, and Spacing.
+ Important playback pairs	
+ 
+ on skips . Slash and polychord
+ harmony force off. Bass sustain override needs finite 
+ and Strum off.
+ 
+ 
 
- - Use Voice Lead and Low Interval Limits for motion and clarity.
 
- - Add Sustain, Sustain C.T., Strum, and Dynamics for performance feel.
+ Dashboard	
+ 
+ On PALETTE, condensed readouts open Layer Hierarchy / cell edit. 
+ and are not on the Dashboard. 
+ may show SCALE or CHORD from the stored mode even when power is off
+ — generation still respects power.
+ 
+ 
+
+
+
+
+
+
+### Where settings live
+
+
+
+ 
+
+
+ Scope	
+ Controls	
+ 
+
+
+
+
+
+
+ Per voicing / bank	
+ 
+ , , 
+ , , , 
+ , , 
+ , 
+ 
+ 
+
+
+ Song / Palette	
+ 
+ , , 
+ , 
+ 
+ 
+
+
+ Per voicing button	
+ 
+ 
+ 
+ 
+
+
+ Per track	
+ 
+ (also from track / mixer Dynamics popup)
+ 
+ 
+
+
+
+
+
+
+### Recommended adjustment order
+
+
 
  - 
- Use Expressions when you need alternate versions instead of
- replacing the main setting.
+ , , 
+ , 
+
+
+ - 
+ , , , 
+ , 
+
+
+ - 
+ (RANGE, Reverse on Boundary, Low Interval Limits)
+
+
+ - 
+ , , 
+ , , 
+ 
+
+
+ - 
+ Use Expressions for alternate versions instead of overwriting
+ the main setting
+
+
+
+
+
+
+### Dashboard condensed values
+
+
+
+ 
+
+
+ Button	
+ Typical readout	
+ 
+
+
+
+
+
+
+ 
+ KEY
+ 
+ Key letter	
+ 
+
+
+ 
+ SCALE / CHORD
+ 
+ Scale or chord name	
+ 
+
+
+ 
+ INVERSION
+ 
+ Root, 1st … 6th	
+ 
+
+
+ 
+ BASS / VOICE LEAD 
+ / SUSTAIN C.T. / 
+ STRUM
+ 
+ ON / OFF	
+ 
+
+
+ 
+ OCTAVE
+ 
+ Number 1–7	
+ 
+
+
+ 
+ VOICE COUNT
+ 
+ 1–12, or ANY when power is off	
+ 
+
+
+ 
+ SMART CHORD
+ 
+ OFF / SCALE / CHORD	
+ 
+
+
+ 
+ SPACING
+ 
+ Compact spacing display string	
+ 
+
+
+ 
+ CHORD PREFIX
+ 
+ Letter / Numeral / Solfege / None	
+ 
+
+
+ 
+ SPELLING
+ 
+ Layer-gated (same rules as VOICING)
 
 ---
 
@@ -5591,9 +6267,12 @@ export const TrackViewGuide = memo(function TrackViewGuide() {
 
 
  VOICING is the detailed chord-to-MIDI shaping workspace. It controls how Cymasphere turns harmonic intent into
- concrete notes: spelling, register, bass behavior, density, spacing, motion, sustain, strum, and dynamics. See 
+ concrete notes: spelling, register, 
+ bass behavior, density, spacing,
+ motion, sustain, strum, and 
+ dynamics. See 
  Harmony & Voicing for the musical overview and 
- Voicing Controls In Detail for per-control reference.
+ Voicing Settings for every parameter.
 
 
 
@@ -5659,31 +6338,45 @@ export const TrackViewGuide = memo(function TrackViewGuide() {
 
 
  Pitch context	
- Chord/Scale, Key, Chord Prefix, Spelling	
+ 
+ , , 
+ , 
+ 
  What harmony is named, which notes are available, and how notes are displayed.	
  
 
 
  Register	
- Inversion, Octave, Bass	
+ 
+ , , 
+ 
+ 
  Which chord tone is low, what range the upper voices occupy, and how bass behaves.	
  
 
 
  Density and spacing	
- Voice Count, Spacing, Smart Chord	
+ 
+ , , 
+ 
+ 
  How many notes play, how far apart they sit, and which chord tones are favored.	
  
 
 
  Motion	
- Voice Lead, Low Interval Limits, boundary behavior	
+ 
+ , Low Interval Limits, boundary behavior
+ 
  How voices move between chords and how low-register clashes are avoided.	
  
 
 
  Performance	
- Sustain C.T., Sustain, Strum, Dynamics	
+ 
+ , , 
+ , 
+ 
  
  How long notes hold, whether common tones connect, how chords are staggered, and how velocity moves.
  
@@ -5699,11 +6392,9 @@ export const TrackViewGuide = memo(function TrackViewGuide() {
 
 
 
- Cymasphere settings can inherit through a hierarchy: Song → Palette → Bank → Voicing Button → Expression.
- A linked setting follows its parent; an overridden setting belongs to the current context. Song/Palette-only
- settings (key, voice leading, sustain, strum, chord prefix) live on SP settings — edits made while viewing
- a bank or voicing still apply at the palette. If an edit seems to affect too much or too little, check
- whether that control is linked or overridden before changing the musical value. See
+ Cymasphere settings can inherit through a hierarchy: Song, Palette, Bank, Voicing Button, and Expression. A linked
+ setting follows its parent; an overridden setting belongs to the current context. If an edit seems to affect too
+ much or too little, check whether that control is linked or overridden before changing the musical value. See 
  Layers & Expressions.
 
 
@@ -5715,16 +6406,30 @@ export const TrackViewGuide = memo(function TrackViewGuide() {
 
 
  - 
- **Too muddy:** Raise octave, reduce voice count, widen spacing, or enable low interval limits.
+ **Too muddy:** Raise , reduce 
+ , widen , or enable Low Interval Limits
+ under .
 
 
- - **Too thin:** Increase voice count, add bass, or reduce spacing.
+ - 
+ **Too thin:** Increase , add 
+ , or reduce .
 
- - **Jumpy changes:** Increase voice-leading strength and check inversion choices.
 
- - **Too mechanical:** Add dynamics, strum, sustain, or expression variation.
+ - 
+ **Jumpy changes:** Strengthen and check 
+ .
 
- - **Wrong notation:** Adjust spelling or chord prefix before changing the actual harmony.
+
+ - 
+ **Too mechanical:** Add , , 
+ , or expression variation.
+
+
+ - 
+ **Wrong notation:** Adjust or 
+ before changing the actual harmony.
+
 
 
 
@@ -5779,8 +6484,9 @@ export const TrackViewGuide = memo(function TrackViewGuide() {
 
 
  - 
- **Profile button:** Opens settings, hotkeys, account, restore, MIDI, performance, and theme tools
- (see Settings, Help & Account).
+ **Profile button:** Opens the glass profile overlay (Escape or click outside to dismiss) for
+ settings, hotkeys (desktop), USER MANUAL, account, restore, MIDI, performance meter, and theme tools (see 
+ Settings, Help & Account).
 
 
 
@@ -5793,14 +6499,20 @@ export const TrackViewGuide = memo(function TrackViewGuide() {
 
  The Songbar holds transport and progression timing. See 
  Transport & Progressions for loop, metronome, ghost track,
- and chord-block workflows. Right-click the Record button for performance-sensitive recording options such as 
- MIDI THRU and 
+ rubato (right-click BPM), and chord-block workflows. Right-click the Record button for performance-sensitive
+ recording options such as MIDI THRU and 
  SNAP TO GRID.
 
 
 
 
 ### Profile Menu Reference
+
+
+
+ Menu labels use title case with leading icons. Virtual MIDI Device and CPU / RAM Meter are toggles (filled
+ accent dot = on). Order matches the live profile menu.
+
 
 
 

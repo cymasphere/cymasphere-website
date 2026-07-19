@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import {
   buildAppAssistantSystemPrompt,
+  resolveAppAssistantMode,
   type AppAssistantContext,
 } from "@/lib/app-assistant-knowledge";
 import { getAppAssistantTools } from "@/lib/app-assistant-tools";
@@ -53,6 +54,8 @@ interface AppAssistantRequest {
   toolResults?: ToolResult[];
   /** When true, respond with text/event-stream (SSE token deltas). */
   stream?: boolean;
+  /** Chat = read-only inspect tools; Agent = full tools + plan. Defaults to chat. */
+  mode?: "chat" | "agent";
 }
 
 const MAX_TOOL_ROUNDS = 32;
@@ -249,7 +252,10 @@ function buildOpenAiMessages(
   const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
     {
       role: "system",
-      content: buildAppAssistantSystemPrompt(body.appContext),
+      content: buildAppAssistantSystemPrompt(
+        body.appContext,
+        resolveAppAssistantMode(body.mode)
+      ),
     },
     ...history.map((msg) => ({
       role: (msg.isUser ? "user" : "assistant") as "user" | "assistant",
@@ -279,12 +285,12 @@ async function generateAssistantResponse(
   }
 
   try {
-    const tools = getAppAssistantTools();
+    const tools = getAppAssistantTools(resolveAppAssistantMode(body.mode));
     const messages = buildOpenAiMessages(body, language);
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      temperature: 0.35,
+      temperature: 0.2,
       messages,
       ...(tools.length > 0 ? { tools, tool_choice: "auto" as const } : {}),
     });
@@ -363,12 +369,12 @@ function createAssistantSseStream(
           return;
         }
 
-        const tools = getAppAssistantTools();
+        const tools = getAppAssistantTools(resolveAppAssistantMode(body.mode));
         const messages = buildOpenAiMessages(body, language);
 
         const completion = await openai.chat.completions.create({
           model: "gpt-4o-mini",
-          temperature: 0.35,
+          temperature: 0.2,
           messages,
           stream: true,
           ...(tools.length > 0 ? { tools, tool_choice: "auto" as const } : {}),
