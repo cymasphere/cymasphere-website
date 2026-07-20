@@ -25,6 +25,14 @@ const CYMASYNTH_GLOSSARY = path.join(
   "data",
   "glossary.ts"
 );
+const CYMASYNTH_PRESET_GUIDE = path.join(
+  CYMASPHERE_ROOT,
+  "CymaSynth",
+  "UserManual",
+  "src",
+  "data",
+  "presetCategoryGuide.ts"
+);
 
 /** Convert manual TSX/JSX prose into plain markdown-ish text. */
 function tsxToMarkdown(source, titleHint = "") {
@@ -109,6 +117,30 @@ function extractGlossary() {
   return lines.join("\n").trim();
 }
 
+function extractPresetCategoryGuide() {
+  if (!fs.existsSync(CYMASYNTH_PRESET_GUIDE)) {
+    console.warn(`Skip missing preset guide: ${CYMASYNTH_PRESET_GUIDE}`);
+    return "";
+  }
+  const raw = fs.readFileSync(CYMASYNTH_PRESET_GUIDE, "utf8");
+  const entries = [
+    ...raw.matchAll(
+      /\{\s*id:\s*'([^']+)'[\s\S]*?description:\s*'([^']+)'[\s\S]*?listeningNotes:\s*'([^']+)'/g
+    ),
+  ];
+  if (!entries.length) return "";
+  const lines = [
+    "# CymaSynth factory preset categories",
+    "",
+    "Use when recommending presets. Ask Cyma cannot load presets — tell the user to open CymaSynth and browse by category.",
+    "",
+  ];
+  for (const [, id, description, listeningNotes] of entries) {
+    lines.push(`## ${id}`, description, "", `Listen for: ${listeningNotes}`, "");
+  }
+  return lines.join("\n").trim();
+}
+
 /** Site facts manuals do not define (pricing injected at API runtime from lib/pricing.ts). */
 const SITE_OPS_APPENDIX = `
 # Site operations appendix
@@ -162,6 +194,7 @@ function main() {
   const cymasphere = extractManualSections(CYMASPHERE_MANUAL);
   const cymasynth = extractManualSections(CYMASYNTH_MANUAL);
   const glossary = extractGlossary();
+  const presetGuide = extractPresetCategoryGuide();
 
   const parts = [
     "# Cymasphere & CymaSynth knowledge (User Manuals)",
@@ -179,6 +212,10 @@ function main() {
 
   if (glossary) {
     parts.push(glossary, "", "---", "");
+  }
+
+  if (presetGuide) {
+    parts.push(presetGuide, "", "---", "");
   }
 
   parts.push(SITE_OPS_APPENDIX, "");
@@ -211,7 +248,7 @@ Optional: \`CYMASPHERE_REPO=/path/to/Cymasphere\`
     `Wrote ${OUT_FILE} (${(Buffer.byteLength(body) / 1024).toFixed(1)} KB)`
   );
   console.log(
-    `Chapters: Cymasphere=${cymasphere.length}, CymaSynth=${cymasynth.length}, glossary=${Boolean(glossary)}`
+    `Chapters: Cymasphere=${cymasphere.length}, CymaSynth=${cymasynth.length}, glossary=${Boolean(glossary)}, presetGuide=${Boolean(presetGuide)}`
   );
   console.log(`Source repo: ${CYMASPHERE_ROOT}`);
 }

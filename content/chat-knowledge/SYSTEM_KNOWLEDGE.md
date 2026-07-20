@@ -5104,11 +5104,8 @@ export const TrackViewGuide = memo(function TrackViewGuide() {
 
 
  - 
- On Voicing and Sequencer, pinch on the note grid for horizontal timeline zoom.
-
-
- - 
- Pattern timeline pinch zoom is currently disabled; use the timeline zoom controls instead.
+ Pinch on the note grid for horizontal timeline zoom (Pattern, Voicing, Sequencer, Groove). Zoom stays
+ centered on the cursor.
 
 
 
@@ -10075,6 +10072,107 @@ Velocity, mod wheel, and similar expression sources applied by factory presets; 
 
 ## Tuplet (TUP)
 LFO timing option for triplet, quintuplet, and other non-standard divisions when BPM sync is on.
+
+---
+
+# CymaSynth factory preset categories
+
+Use when recommending presets. Ask Cyma cannot load presets — tell the user to open CymaSynth and browse by category.
+
+## Favorites
+Your starred presets (local list, not a factory bank).
+
+Listen for: Quick access to patches you marked with ★ — good for gig or session shortcuts.
+
+## Custom
+Patches you saved with Save or Save As.
+
+Listen for: Your own work — compare against the factory name you started from if you used Save As.
+
+## Init
+Minimal starting points — one or few oscillators, neutral filters, ready to sculpt.
+
+Listen for: Dry, simple tone — little or no FX wet; ideal blank canvas, not a finished sound.
+
+## Bass
+Sub-heavy mono or poly basses, dub wobbles, and low-end focused sounds.
+
+Listen for: Listen on headphones or monitors with sub response; try low notes and mono glide for legato.
+
+## Lead
+Solo lines, saws, squares, and bright melodic patches with movement.
+
+Listen for: Play mid–high register; mod wheel and velocity often open filter or vibrato.
+
+## Pad
+Sustained chords, wide unison, slow envelopes, and atmospheric beds.
+
+Listen for: Hold chords — expect slow attack, long release, and wide stereo; FX mix may be subtle until raised.
+
+## Pluck
+Short attacks, filter plucks, guitars, harps, and percussive keys.
+
+Listen for: Short notes reveal the envelope; staccato playing shows decay and filter snap.
+
+## Keys
+Piano-like, electric piano, organ, and chordal keyboard tones.
+
+Listen for: Velocity layers matter — play soft and hard; many patches map dynamics to tone.
+
+## Bell
+Mallets, chimes, glass, and inharmonic struck sounds.
+
+Listen for: Bright attack, often long decay; try high notes and let releases ring.
+
+## Strings
+Ensemble strings, bows, and orchestral sustain.
+
+Listen for: Smooth sustained bowing; chords should blend without obvious digital stepping.
+
+## Brass
+Horns, swells, and punchy brass stabs.
+
+Listen for: Look for filter or level swells on held notes; stabs work in mid register.
+
+## Synth
+General-purpose synthetic tones that do not fit a single genre tag.
+
+Listen for: Varied — browse for inspiration; check MATRIX and FX if the front panel looks simple.
+
+## Vocal
+Formant, choir-like, and talk-box style wavetable sounds.
+
+Listen for: Vowel-like movement — try mod wheel and WT POS automation on held notes.
+
+## Texture
+Evolving drones, noise beds, and experimental atmospheres.
+
+Listen for: Often slow LFOs and noise; hold one note and listen for evolution over bars.
+
+## Drums
+Kicks, snares, hats, and percussion — often short envelopes and noise.
+
+Listen for: Single-note hits; velocity changes impact; many are mono — use one note per hit.
+
+## 8bit
+Chiptune, lo-fi digital, and retro game-style timbres.
+
+Listen for: Square/saw character, bitcrush or band-limited tone; works in mid register.
+
+## Elemental
+Thematic sound-design sets (water, fire, wind-style textures).
+
+Listen for: Designed as mood beds — long notes and automation-friendly macros.
+
+## Layered
+Multi-source evolving patches — stacked oscillators, deep modulation, and motion over time.
+
+Listen for: Hold a chord 30–60 seconds: expect filter sweeps, wavetable morphs, stereo drift, FX depth changes, and LFO cross-modulation. Each preset uses 5 LFOs and 11–15 matrix routes.
+
+## Experimental
+Unusual modulation, chaos, and avant-garde patches (category may appear as “exp”).
+
+Listen for: Expect surprises — chaos LFOs, extreme matrix depths; start at low MAIN volume.
 
 ---
 
