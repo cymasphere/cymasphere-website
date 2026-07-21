@@ -22,7 +22,9 @@
     "i18n:refresh": "node scripts/sync-missing-locale-keys-from-en.mjs && node scripts/apply-cyma-i18n-patches.mjs && node scripts/apply-locale-overrides.mjs",
     "i18n:sync-translations": "node scripts/sync-locale-translations.mjs",
     "i18n:check": "node scripts/list-missing-locale-paths.mjs",
-    "chat:build-knowledge": "node scripts/build-chat-knowledge.mjs"
+    "chat:build-knowledge": "node scripts/build-chat-knowledge.mjs",
+    "assistant-tools:generate": "node ../cymasphere/Scripts/Assistant/generate-assistant-tool-contract.mjs --website-root .",
+    "assistant-tools:validate": "node ../cymasphere/Scripts/Assistant/validate-assistant-tool-contract.mjs --website-root ."
   },
   "packageManager": "bun@1.2.2",
   "overrides": {
