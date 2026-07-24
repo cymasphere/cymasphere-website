@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "supabase-cymasphere": {
+      "url": "https://mcp.supabase.com/mcp",
+      "env": {
+        "SUPABASE_PROJECT_ID": "jibirpbauzqhdiwjlrmf"
+      }
+    }
+  }
+}

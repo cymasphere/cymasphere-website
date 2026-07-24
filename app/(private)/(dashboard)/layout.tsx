@@ -25,6 +25,8 @@ import {
   FaShieldAlt,
   FaRocket,
   FaTicketAlt,
+  FaBug,
+  FaLightbulb,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardProvider } from "@/contexts/DashboardContext";
@@ -713,6 +715,23 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <FaTicketAlt /> {t("dashboard.layout.support", "Support")}
               </NavItem>
             </Link>
+            <Link href="/bug-report">
+              <NavItem
+                $active={pathname === "/bug-report" ? "true" : "false"}
+                onClick={(e) => handleNavigation(e, "/bug-report")}
+              >
+                <FaBug /> {t("dashboard.layout.bugReport", "Bug Report")}
+              </NavItem>
+            </Link>
+            <Link href="/feature-request">
+              <NavItem
+                $active={pathname === "/feature-request" ? "true" : "false"}
+                onClick={(e) => handleNavigation(e, "/feature-request")}
+              >
+                <FaLightbulb />{" "}
+                {t("dashboard.layout.featureRequest", "Feature Request")}
+              </NavItem>
+            </Link>
             <Link href="/settings">
               <NavItem
                 $active={pathname === "/settings" ? "true" : "false"}
@@ -868,11 +887,38 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </MobileNavItem>
             </Link>
 
+            <Link href="/bug-report">
+              <MobileNavItem
+                $active={pathname === "/bug-report" ? "true" : "false"}
+                variants={menuItemVariants}
+                custom={user.is_admin ? 6 : 5}
+                initial="hidden"
+                animate="visible"
+                onClick={(e) => handleNavigation(e, "/bug-report")}
+              >
+                <FaBug /> {t("dashboard.layout.bugReport", "Bug Report")}
+              </MobileNavItem>
+            </Link>
+
+            <Link href="/feature-request">
+              <MobileNavItem
+                $active={pathname === "/feature-request" ? "true" : "false"}
+                variants={menuItemVariants}
+                custom={user.is_admin ? 7 : 6}
+                initial="hidden"
+                animate="visible"
+                onClick={(e) => handleNavigation(e, "/feature-request")}
+              >
+                <FaLightbulb />{" "}
+                {t("dashboard.layout.featureRequest", "Feature Request")}
+              </MobileNavItem>
+            </Link>
+
             <Link href="/settings">
               <MobileNavItem
                 $active={pathname === "/settings" ? "true" : "false"}
                 variants={menuItemVariants}
-                custom={user.is_admin ? 6 : 5}
+                custom={user.is_admin ? 8 : 7}
                 initial="hidden"
                 animate="visible"
                 onClick={(e) => handleNavigation(e, "/settings")}
@@ -885,7 +931,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <MobileNavItem
                 $active="false"
                 variants={menuItemVariants}
-                custom={user.is_admin ? 7 : 6}
+                custom={user.is_admin ? 9 : 8}
                 initial="hidden"
                 animate="visible"
                 onClick={(e) => handleNavigation(e, "/")}

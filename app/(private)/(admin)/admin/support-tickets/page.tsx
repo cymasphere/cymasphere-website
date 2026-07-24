@@ -1644,6 +1644,7 @@ interface Ticket {
   subject: string;
   description: string | null;
   status: string;
+  ticket_type?: string;
   user_id: string;
   user_email: string | null;
   user_first_name?: string | null;
@@ -1667,6 +1668,7 @@ function SupportTicketsPage() {
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [showUserModal, setShowUserModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterType, setFilterType] = useState("all");
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -2061,8 +2063,10 @@ function SupportTicketsPage() {
     }
     
     const matchesFilter = filterStatus === "all" || normalizedStatus === filterStatus;
-    
-    return matchesSearch && matchesFilter;
+    const matchesType =
+      filterType === "all" || (ticket.ticket_type || "support") === filterType;
+
+    return matchesSearch && matchesFilter && matchesType;
   });
 
   const sortedTickets = [...filteredTickets].sort((a, b) => {
@@ -2764,6 +2768,17 @@ function SupportTicketsPage() {
               <option value="closed">{t("admin.supportTickets.filters.closed", "Closed")}</option>
             </FilterSelect>
 
+            <FilterSelect
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+            >
+              <option value="all">{t("admin.supportTickets.filters.allTypes", "All Types")}</option>
+              <option value="support">{t("admin.supportTickets.filters.typeSupport", "Support")}</option>
+              <option value="bug">{t("admin.supportTickets.filters.typeBug", "Bug")}</option>
+              <option value="feature">{t("admin.supportTickets.filters.typeFeature", "Feature")}</option>
+              <option value="crash">{t("admin.supportTickets.filters.typeCrash", "Crash")}</option>
+            </FilterSelect>
+
             <ActionButton $variant="success" onClick={() => setShowCreateModal(true)}>
               <FaPlus />
               {t("admin.supportTickets.createTicket", "Create Ticket")}
@@ -2794,6 +2809,9 @@ function SupportTicketsPage() {
                   {t("admin.supportTickets.ticketTable.status", "Status")}
                   {getSortIcon('status')}
                 </TableHeaderCell>
+                <TableHeaderCell>
+                  {t("admin.supportTickets.ticketTable.type", "Type")}
+                </TableHeaderCell>
                 <TableHeaderCell onClick={() => handleSort('created')}>
                   {t("admin.supportTickets.ticketTable.created", "Created")}
                   {getSortIcon('created')}
@@ -2805,10 +2823,10 @@ function SupportTicketsPage() {
             </TableHeader>
             <TableBody>
               {loadingTickets ? (
-                <TableLoadingRow colSpan={7} message="Loading tickets..." />
+                <TableLoadingRow colSpan={8} message="Loading tickets..." />
               ) : paginatedTickets.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
                     No support tickets found
                   </td>
                 </tr>
@@ -2952,6 +2970,12 @@ function SupportTicketsPage() {
                         )}
                       </AnimatePresence>
                     </StatusContainer>
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge $status="open">
+                      {(ticket.ticket_type || "support").charAt(0).toUpperCase() +
+                        (ticket.ticket_type || "support").slice(1)}
+                    </StatusBadge>
                   </TableCell>
                   <TableCell>{formatDate(ticket.created_at)}</TableCell>
                   <TableCell data-has-dropdown>

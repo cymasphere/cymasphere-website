@@ -32,6 +32,285 @@ export type Database = {
         }
         Relationships: []
       }
+      affiliate_balance_adjustments: {
+        Row: {
+          affiliate_id: string
+          amount_cents: number
+          applied_to_payout_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          reason: string
+          related_commission_id: string | null
+        }
+        Insert: {
+          affiliate_id: string
+          amount_cents: number
+          applied_to_payout_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reason: string
+          related_commission_id?: string | null
+        }
+        Update: {
+          affiliate_id?: string
+          amount_cents?: number
+          applied_to_payout_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reason?: string
+          related_commission_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_balance_adjustments_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_balance_adjustments_applied_to_payout_id_fkey"
+            columns: ["applied_to_payout_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_payouts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_balance_adjustments_related_commission_id_fkey"
+            columns: ["related_commission_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_commissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_commissions: {
+        Row: {
+          affiliate_id: string
+          approve_at: string
+          commission_amount_cents: number
+          created_at: string
+          currency: string
+          gross_amount_cents: number
+          id: string
+          paid_at: string | null
+          payout_id: string | null
+          product_kind: string
+          recurring_month_index: number | null
+          referred_customer_id: string
+          referred_user_id: string | null
+          refunded_at: string | null
+          status: string
+          stripe_charge_id: string | null
+          stripe_invoice_id: string | null
+          stripe_payment_intent_id: string | null
+          stripe_promotion_code_id: string
+          stripe_subscription_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          affiliate_id: string
+          approve_at: string
+          commission_amount_cents: number
+          created_at?: string
+          currency: string
+          gross_amount_cents: number
+          id?: string
+          paid_at?: string | null
+          payout_id?: string | null
+          product_kind: string
+          recurring_month_index?: number | null
+          referred_customer_id: string
+          referred_user_id?: string | null
+          refunded_at?: string | null
+          status?: string
+          stripe_charge_id?: string | null
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_promotion_code_id: string
+          stripe_subscription_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          affiliate_id?: string
+          approve_at?: string
+          commission_amount_cents?: number
+          created_at?: string
+          currency?: string
+          gross_amount_cents?: number
+          id?: string
+          paid_at?: string | null
+          payout_id?: string | null
+          product_kind?: string
+          recurring_month_index?: number | null
+          referred_customer_id?: string
+          referred_user_id?: string | null
+          refunded_at?: string | null
+          status?: string
+          stripe_charge_id?: string | null
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_promotion_code_id?: string
+          stripe_subscription_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_commissions_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_commissions_payout_id_fkey"
+            columns: ["payout_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_payouts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_commissions_referred_user_id_fkey"
+            columns: ["referred_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_payouts: {
+        Row: {
+          adjustment_total_cents: number
+          affiliate_id: string
+          amount_cents: number
+          commission_count: number
+          created_at: string
+          created_by: string | null
+          currency: string
+          failure_reason: string | null
+          id: string
+          status: string
+          stripe_transfer_group: string | null
+          stripe_transfer_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          adjustment_total_cents?: number
+          affiliate_id: string
+          amount_cents: number
+          commission_count?: number
+          created_at?: string
+          created_by?: string | null
+          currency: string
+          failure_reason?: string | null
+          id?: string
+          status?: string
+          stripe_transfer_group?: string | null
+          stripe_transfer_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          adjustment_total_cents?: number
+          affiliate_id?: string
+          amount_cents?: number
+          commission_count?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          failure_reason?: string | null
+          id?: string
+          status?: string
+          stripe_transfer_group?: string | null
+          stripe_transfer_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_payouts_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliates: {
+        Row: {
+          code: string
+          commission_rate_lifetime: number
+          commission_rate_subscription: number
+          connect_onboarded_at: string | null
+          connect_payouts_enabled: boolean
+          created_at: string
+          created_by: string | null
+          customer_discount_percent: number
+          id: string
+          notes: string | null
+          payout_minimum_cents: number
+          recurring_months: number
+          status: string
+          stripe_connect_account_id: string | null
+          stripe_coupon_id: string
+          stripe_promotion_code_id: string
+          tos_accepted_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          commission_rate_lifetime?: number
+          commission_rate_subscription?: number
+          connect_onboarded_at?: string | null
+          connect_payouts_enabled?: boolean
+          created_at?: string
+          created_by?: string | null
+          customer_discount_percent?: number
+          id?: string
+          notes?: string | null
+          payout_minimum_cents?: number
+          recurring_months?: number
+          status?: string
+          stripe_connect_account_id?: string | null
+          stripe_coupon_id: string
+          stripe_promotion_code_id: string
+          tos_accepted_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          commission_rate_lifetime?: number
+          commission_rate_subscription?: number
+          connect_onboarded_at?: string | null
+          connect_payouts_enabled?: boolean
+          created_at?: string
+          created_by?: string | null
+          customer_discount_percent?: number
+          id?: string
+          notes?: string | null
+          payout_minimum_cents?: number
+          recurring_months?: number
+          status?: string
+          stripe_connect_account_id?: string | null
+          stripe_coupon_id?: string
+          stripe_promotion_code_id?: string
+          tos_accepted_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliates_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       automation_custom_fields: {
         Row: {
           created_at: string | null
@@ -1928,16 +2207,19 @@ export type Database = {
       }
       subscription_emails_sent: {
         Row: {
+          email: string
           email_kind: string
           sent_at: string
           user_id: string
         }
         Insert: {
+          email: string
           email_kind: string
           sent_at?: string
           user_id: string
         }
         Update: {
+          email?: string
           email_kind?: string
           sent_at?: string
           user_id?: string
@@ -2050,6 +2332,7 @@ export type Database = {
           status: Database["public"]["Enums"]["ticket_status"]
           subject: string
           ticket_number: string
+          ticket_type: Database["public"]["Enums"]["ticket_type"]
           updated_at: string
           user_id: string
         }
@@ -2062,6 +2345,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["ticket_status"]
           subject: string
           ticket_number: string
+          ticket_type?: Database["public"]["Enums"]["ticket_type"]
           updated_at?: string
           user_id: string
         }
@@ -2074,6 +2358,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["ticket_status"]
           subject?: string
           ticket_number?: string
+          ticket_type?: Database["public"]["Enums"]["ticket_type"]
           updated_at?: string
           user_id?: string
         }
@@ -2465,6 +2750,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      count_paid_commissions_for_subscription: {
+        Args: { p_affiliate_id: string; p_subscription_id: string }
+        Returns: number
+      }
       create_automation_event: {
         Args: {
           p_event_data?: Json
@@ -2473,6 +2762,10 @@ export type Database = {
           p_source?: string
           p_subscriber_id: string
         }
+        Returns: string
+      }
+      cymasphere_device_host: {
+        Args: { p_user_agent: string }
         Returns: string
       }
       debug_is_admin: { Args: { user_id: string }; Returns: Json }
@@ -2518,6 +2811,10 @@ export type Database = {
           stripe_coupon_code: string
           title: string
         }[]
+      }
+      get_affiliate_available_balance_cents: {
+        Args: { p_affiliate_id: string }
+        Returns: number
       }
       get_lifetime_revenue: { Args: never; Returns: number }
       get_monthly_revenue: { Args: never; Returns: number }
@@ -2672,469 +2969,7 @@ export type Database = {
         | "transactional"
         | "custom"
       ticket_status: "open" | "in_progress" | "resolved" | "closed"
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-  stripe_tables: {
-    Tables: {
-      stripe_charges: {
-        Row: {
-          amount: number | null
-          attrs: Json | null
-          created: string | null
-          currency: string | null
-          customer: string | null
-          description: string | null
-          id: string | null
-          invoice: string | null
-          payment_intent: string | null
-          status: string | null
-        }
-        Insert: {
-          amount?: number | null
-          attrs?: Json | null
-          created?: string | null
-          currency?: string | null
-          customer?: string | null
-          description?: string | null
-          id?: string | null
-          invoice?: string | null
-          payment_intent?: string | null
-          status?: string | null
-        }
-        Update: {
-          amount?: number | null
-          attrs?: Json | null
-          created?: string | null
-          currency?: string | null
-          customer?: string | null
-          description?: string | null
-          id?: string | null
-          invoice?: string | null
-          payment_intent?: string | null
-          status?: string | null
-        }
-        Relationships: []
-      }
-      stripe_checkout_sessions: {
-        Row: {
-          attrs: Json | null
-          customer: string | null
-          id: string | null
-          payment_intent: string | null
-          subscription: string | null
-        }
-        Insert: {
-          attrs?: Json | null
-          customer?: string | null
-          id?: string | null
-          payment_intent?: string | null
-          subscription?: string | null
-        }
-        Update: {
-          attrs?: Json | null
-          customer?: string | null
-          id?: string | null
-          payment_intent?: string | null
-          subscription?: string | null
-        }
-        Relationships: []
-      }
-      stripe_customers: {
-        Row: {
-          attrs: Json | null
-          created: string | null
-          description: string | null
-          email: string | null
-          id: string | null
-          name: string | null
-        }
-        Insert: {
-          attrs?: Json | null
-          created?: string | null
-          description?: string | null
-          email?: string | null
-          id?: string | null
-          name?: string | null
-        }
-        Update: {
-          attrs?: Json | null
-          created?: string | null
-          description?: string | null
-          email?: string | null
-          id?: string | null
-          name?: string | null
-        }
-        Relationships: []
-      }
-      stripe_disputes: {
-        Row: {
-          amount: number | null
-          attrs: Json | null
-          charge: string | null
-          created: string | null
-          currency: string | null
-          id: string | null
-          payment_intent: string | null
-          reason: string | null
-          status: string | null
-        }
-        Insert: {
-          amount?: number | null
-          attrs?: Json | null
-          charge?: string | null
-          created?: string | null
-          currency?: string | null
-          id?: string | null
-          payment_intent?: string | null
-          reason?: string | null
-          status?: string | null
-        }
-        Update: {
-          amount?: number | null
-          attrs?: Json | null
-          charge?: string | null
-          created?: string | null
-          currency?: string | null
-          id?: string | null
-          payment_intent?: string | null
-          reason?: string | null
-          status?: string | null
-        }
-        Relationships: []
-      }
-      stripe_events: {
-        Row: {
-          api_version: string | null
-          attrs: Json | null
-          created: string | null
-          id: string | null
-          type: string | null
-        }
-        Insert: {
-          api_version?: string | null
-          attrs?: Json | null
-          created?: string | null
-          id?: string | null
-          type?: string | null
-        }
-        Update: {
-          api_version?: string | null
-          attrs?: Json | null
-          created?: string | null
-          id?: string | null
-          type?: string | null
-        }
-        Relationships: []
-      }
-      stripe_invoices: {
-        Row: {
-          attrs: Json | null
-          currency: string | null
-          customer: string | null
-          id: string | null
-          period_end: string | null
-          period_start: string | null
-          status: string | null
-          subscription: string | null
-          total: number | null
-        }
-        Insert: {
-          attrs?: Json | null
-          currency?: string | null
-          customer?: string | null
-          id?: string | null
-          period_end?: string | null
-          period_start?: string | null
-          status?: string | null
-          subscription?: string | null
-          total?: number | null
-        }
-        Update: {
-          attrs?: Json | null
-          currency?: string | null
-          customer?: string | null
-          id?: string | null
-          period_end?: string | null
-          period_start?: string | null
-          status?: string | null
-          subscription?: string | null
-          total?: number | null
-        }
-        Relationships: []
-      }
-      stripe_payment_intents: {
-        Row: {
-          amount: number | null
-          attrs: Json | null
-          created: string | null
-          currency: string | null
-          customer: string | null
-          id: string | null
-          payment_method: string | null
-        }
-        Insert: {
-          amount?: number | null
-          attrs?: Json | null
-          created?: string | null
-          currency?: string | null
-          customer?: string | null
-          id?: string | null
-          payment_method?: string | null
-        }
-        Update: {
-          amount?: number | null
-          attrs?: Json | null
-          created?: string | null
-          currency?: string | null
-          customer?: string | null
-          id?: string | null
-          payment_method?: string | null
-        }
-        Relationships: []
-      }
-      stripe_prices: {
-        Row: {
-          active: boolean | null
-          attrs: Json | null
-          created: string | null
-          currency: string | null
-          id: string | null
-          product: string | null
-          type: string | null
-          unit_amount: number | null
-        }
-        Insert: {
-          active?: boolean | null
-          attrs?: Json | null
-          created?: string | null
-          currency?: string | null
-          id?: string | null
-          product?: string | null
-          type?: string | null
-          unit_amount?: number | null
-        }
-        Update: {
-          active?: boolean | null
-          attrs?: Json | null
-          created?: string | null
-          currency?: string | null
-          id?: string | null
-          product?: string | null
-          type?: string | null
-          unit_amount?: number | null
-        }
-        Relationships: []
-      }
-      stripe_products: {
-        Row: {
-          active: boolean | null
-          attrs: Json | null
-          created: string | null
-          default_price: string | null
-          description: string | null
-          id: string | null
-          name: string | null
-          updated: string | null
-        }
-        Insert: {
-          active?: boolean | null
-          attrs?: Json | null
-          created?: string | null
-          default_price?: string | null
-          description?: string | null
-          id?: string | null
-          name?: string | null
-          updated?: string | null
-        }
-        Update: {
-          active?: boolean | null
-          attrs?: Json | null
-          created?: string | null
-          default_price?: string | null
-          description?: string | null
-          id?: string | null
-          name?: string | null
-          updated?: string | null
-        }
-        Relationships: []
-      }
-      stripe_refunds: {
-        Row: {
-          amount: number | null
-          attrs: Json | null
-          charge: string | null
-          created: string | null
-          currency: string | null
-          id: string | null
-          payment_intent: string | null
-          reason: string | null
-          status: string | null
-        }
-        Insert: {
-          amount?: number | null
-          attrs?: Json | null
-          charge?: string | null
-          created?: string | null
-          currency?: string | null
-          id?: string | null
-          payment_intent?: string | null
-          reason?: string | null
-          status?: string | null
-        }
-        Update: {
-          amount?: number | null
-          attrs?: Json | null
-          charge?: string | null
-          created?: string | null
-          currency?: string | null
-          id?: string | null
-          payment_intent?: string | null
-          reason?: string | null
-          status?: string | null
-        }
-        Relationships: []
-      }
-      stripe_setup_attempts: {
-        Row: {
-          application: string | null
-          attrs: Json | null
-          created: string | null
-          customer: string | null
-          id: string | null
-          on_behalf_of: string | null
-          payment_method: string | null
-          setup_intent: string | null
-          status: string | null
-          usage: string | null
-        }
-        Insert: {
-          application?: string | null
-          attrs?: Json | null
-          created?: string | null
-          customer?: string | null
-          id?: string | null
-          on_behalf_of?: string | null
-          payment_method?: string | null
-          setup_intent?: string | null
-          status?: string | null
-          usage?: string | null
-        }
-        Update: {
-          application?: string | null
-          attrs?: Json | null
-          created?: string | null
-          customer?: string | null
-          id?: string | null
-          on_behalf_of?: string | null
-          payment_method?: string | null
-          setup_intent?: string | null
-          status?: string | null
-          usage?: string | null
-        }
-        Relationships: []
-      }
-      stripe_setup_intents: {
-        Row: {
-          attrs: Json | null
-          client_secret: string | null
-          created: string | null
-          customer: string | null
-          description: string | null
-          id: string | null
-          payment_method: string | null
-          status: string | null
-          usage: string | null
-        }
-        Insert: {
-          attrs?: Json | null
-          client_secret?: string | null
-          created?: string | null
-          customer?: string | null
-          description?: string | null
-          id?: string | null
-          payment_method?: string | null
-          status?: string | null
-          usage?: string | null
-        }
-        Update: {
-          attrs?: Json | null
-          client_secret?: string | null
-          created?: string | null
-          customer?: string | null
-          description?: string | null
-          id?: string | null
-          payment_method?: string | null
-          status?: string | null
-          usage?: string | null
-        }
-        Relationships: []
-      }
-      stripe_subscriptions: {
-        Row: {
-          attrs: Json | null
-          currency: string | null
-          current_period_end: string | null
-          current_period_start: string | null
-          customer: string | null
-          id: string | null
-        }
-        Insert: {
-          attrs?: Json | null
-          currency?: string | null
-          current_period_end?: string | null
-          current_period_start?: string | null
-          customer?: string | null
-          id?: string | null
-        }
-        Update: {
-          attrs?: Json | null
-          currency?: string | null
-          current_period_end?: string | null
-          current_period_start?: string | null
-          customer?: string | null
-          id?: string | null
-        }
-        Relationships: []
-      }
-      stripe_tokens: {
-        Row: {
-          attrs: Json | null
-          currency: string | null
-          current_period_end: string | null
-          current_period_start: string | null
-          customer: string | null
-          id: string | null
-        }
-        Insert: {
-          attrs?: Json | null
-          currency?: string | null
-          current_period_end?: string | null
-          current_period_start?: string | null
-          customer?: string | null
-          id?: string | null
-        }
-        Update: {
-          attrs?: Json | null
-          currency?: string | null
-          current_period_end?: string | null
-          current_period_start?: string | null
-          customer?: string | null
-          id?: string | null
-        }
-        Relationships: []
-      }
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      [_ in never]: never
-    }
-    Enums: {
-      [_ in never]: never
+      ticket_type: "support" | "bug" | "feature" | "crash"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3353,9 +3188,7 @@ export const Constants = {
         "custom",
       ],
       ticket_status: ["open", "in_progress", "resolved", "closed"],
+      ticket_type: ["support", "bug", "feature", "crash"],
     },
-  },
-  stripe_tables: {
-    Enums: {},
   },
 } as const

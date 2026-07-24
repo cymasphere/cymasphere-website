@@ -157,6 +157,11 @@ Do not invent additional product features beyond the manuals above.
 - Email: support@cymasphere.com
 - Discord community: https://discord.gg/gXGqqYR47B
 - In-app Help / User Manual is the primary product documentation
+- Account bug reports: https://cymasphere.com/bug-report
+- Account feature requests: https://cymasphere.com/feature-request
+- General support tickets: https://cymasphere.com/support
+- In the app Profile menu: **Bug Report** and **Feature Request** open the same report form used after a crash
+- After a crash, the next launch shows a send-report prompt (same report UI) so you can describe what happened and attach the pending crash data
 
 ## Installation (typical desktop paths)
 - Windows standalone: C:\\Program Files\\Cymasphere\\

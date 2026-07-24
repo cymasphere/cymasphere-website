@@ -864,6 +864,7 @@ export async function createSupportTicketAdmin(data: {
   subject: string;
   description: string;
   userId: string;
+  ticket_type?: "support" | "bug" | "feature" | "crash";
 }): Promise<{
   success: boolean;
   ticket?: {
@@ -906,6 +907,7 @@ export async function createSupportTicketAdmin(data: {
         user_id: data.userId,
         status: "open",
         ticket_number: ticketNumber,
+        ticket_type: data.ticket_type ?? "support",
       })
       .select("id, ticket_number")
       .single();
@@ -1033,6 +1035,7 @@ export async function getSupportTicketsAdmin(): Promise<{
     subject: string;
     description: string | null;
     status: string;
+    ticket_type: string;
     user_id: string;
     user_email: string | null;
     user_first_name: string | null;
@@ -1064,6 +1067,7 @@ export async function getSupportTicketsAdmin(): Promise<{
         subject,
         description,
         status,
+        ticket_type,
         user_id,
         created_at,
         updated_at,
@@ -1183,6 +1187,7 @@ export async function getSupportTicketsAdmin(): Promise<{
       };
       return {
         ...ticket,
+        ticket_type: (ticket as { ticket_type?: string }).ticket_type ?? "support",
         user_email: userEmailsMap.get(ticket.user_id) || null,
         user_first_name: userNameData.firstName,
         user_last_name: userNameData.lastName,
@@ -2688,6 +2693,7 @@ export async function getUserSupportTicket(ticketId: string): Promise<{
 export async function createSupportTicket(data: {
   subject: string;
   description: string;
+  ticket_type?: "support" | "bug" | "feature" | "crash";
 }): Promise<{
   success: boolean;
   ticket?: {
@@ -2698,8 +2704,6 @@ export async function createSupportTicket(data: {
 }> {
   try {
     const supabase = await createClient();
-
-    // Get current user
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -2707,101 +2711,53 @@ export async function createSupportTicket(data: {
       return { success: false, error: "Not authenticated" };
     }
 
-    // Validate required fields
-    if (!data.subject || !data.description) {
-      return {
-        success: false,
-        error: "All fields are required",
-      };
-    }
-
-    const { data: ticketNumber, error: numError } = await supabase.rpc(
-      "generate_ticket_number"
+    const { createTypedSupportTicket } = await import(
+      "@/lib/support/create-typed-support-ticket"
     );
-    if (numError || !ticketNumber) {
-      return {
-        success: false,
-        error: "Failed to generate ticket number",
-      };
+    const result = await createTypedSupportTicket({
+      supabase,
+      userId: user.id,
+      subject: data.subject,
+      description: data.description,
+      ticketType: data.ticket_type ?? "support",
+    });
+
+    if (!result.success) {
+      return { success: false, error: result.error };
     }
 
-    // Create the ticket
-    const { data: ticket, error: ticketError } = await supabase
-      .from("support_tickets")
-      .insert({
-        subject: data.subject,
-        description: data.description,
-        user_id: user.id,
-        status: "open",
-        ticket_number: ticketNumber,
-      })
-      .select("id, ticket_number")
-      .single();
-
-    if (ticketError) {
-      if (ticketError.code === "42P01") {
-        return {
-          success: false,
-          error:
-            "Support tickets table does not exist. Please run the migration.",
-        };
-      }
-      console.error("Error creating support ticket:", ticketError);
-      return {
-        success: false,
-        error: ticketError.message || "Failed to create support ticket",
-      };
-    }
-
-    // Create the initial message
-    if (ticket) {
-      const { data: message, error: messageError } = await supabase
-        .from("support_messages")
-        .insert({
-          ticket_id: ticket.id,
-          user_id: user.id,
-          content: data.description,
-          is_admin: false, // User creates it
-        })
-        .select("id")
-        .single();
-
-      if (messageError) {
-        console.error("Error creating initial message:", messageError);
-        // Ticket was created but message failed - still return success
-        // as the ticket exists
-      } else if (message) {
-        /**
-         * @note Notify support inbox for customer-originated tickets only. Admins
-         * who use /support with their own account should not receive duplicate
-         * notifications for their own submissions.
-         */
-        const notifySupportInbox = !(await checkAdmin(supabase));
-        if (notifySupportInbox) {
-          try {
-            await sendSupportTicketEmailNotificationToAdmin(
-              ticket.id,
-              message.id
-            );
-          } catch (emailError) {
-            // Don't fail the ticket creation if email fails
-            console.error(
-              "Error sending support ticket email notification to admin:",
-              emailError
-            );
-          }
+    /**
+     * @note Notify support inbox for customer-originated tickets only. Admins
+     * who use /support with their own account should not receive duplicate
+     * notifications for their own submissions.
+     */
+    const notifySupportInbox = !(await checkAdmin(supabase));
+    if (notifySupportInbox) {
+      try {
+        const { data: messages } = await supabase
+          .from("support_messages")
+          .select("id")
+          .eq("ticket_id", result.ticket.id)
+          .order("created_at", { ascending: true })
+          .limit(1);
+        const messageId = messages?.[0]?.id;
+        if (messageId) {
+          await sendSupportTicketEmailNotificationToAdmin(
+            result.ticket.id,
+            messageId
+          );
         }
+      } catch (emailError) {
+        console.error(
+          "Error sending support ticket email notification to admin:",
+          emailError
+        );
       }
     }
 
     return {
       success: true,
-      ticket: ticket
-        ? {
-            id: ticket.id,
-            ticket_number: ticket.ticket_number,
-          }
-        : undefined,
+      ticket: result.ticket,
     };
   } catch (error) {
     console.error("Error in createSupportTicket:", error);

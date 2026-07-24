@@ -105,7 +105,7 @@ const HELP_FAQ: Record<
         "broken",
       ],
       response:
-        "I can help troubleshoot workflows. For account or billing issues use Manage Account in the profile menu, or email support@cymasphere.com. What's blocking you in the app?",
+        "I can help troubleshoot workflows. To file a bug use Profile menu → Bug Report (or https://cymasphere.com/bug-report). For account or billing use Manage Account, or email support@cymasphere.com. What's blocking you in the app?",
     },
     technical: {
       keywords: [
