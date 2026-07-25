@@ -4,7 +4,10 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import {
+  createClient,
+  createClientWithAccessToken,
+} from "@/utils/supabase/server";
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
 import { createTypedSupportTicket } from "@/lib/support/create-typed-support-ticket";
 import {
@@ -20,22 +23,26 @@ import {
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
     const authHeader = request.headers.get("Authorization");
     const accessToken = authHeader?.startsWith("Bearer ")
       ? authHeader.slice(7)
       : null;
 
-    const authApi = {
-      getUser: async (jwt?: string) => {
-        if (jwt) {
-          return supabase.auth.getUser(jwt);
-        }
-        return supabase.auth.getUser();
-      },
-    };
+    const supabase = accessToken
+      ? createClientWithAccessToken(accessToken)
+      : await createClient();
 
-    const auth = await requireFeedbackUser(authApi, accessToken);
+    const auth = await requireFeedbackUser(
+      {
+        getUser: async (jwt?: string) => {
+          if (jwt) {
+            return supabase.auth.getUser(jwt);
+          }
+          return supabase.auth.getUser();
+        },
+      },
+      accessToken
+    );
     if (!auth.ok) {
       return NextResponse.json(
         { success: false, error: auth.error },
