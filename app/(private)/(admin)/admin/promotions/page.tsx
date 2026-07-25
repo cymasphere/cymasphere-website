@@ -106,7 +106,7 @@ const Title = styled.h1`
   gap: 1rem;
 
   svg {
-    color: #FF6B6B;
+    color: #ffffff;
   }
 
   @media (max-width: 768px) {
