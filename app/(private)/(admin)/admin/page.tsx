@@ -20,10 +20,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   getAdminDashboardSummaryStats,
   getRecentActivity,
-  getAnalyticsTimeSeries,
   AdminActivity,
   AdminDashboardSummaryStats,
 } from "@/utils/stripe/admin-analytics";
+import type { AnalyticsTimeSeriesPoint } from "@/lib/admin/analytics-time-series";
 import { useRouter } from "next/navigation";
 import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
 import { getRecentSupportTicketMessagesAdmin } from "@/app/actions/user-management";
@@ -283,6 +283,24 @@ const EmptyState = styled.div`
   color: var(--text-secondary);
   font-size: 0.9rem;
   padding: 2rem;
+`;
+
+const AnalyticsAlert = styled.div<{ $variant?: "error" | "warning" }>`
+  margin-bottom: 1.25rem;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: ${(p) => (p.$variant === "warning" ? "#fbbf24" : "#fecaca")};
+  background: ${(p) =>
+    p.$variant === "warning"
+      ? "rgba(245, 158, 11, 0.12)"
+      : "rgba(239, 68, 68, 0.12)"};
+  border: 1px solid
+    ${(p) =>
+      p.$variant === "warning"
+        ? "rgba(245, 158, 11, 0.35)"
+        : "rgba(239, 68, 68, 0.35)"};
 `;
 
 const AdditionalStatsGrid = styled.div`
@@ -1042,6 +1060,8 @@ export default function AdminDashboard() {
           </>
         )}
 
+      </motion.div>
+
         {activeTab === 'analytics' && (
           <AnalyticsTab 
             formatCurrency={formatCurrency}
@@ -1067,7 +1087,6 @@ export default function AdminDashboard() {
             fadeIn={fadeIn}
           />
         )}
-      </motion.div>
     </Container>
   );
 }
@@ -1079,17 +1098,20 @@ interface AnalyticsTabProps {
   formatCurrencyForChart: (amount: number) => string;
 }
 
-const AnalyticsSection = styled(motion.div)`
+const AnalyticsSection = styled.div`
   margin-bottom: 3rem;
 `;
 
-const ChartCard = styled(motion.div)`
+const ChartCard = styled.div`
   background-color: var(--card-bg);
   border-radius: 16px;
   padding: 2rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
   margin-bottom: 2rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  /* Ensure Recharts ResponsiveContainer can measure a real width */
+  width: 100%;
+  min-width: 0;
 
   @media (max-width: 768px) {
     padding: 1.5rem;
@@ -1117,7 +1139,7 @@ const TimeRangeSelector = styled.div`
   align-items: center;
 `;
 
-const ProjectionsPanel = styled(motion.div)`
+const ProjectionsPanel = styled.div`
   background-color: var(--card-bg);
   border-radius: 12px;
   padding: 1.5rem;
@@ -1261,84 +1283,114 @@ function AnalyticsTab({
   formatCurrencyWholeDollars,
   formatCurrencyForChart,
 }: AnalyticsTabProps) {
-  const [timeRange, setTimeRange] = useState<'month' | 'year' | 'projections'>('month');
-  const [analyticsData, setAnalyticsData] = useState<any[]>([]);
+  const [timeRange, setTimeRange] = useState<"month" | "year" | "projections">(
+    "month"
+  );
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsTimeSeriesPoint[]>(
+    []
+  );
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+  const [analyticsWarning, setAnalyticsWarning] = useState<string | null>(null);
   const [projectionParams, setProjectionParams] = useState({
     monthlyAdSpend: 0,
     monthlyMarketingCost: 0,
     roas: 3.0, // Return on Ad Spend (3x means $3 revenue per $1 spent)
-    projectionPeriod: 'endOfYear' as 'endOfYear' | 'nextYear',
+    projectionPeriod: "endOfYear" as "endOfYear" | "nextYear",
   });
 
   useEffect(() => {
-    const fetchAnalyticsData = async () => {
-      // Check cache first
-      const cacheKey = `analytics_${timeRange}`;
+    /** Bumped when fetch/result shape changes so stale caches are ignored. */
+    const CACHE_VERSION = "v5";
+    let cancelled = false;
+
+    const run = async () => {
+      const cacheKey = `analytics_${CACHE_VERSION}_${timeRange}`;
+      const period = timeRange === "projections" ? "year" : timeRange;
+
       const cachedData = localStorage.getItem(cacheKey);
       const cacheTimestamp = localStorage.getItem(`${cacheKey}_timestamp`);
-      const now = Date.now();
-      const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-      // If we have cached data that's less than 5 minutes old, use it immediately
-      if (cachedData && cacheTimestamp) {
-        const age = now - parseInt(cacheTimestamp);
-        if (age < CACHE_DURATION) {
-          try {
-            const parsed = JSON.parse(cachedData);
+      const cacheAge = cacheTimestamp
+        ? Date.now() - parseInt(cacheTimestamp, 10)
+        : Number.POSITIVE_INFINITY;
+      let showedCache = false;
+      if (cachedData && cacheAge < 5 * 60 * 1000) {
+        try {
+          const parsed = JSON.parse(cachedData) as AnalyticsTimeSeriesPoint[];
+          if (Array.isArray(parsed) && parsed.length > 0) {
             setAnalyticsData(parsed);
+            setAnalyticsError(null);
             setLoadingAnalytics(false);
-            // Still fetch fresh data in background
-            fetchFreshData();
-            return;
-          } catch (e) {
-            console.error("Error parsing cached data:", e);
+            showedCache = true;
           }
+        } catch {
+          // ignore bad cache
         }
       }
 
-      // No cache or cache expired, fetch fresh data
-      setLoadingAnalytics(true);
-      await fetchFreshData();
-    };
+      if (!showedCache) {
+        setLoadingAnalytics(true);
+        setAnalyticsError(null);
+      }
 
-    const fetchFreshData = async () => {
       try {
-        const period = timeRange === 'projections' ? 'year' : timeRange;
-        const data = await getAnalyticsTimeSeries(period);
-        setAnalyticsData(data);
-        
-        // Cache the data
-        const cacheKey = `analytics_${timeRange}`;
-        localStorage.setItem(cacheKey, JSON.stringify(data));
-        localStorage.setItem(`${cacheKey}_timestamp`, Date.now().toString());
+        /**
+         * Use Route Handler instead of a server action — Turbopack was keeping
+         * stale broken action chunks (limit:500) after refactors.
+         */
+        const response = await fetch(
+          `/api/admin/analytics?range=${encodeURIComponent(period)}`,
+          { credentials: "same-origin", cache: "no-store" }
+        );
+        const result = (await response.json()) as {
+          data?: AnalyticsTimeSeriesPoint[];
+          error?: string;
+          warnings?: string[];
+        };
+        if (cancelled) return;
+
+        const points = Array.isArray(result?.data) ? result.data : [];
+        const err =
+          typeof result?.error === "string"
+            ? result.error
+            : !response.ok
+              ? `Failed to load analytics (${response.status})`
+              : null;
+        const warn = Array.isArray(result?.warnings)
+          ? (result.warnings[0] ?? null)
+          : null;
+
+        if (err) {
+          setAnalyticsError(err);
+          setAnalyticsWarning(null);
+          setAnalyticsData(points);
+          return;
+        }
+
+        setAnalyticsData(points);
+        setAnalyticsError(null);
+        setAnalyticsWarning(warn);
+        if (points.length > 0) {
+          localStorage.setItem(cacheKey, JSON.stringify(points));
+          localStorage.setItem(`${cacheKey}_timestamp`, Date.now().toString());
+        }
       } catch (error) {
         console.error("Error fetching analytics data:", error);
-        // If fetch fails and we have no data, try to use stale cache
-        const cacheKey = `analytics_${timeRange}`;
-        const cachedData = localStorage.getItem(cacheKey);
-        if (cachedData) {
-          try {
-            const parsed = JSON.parse(cachedData);
-            setAnalyticsData(parsed);
-          } catch (e) {
-            setAnalyticsData([]);
-          }
-        } else {
-          setAnalyticsData([]);
-        }
+        if (cancelled) return;
+        setAnalyticsError(
+          error instanceof Error ? error.message : "Failed to load analytics"
+        );
+        if (!showedCache) setAnalyticsData([]);
       } finally {
-        setLoadingAnalytics(false);
+        if (!cancelled) setLoadingAnalytics(false);
       }
     };
 
-    fetchAnalyticsData();
+    void run();
+    return () => {
+      cancelled = true;
+    };
   }, [timeRange]);
-
-  const fadeIn = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
-  };
 
   // Calculate projections based on historical data and inputs - recalculates when params change
   const projectionData = useMemo(() => {
@@ -1444,15 +1496,14 @@ function AnalyticsTab({
     return projections;
   }, [timeRange, analyticsData, projectionParams.monthlyAdSpend, projectionParams.monthlyMarketingCost, projectionParams.roas, projectionParams.projectionPeriod]);
 
-  // Add net revenue to historical data as well
   const combinedData = useMemo(() => {
-    const historicalWithNet = analyticsData.map((point: any) => ({
+    const historicalWithNet = analyticsData.map((point) => ({
       ...point,
-      revenue: Math.round(point.revenue || 0), // Round to nearest dollar
-      mrr: Math.round(point.mrr || 0), // Round to nearest dollar
-      netRevenue: Math.round(point.revenue || 0), // For historical data, net = revenue (no costs applied)
+      revenue: Math.round(point.revenue || 0),
+      mrr: Math.round(point.mrr || 0),
+      // Chart "net" for projections = revenue minus marketing costs; historical has no costs applied
+      netRevenue: Math.round(point.revenue || 0),
     }));
-    // Projection data is already rounded in calculateProjections
     return [...historicalWithNet, ...projectionData];
   }, [analyticsData, projectionData]);
 
@@ -1487,8 +1538,18 @@ function AnalyticsTab({
         </TimeRangeButton>
       </TimeRangeSelector>
 
+      {!loadingAnalytics && analyticsData.length > 0 && (
+        <Subtitle style={{ marginBottom: "1.25rem" }}>
+          Latest: {analyticsData[analyticsData.length - 1]?.date} ·{" "}
+          {analyticsData[analyticsData.length - 1]?.subscriptions ?? 0} subs · MRR{" "}
+          {formatCurrency(
+            analyticsData[analyticsData.length - 1]?.mrr ?? 0
+          )}
+        </Subtitle>
+      )}
+
       {timeRange === 'projections' && (
-        <ProjectionsPanel variants={fadeIn}>
+        <ProjectionsPanel>
           <ProjectionsHeader>
             <ProjectionsTitle>
               <FaChartLine />
@@ -1574,17 +1635,33 @@ function AnalyticsTab({
         </ProjectionsPanel>
       )}
 
+      {analyticsError && (
+        <AnalyticsAlert $variant="error" role="alert">
+          {analyticsError}
+          {analyticsData.length > 0
+            ? " Showing the last successful cached series."
+            : ""}
+        </AnalyticsAlert>
+      )}
+      {analyticsWarning && !analyticsError && (
+        <AnalyticsAlert $variant="warning" role="status">
+          {analyticsWarning}
+        </AnalyticsAlert>
+      )}
+
       {loadingAnalytics ? (
         <EmptyState>
           <StatLoadingSpinner size={20} />
         </EmptyState>
+      ) : analyticsData.length === 0 && analyticsError ? (
+        <EmptyState>Analytics could not be loaded. Try again shortly.</EmptyState>
       ) : (
         <>
-          <AnalyticsSection variants={fadeIn}>
+          <AnalyticsSection>
             <ChartCard>
               <ChartTitle>
                 <FaMoneyBillWave />
-                Revenue & MRR Over Time
+                Net Revenue & MRR Over Time
               </ChartTitle>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={combinedData}>
@@ -1615,8 +1692,8 @@ function AnalyticsTab({
                     dataKey="revenue" 
                     stroke="#22c55e" 
                     strokeWidth={2} 
-                    name="Revenue ($)"
-                    strokeDasharray={timeRange === 'projections' ? "5 5" : "0"}
+                    name="Net Revenue ($)"
+                    strokeDasharray={timeRange === 'projections' ? "5 5" : undefined}
                     dot={false}
                   />
                   {timeRange === 'projections' && (
@@ -1625,7 +1702,7 @@ function AnalyticsTab({
                       dataKey="netRevenue" 
                       stroke="#10b981" 
                       strokeWidth={2} 
-                      name="Net Revenue ($)"
+                      name="Revenue After Costs ($)"
                       strokeDasharray="5 5"
                       dot={false}
                     />
@@ -1636,7 +1713,7 @@ function AnalyticsTab({
                     stroke="var(--primary)" 
                     strokeWidth={2} 
                     name="MRR ($)"
-                    strokeDasharray={timeRange === 'projections' ? "5 5" : "0"}
+                    strokeDasharray={timeRange === 'projections' ? "5 5" : undefined}
                     dot={false}
                   />
                 </LineChart>
@@ -1644,11 +1721,11 @@ function AnalyticsTab({
             </ChartCard>
           </AnalyticsSection>
 
-          <AnalyticsSection variants={fadeIn}>
+          <AnalyticsSection>
             <ChartCard>
               <ChartTitle>
                 <FaUsers />
-                Total Users Over Time
+                Total Users (current)
               </ChartTitle>
               <ResponsiveContainer width="100%" height={300}>
                 <AreaChart data={combinedData}>
@@ -1676,7 +1753,7 @@ function AnalyticsTab({
             </ChartCard>
           </AnalyticsSection>
 
-          <AnalyticsSection variants={fadeIn}>
+          <AnalyticsSection>
             <ChartCard>
               <ChartTitle>
                 <FaTicketAlt />
@@ -1708,7 +1785,7 @@ function AnalyticsTab({
             </ChartCard>
           </AnalyticsSection>
 
-          <AnalyticsSection variants={fadeIn}>
+          <AnalyticsSection>
             <ChartCard>
               <ChartTitle>
                 <FaClock />
@@ -1741,7 +1818,7 @@ function AnalyticsTab({
             </ChartCard>
           </AnalyticsSection>
 
-          <AnalyticsSection variants={fadeIn}>
+          <AnalyticsSection>
             <ChartCard>
               <ChartTitle>
                 <FaChartLine />
