@@ -49,10 +49,10 @@
     "tryDemo": "Try Demo"
   },
   "hero": {
-    "title": "Cymasphere — First-Principles Harmony Engine",
-    "titlePartA": "First-Principles",
-    "titlePartB": "Harmony Engine",
-    "subtitle": "Write better music from harmony out. An intelligent audio/MIDI studio for progressions, voicings, and melody—built from the ground up around how music works.",
+    "title": "Cymasphere — Harmony Engine & Audio/MIDI Creative Suite",
+    "titlePartA": "Harmony Engine",
+    "titlePartB": "& Audio/MIDI Creative Suite",
+    "subtitle": "Write better music from harmony out. An intelligent audio/MIDI studio for progressions, voicings, and melody—built from first principles around how music works.",
     "bundleEyebrow": "One subscription · two products",
     "bundleCymasphereTitle": "Cymasphere",
     "bundleCymasphereDesc": "Harmony-centric composition",

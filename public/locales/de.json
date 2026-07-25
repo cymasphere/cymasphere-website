@@ -59,10 +59,10 @@
     "tryDemo": "Demo testen"
   },
   "hero": {
-    "title": "Cymasphere — Harmonie-Engine aus ersten Prinzipien",
-    "titlePartA": "Erste Prinzipien",
-    "titlePartB": "Harmonie-Engine",
-    "subtitle": "Schreibe bessere Musik aus der Harmonie heraus. Ein intelligentes Audio/MIDI-Studio für Progressionen, Voicings und Melodie—von Grund auf rund um die Funktionsweise von Musik gebaut.",
+    "title": "Cymasphere — Harmonie-Engine & Audio/MIDI Creative Suite",
+    "titlePartA": "Harmonie-Engine",
+    "titlePartB": "& Audio/MIDI Creative Suite",
+    "subtitle": "Schreibe bessere Musik aus der Harmonie heraus. Ein intelligentes Audio/MIDI-Studio für Progressionen, Voicings und Melodie—aus ersten Prinzipien rund um die Funktionsweise von Musik gebaut.",
     "cta": "Jetzt ausprobieren",
     "titleWords": {
       "music": "Musik",

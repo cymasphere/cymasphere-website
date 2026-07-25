@@ -59,10 +59,10 @@
     "tryDemo": "デモを試す"
   },
   "hero": {
-    "title": "Cymasphere — 第一原理のハーモニーエンジン",
-    "titlePartA": "第一原理の",
-    "titlePartB": "ハーモニーエンジン",
-    "subtitle": "ハーモニーから、より良い音楽を。進行・ボイシング・メロディのためのインテリジェントなオーディオ／MIDIスタジオ—音楽の仕組みを土台から設計。",
+    "title": "Cymasphere — ハーモニーエンジン & Audio/MIDIクリエイティブスイート",
+    "titlePartA": "ハーモニーエンジン",
+    "titlePartB": "& Audio/MIDIクリエイティブスイート",
+    "subtitle": "ハーモニーから、より良い音楽を。進行・ボイシング・メロディのためのインテリジェントなオーディオ／MIDIスタジオ—第一原理で、音楽の仕組みを土台から設計。",
     "cta": "今すぐ試す",
     "titleWords": {
       "music": "音楽",

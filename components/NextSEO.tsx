@@ -1,7 +1,7 @@
 /**
  * @fileoverview SEO and social meta tags for pages using the legacy Head API.
  * @module components/NextSEO
- * @description Default title and copy position Cymasphere as a first-principles harmony engine.
+ * @description Default title and copy position Cymasphere as a harmony engine.
  */
 
 import React, { ReactNode } from "react";
@@ -21,17 +21,17 @@ interface NextSEOProps {
 
 /**
  * @brief SEO component for Next.js pages using `next/head`.
- * @param props.title Page title (defaults to First-Principles Harmony Engine messaging).
+ * @param props.title Page title (defaults to Harmony Engine suite messaging).
  * @param props.description Meta description for search and OG.
  * @param props.keywords Comma-separated keywords.
  * @returns Head fragment with meta, Open Graph, and Twitter tags.
  */
 const NextSEO: React.FC<NextSEOProps> = ({
-  title = "Cymasphere — First-Principles Harmony Engine",
+  title = "Cymasphere — Harmony Engine & Audio/MIDI Creative Suite",
   description =
-    "Write better music from harmony out. An intelligent audio/MIDI studio for progressions, voicings, and melody—built from the ground up around how music works.",
+    "Write better music from harmony out. An intelligent audio/MIDI studio for progressions, voicings, and melody—built from first principles around how music works.",
   keywords =
-    "Cymasphere, harmony engine, music theory, chord progression, MIDI composition, audio MIDI, voicing, VST3, AU, DAW, composition",
+    "Cymasphere, harmony engine, audio MIDI, creative suite, music theory, chord progression, MIDI composition, voicing, VST3, AU, DAW, composition",
   canonical = "",
   ogType = "website",
   ogImage = "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/meta/og-image.webp",

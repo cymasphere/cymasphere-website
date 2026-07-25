@@ -59,10 +59,10 @@
     "tryDemo": "Essayer la Démo"
   },
   "hero": {
-    "title": "Cymasphere — Moteur d’harmonie dès les premiers principes",
-    "titlePartA": "Premiers principes",
-    "titlePartB": "Moteur d’harmonie",
-    "subtitle": "Composez mieux à partir de l’harmonie. Un studio audio/MIDI intelligent pour progressions, voicings et mélodie—conçu dès le départ autour du fonctionnement de la musique.",
+    "title": "Cymasphere — Moteur d’harmonie & suite créative Audio/MIDI",
+    "titlePartA": "Moteur d’harmonie",
+    "titlePartB": "& suite créative Audio/MIDI",
+    "subtitle": "Composez mieux à partir de l’harmonie. Un studio audio/MIDI intelligent pour progressions, voicings et mélodie—conçu dès les premiers principes autour du fonctionnement de la musique.",
     "cta": "Essayez Maintenant",
     "titleWords": {
       "music": "Musique",

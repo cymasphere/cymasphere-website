@@ -59,10 +59,10 @@
     "tryDemo": "Prova la demo"
   },
   "hero": {
-    "title": "Cymasphere — Motore armonico dai primi principi",
-    "titlePartA": "Primi principi",
-    "titlePartB": "Motore armonico",
-    "subtitle": "Scrivi musica migliore partendo dall’armonia. Uno studio audio/MIDI intelligente per progressioni, voicing e melodia—costruito da zero attorno a come funziona la musica.",
+    "title": "Cymasphere — Motore armonico & suite creativa Audio/MIDI",
+    "titlePartA": "Motore armonico",
+    "titlePartB": "& suite creativa Audio/MIDI",
+    "subtitle": "Scrivi musica migliore partendo dall’armonia. Uno studio audio/MIDI intelligente per progressioni, voicing e melodia—costruito dai primi principi attorno a come funziona la musica.",
     "cta": "Provalo ora",
     "titleWords": {
       "music": "Musica",

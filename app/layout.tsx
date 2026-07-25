@@ -22,21 +22,21 @@ import "./globals.css";
  * @description Defines SEO metadata, title, description, and favicon configurations.
  */
 export const metadata: Metadata = {
-  title: "Cymasphere — First-Principles Harmony Engine",
+  title: "Cymasphere — Harmony Engine & Audio/MIDI Creative Suite",
   description:
-    "Write better music from harmony out. An intelligent audio/MIDI studio for progressions, voicings, and melody—built from the ground up around how music works.",
+    "Write better music from harmony out. An intelligent audio/MIDI studio for progressions, voicings, and melody—built from first principles around how music works.",
   openGraph: {
-    title: "Cymasphere — First-Principles Harmony Engine",
+    title: "Cymasphere — Harmony Engine & Audio/MIDI Creative Suite",
     description:
-      "Write better music from harmony out. An intelligent audio/MIDI studio for progressions, voicings, and melody—built from the ground up around how music works.",
+      "Write better music from harmony out. An intelligent audio/MIDI studio for progressions, voicings, and melody—built from first principles around how music works.",
     siteName: "Cymasphere",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Cymasphere — First-Principles Harmony Engine",
+    title: "Cymasphere — Harmony Engine & Audio/MIDI Creative Suite",
     description:
-      "Write better music from harmony out. An intelligent audio/MIDI studio for progressions, voicings, and melody—built from the ground up around how music works.",
+      "Write better music from harmony out. An intelligent audio/MIDI studio for progressions, voicings, and melody—built from first principles around how music works.",
   },
   icons: {
     icon: [

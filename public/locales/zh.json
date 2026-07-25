@@ -49,10 +49,10 @@
     "tryDemo": "试用演示"
   },
   "hero": {
-    "title": "Cymasphere — 第一性原理和声引擎",
-    "titlePartA": "第一性原理",
-    "titlePartB": "和声引擎",
-    "subtitle": "从和声出发，写出更好的音乐。面向进行、声部与旋律的智能音频／MIDI 工作室—围绕音乐如何运作，从底层构建。",
+    "title": "Cymasphere — 和声引擎与 Audio/MIDI 创意套件",
+    "titlePartA": "和声引擎",
+    "titlePartB": "& Audio/MIDI 创意套件",
+    "subtitle": "从和声出发，写出更好的音乐。面向进行、声部与旋律的智能音频／MIDI 工作室—按第一性原理，围绕音乐如何运作从底层构建。",
     "cta": "立即试用",
     "titleWords": {
       "music": "音乐",

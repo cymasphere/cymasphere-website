@@ -59,10 +59,10 @@
     "tryDemo": "Demo'yu dene"
   },
   "hero": {
-    "title": "Cymasphere — İlk İlkelere Dayalı Armoni Motoru",
-    "titlePartA": "İlk ilkeler",
-    "titlePartB": "Armoni motoru",
-    "subtitle": "Daha iyi müziği armoniden yazın. Progresyonlar, voicing’ler ve melodi için akıllı bir audio/MIDI stüdyosu—müziğin nasıl işlediğinin temellerinden tasarlandı.",
+    "title": "Cymasphere — Armoni Motoru & Audio/MIDI Yaratıcı Paket",
+    "titlePartA": "Armoni Motoru",
+    "titlePartB": "& Audio/MIDI Yaratıcı Paket",
+    "subtitle": "Daha iyi müziği armoniden yazın. Progresyonlar, voicing’ler ve melodi için akıllı bir audio/MIDI stüdyosu—müziğin nasıl işlediğinin temellerinden, ilk ilkelere göre tasarlandı.",
     "cta": "Şimdi dene",
     "titleWords": {
       "music": "Müzik",

@@ -3,7 +3,7 @@
  * @module components/sections/HeroSection
  *
  * Main hero section for the landing page. Positions Cymasphere as a
- * first-principles harmony engine, with floating musical notes (voice-leading),
+ * harmony engine, with floating musical notes (voice-leading),
  * chord progression playback, product bundle lockup, and background video.
  *
  * @example
@@ -166,36 +166,43 @@ const HeroContent = styled.div`
 `;
 
 const HeroTitle = styled(motion.h1)`
-  font-size: clamp(2.15rem, 5.2vw, 3.5rem);
+  font-size: clamp(1.85rem, 4.6vw, 3.25rem);
   margin-bottom: 0.85rem;
   text-align: center;
-  line-height: 1.12;
+  line-height: 1.14;
   font-weight: 700;
-  max-width: 18ch;
+  max-width: 22ch;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.28em 0.35em;
+  align-items: baseline;
+  gap: 0.2em 0.35em;
 
   @media (max-width: 768px) {
     margin-bottom: 0.65rem;
-    max-width: 14ch;
+    max-width: 16ch;
   }
 `;
 
-/** @brief Static lead phrase in the hero H1 (e.g. “First-Principles”). */
-const HeroTitleLead = styled.span`
-  color: #fff;
-  white-space: nowrap;
-`;
-
-/** @brief Accented product category in the hero H1 (e.g. “Harmony Engine”). */
+/** @brief Primary product tagline in the hero H1 (e.g. “Harmony Engine”). */
 const HeroTitleAccent = styled.span`
   white-space: nowrap;
   background: linear-gradient(105deg, var(--primary), var(--accent));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+`;
+
+/** @brief Secondary hero tagline clause (e.g. “& Audio/MIDI Creative Suite”). */
+const HeroTitleSupport = styled.span`
+  color: #fff;
+  white-space: nowrap;
+  font-weight: 600;
+
+  @media (max-width: 768px) {
+    white-space: normal;
+    max-width: 14ch;
+  }
 `;
 
 const HeroSubtitle = styled(motion.p)`
@@ -556,7 +563,7 @@ const useWindowSize = () => {
  * @brief HeroSection component
  *
  * Main landing page hero with:
- * - First-Principles Harmony Engine headline
+ * - Harmony Engine & Audio/MIDI Creative Suite headline
  * - Floating musical notes that transition between chords using voice-leading
  * - Interactive note and chord playback
  * - Background video with fade-in effect
@@ -1132,12 +1139,12 @@ const HeroSection = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.75, ease: "easeOut" }}
         >
-          <HeroTitleLead>
-            {t("hero.titlePartA", "First-Principles")}
-          </HeroTitleLead>
           <HeroTitleAccent>
-            {t("hero.titlePartB", "Harmony Engine")}
+            {t("hero.titlePartA", "Harmony Engine")}
           </HeroTitleAccent>
+          <HeroTitleSupport>
+            {t("hero.titlePartB", "& Audio/MIDI Creative Suite")}
+          </HeroTitleSupport>
         </HeroTitle>
 
         <HeroBundleLockup
@@ -1227,7 +1234,7 @@ const HeroSection = () => {
         >
           {t(
             "hero.subtitle",
-            "Write better music from harmony out. An intelligent audio/MIDI studio for progressions, voicings, and melody—built from the ground up around how music works.",
+            "Write better music from harmony out. An intelligent audio/MIDI studio for progressions, voicings, and melody—built from first principles around how music works.",
           )}
         </HeroSubtitle>
 
