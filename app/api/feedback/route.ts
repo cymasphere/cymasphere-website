@@ -4,10 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import {
-  createClient,
-  createClientWithAccessToken,
-} from "@/utils/supabase/server";
+import { createClient } from "@/utils/supabase/server";
+import { createClientWithAccessToken } from "@/utils/supabase/access-token";
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
 import { createTypedSupportTicket } from "@/lib/support/create-typed-support-ticket";
 import {

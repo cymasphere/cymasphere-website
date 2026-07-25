@@ -12,7 +12,6 @@
 "use server";
 
 import { createServerClient } from "@supabase/ssr";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "@/database.types";
@@ -61,31 +60,4 @@ export async function createClient(): Promise<SupabaseClient<Database>> {
       },
     }
   ) as SupabaseClient<Database>;
-}
-
-/**
- * @brief Supabase client scoped to a Bearer access token (native app / API callers).
- *
- * Required for RLS inserts when the request has no cookie session — auth.uid() must
- * match the JWT passed from the Cymasphere desktop app.
- */
-export function createClientWithAccessToken(
-  accessToken: string
-): SupabaseClient<Database> {
-  return createSupabaseClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      global: {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      },
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-        detectSessionInUrl: false,
-      },
-    }
-  );
 }
