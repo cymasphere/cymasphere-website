@@ -3,123 +3,107 @@
 /**
  * @fileoverview Account bug-report page with guidance for a good report.
  * @module app/(private)/(dashboard)/bug-report/page
+ * @note Layout and form styles match the Support dashboard page.
  */
 
 import React, { useState } from "react";
 import Link from "next/link";
 import styled from "styled-components";
-import { FaBug } from "react-icons/fa";
+import { FaBug, FaTicketAlt } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import NextSEO from "@/components/NextSEO";
 import { createSupportTicket } from "@/app/actions/user-management";
+import {
+  TicketsContainer,
+  TicketsTitle,
+  TicketsSubtitle,
+  FormGroup,
+  FormLabel,
+  FormInput,
+  FormTextarea,
+  SubmitButton,
+  ErrorMessage,
+  SuccessMessage,
+} from "@/components/support/SupportTicketsComponents";
 
-const Page = styled.div`
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 40px 20px;
+const ContentCard = styled.div`
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 `;
 
-const Title = styled.h1`
-  font-size: 2rem;
+const PageFormActions = styled.div`
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-start;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const CardHeading = styled.h2`
+  font-size: 1.2rem;
+  margin: 0 0 1rem;
   color: var(--text);
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
 
   svg {
+    margin-right: 0.75rem;
     color: var(--primary);
   }
 `;
 
-const Subtitle = styled.p`
-  color: var(--text-secondary);
-  margin-bottom: 1.5rem;
-`;
-
-const Guidance = styled.div`
-  background: var(--card-bg);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  padding: 1.25rem 1.5rem;
-  margin-bottom: 2rem;
+const GuidanceList = styled.ul`
+  margin: 0;
+  padding-left: 1.25rem;
   color: var(--text-secondary);
   line-height: 1.55;
 
-  h2 {
-    color: var(--text);
-    font-size: 1.1rem;
-    margin: 0 0 0.75rem;
-  }
-
-  ul {
-    margin: 0;
-    padding-left: 1.25rem;
-  }
-
   li {
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.5rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
   }
 `;
 
-const Form = styled.form`
+const FooterRow = styled.div`
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  justify-content: flex-start;
+  margin-top: 0.5rem;
 `;
 
-const Label = styled.label`
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  color: var(--text);
-  font-weight: 500;
-`;
-
-const Input = styled.input`
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: var(--card-bg);
-  color: var(--text);
-`;
-
-const TextArea = styled.textarea`
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: var(--card-bg);
-  color: var(--text);
-  min-height: 160px;
-  resize: vertical;
-`;
-
-const Button = styled.button`
-  align-self: flex-start;
-  padding: 0.75rem 1.25rem;
-  border: none;
-  border-radius: 6px;
-  background: var(--primary);
-  color: white;
+const TicketsLink = styled(Link)`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 12px 20px;
+  border-radius: 8px;
   font-weight: 600;
-  cursor: pointer;
+  font-size: 0.9rem;
+  text-decoration: none;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
 
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  svg {
+    font-size: 0.9rem;
   }
 `;
 
-const Message = styled.p<{ $error?: boolean }>`
-  color: ${(p) => (p.$error ? "#f87171" : "var(--primary)")};
-`;
-
-const FooterLink = styled(Link)`
-  display: inline-block;
-  margin-top: 1.5rem;
-  color: var(--primary);
-`;
-
+/**
+ * @brief Bug report form for authenticated dashboard users.
+ * @returns Bug report page with guidance and ticket creation form.
+ */
 export default function BugReportPage() {
   const { t } = useTranslation();
   const [subject, setSubject] = useState("");
@@ -128,6 +112,10 @@ export default function BugReportPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  /**
+   * @brief Submit a typed bug support ticket.
+   * @param e Form submit event.
+   */
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -168,26 +156,26 @@ export default function BugReportPage() {
           "Tell us what went wrong so we can fix it"
         )}
       />
-      <Page>
-        <Title>
+      <TicketsContainer>
+        <TicketsTitle>
           <FaBug />
           {t("dashboard.bugReport.title", "Bug Report")}
-        </Title>
-        <Subtitle>
+        </TicketsTitle>
+        <TicketsSubtitle>
           {t(
             "dashboard.bugReport.subtitle",
             "Tell us what went wrong so we can fix it"
           )}
-        </Subtitle>
+        </TicketsSubtitle>
 
-        <Guidance>
-          <h2>
+        <ContentCard>
+          <CardHeading>
             {t(
               "dashboard.bugReport.guidanceTitle",
               "What makes a good bug report?"
             )}
-          </h2>
-          <ul>
+          </CardHeading>
+          <GuidanceList>
             <li>
               {t(
                 "dashboard.bugReport.tipSteps",
@@ -212,47 +200,60 @@ export default function BugReportPage() {
                 "Which view/track/plugin you were using when it failed"
               )}
             </li>
-          </ul>
-        </Guidance>
+          </GuidanceList>
+        </ContentCard>
 
-        <Form onSubmit={onSubmit}>
-          <Label>
-            {t("dashboard.bugReport.subject", "Subject")}
-            <Input
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              required
-              placeholder={t(
-                "dashboard.bugReport.subjectPlaceholder",
-                "Short summary of the bug"
-              )}
-            />
-          </Label>
-          <Label>
-            {t("dashboard.bugReport.description", "Description")}
-            <TextArea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-              placeholder={t(
-                "dashboard.bugReport.descriptionPlaceholder",
-                "Example: 1) Open SONG view 2) Delete a bank 3) App freezes. Expected: bank deletes. Actual: freeze. Windows 11, Cymasphere 1.x."
-              )}
-            />
-          </Label>
-          {error && <Message $error>{error}</Message>}
-          {success && <Message>{success}</Message>}
-          <Button type="submit" disabled={loading}>
-            {loading
-              ? t("dashboard.bugReport.submitting", "Submitting…")
-              : t("dashboard.bugReport.submit", "Submit bug report")}
-          </Button>
-        </Form>
+        <ContentCard>
+          <form onSubmit={onSubmit}>
+            <FormGroup>
+              <FormLabel htmlFor="bug-subject">
+                {t("dashboard.bugReport.subject", "Subject")}
+              </FormLabel>
+              <FormInput
+                id="bug-subject"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                required
+                placeholder={t(
+                  "dashboard.bugReport.subjectPlaceholder",
+                  "Short summary of the bug"
+                )}
+              />
+            </FormGroup>
+            <FormGroup>
+              <FormLabel htmlFor="bug-description">
+                {t("dashboard.bugReport.description", "Description")}
+              </FormLabel>
+              <FormTextarea
+                id="bug-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+                placeholder={t(
+                  "dashboard.bugReport.descriptionPlaceholder",
+                  "Example: 1) Open SONG view 2) Delete a bank 3) App freezes. Expected: bank deletes. Actual: freeze. Windows 11, Cymasphere 1.x."
+                )}
+              />
+            </FormGroup>
+            {error && <ErrorMessage>{error}</ErrorMessage>}
+            {success && <SuccessMessage>{success}</SuccessMessage>}
+            <PageFormActions>
+              <SubmitButton type="submit" disabled={loading}>
+                {loading
+                  ? t("dashboard.bugReport.submitting", "Submitting…")
+                  : t("dashboard.bugReport.submit", "Submit bug report")}
+              </SubmitButton>
+            </PageFormActions>
+          </form>
+        </ContentCard>
 
-        <FooterLink href="/support">
-          {t("dashboard.bugReport.viewTickets", "View my support tickets")}
-        </FooterLink>
-      </Page>
+        <FooterRow>
+          <TicketsLink href="/support">
+            <FaTicketAlt />
+            {t("dashboard.bugReport.viewTickets", "View my support tickets")}
+          </TicketsLink>
+        </FooterRow>
+      </TicketsContainer>
     </>
   );
 }

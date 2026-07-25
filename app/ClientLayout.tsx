@@ -183,14 +183,16 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
     pathname?.startsWith("/checkout-success") ||
     pathname?.startsWith("/checkout-canceled");
 
-  // Check if the route is in the dashboard section
+  // Check if the route is in the dashboard section (uses account sidebar, not site nav)
   const isDashboardRoute =
     pathname?.includes("/dashboard") ||
     pathname?.includes("/billing") ||
     pathname?.includes("/downloads") ||
     pathname?.includes("/settings") ||
     pathname?.includes("/support") ||
-    pathname?.includes("/getting-started");
+    pathname?.includes("/getting-started") ||
+    pathname?.includes("/bug-report") ||
+    pathname?.includes("/feature-request");
 
   // Check if the route is in the admin section
   const isAdminRoute = pathname?.includes("/admin");

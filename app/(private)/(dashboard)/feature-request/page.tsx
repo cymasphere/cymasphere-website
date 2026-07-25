@@ -3,99 +3,86 @@
 /**
  * @fileoverview Account feature-request page.
  * @module app/(private)/(dashboard)/feature-request/page
+ * @note Layout and form styles match the Support dashboard page.
  */
 
 import React, { useState } from "react";
 import Link from "next/link";
 import styled from "styled-components";
-import { FaLightbulb } from "react-icons/fa";
+import { FaLightbulb, FaTicketAlt } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import NextSEO from "@/components/NextSEO";
 import { createSupportTicket } from "@/app/actions/user-management";
+import {
+  TicketsContainer,
+  TicketsTitle,
+  TicketsSubtitle,
+  FormGroup,
+  FormLabel,
+  FormInput,
+  FormTextarea,
+  SubmitButton,
+  ErrorMessage,
+  SuccessMessage,
+} from "@/components/support/SupportTicketsComponents";
 
-const Page = styled.div`
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 40px 20px;
+const ContentCard = styled.div`
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 `;
 
-const Title = styled.h1`
-  font-size: 2rem;
-  color: var(--text);
+const PageFormActions = styled.div`
   display: flex;
+  gap: 1rem;
+  justify-content: flex-start;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const IntroText = styled.p`
+  margin: 0 0 1.5rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  font-size: 1rem;
+`;
+
+const FooterRow = styled.div`
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 0.5rem;
+`;
+
+const TicketsLink = styled(Link)`
+  display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
+  gap: 0.5rem;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
 
   svg {
-    color: var(--primary);
+    font-size: 0.9rem;
   }
 `;
 
-const Subtitle = styled.p`
-  color: var(--text-secondary);
-  margin-bottom: 2rem;
-  line-height: 1.55;
-`;
-
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-`;
-
-const Label = styled.label`
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  color: var(--text);
-  font-weight: 500;
-`;
-
-const Input = styled.input`
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: var(--card-bg);
-  color: var(--text);
-`;
-
-const TextArea = styled.textarea`
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: var(--card-bg);
-  color: var(--text);
-  min-height: 160px;
-  resize: vertical;
-`;
-
-const Button = styled.button`
-  align-self: flex-start;
-  padding: 0.75rem 1.25rem;
-  border: none;
-  border-radius: 6px;
-  background: var(--primary);
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-`;
-
-const Message = styled.p<{ $error?: boolean }>`
-  color: ${(p) => (p.$error ? "#f87171" : "var(--primary)")};
-`;
-
-const FooterLink = styled(Link)`
-  display: inline-block;
-  margin-top: 1.5rem;
-  color: var(--primary);
-`;
-
+/**
+ * @brief Feature request form for authenticated dashboard users.
+ * @returns Feature request page with ticket creation form.
+ */
 export default function FeatureRequestPage() {
   const { t } = useTranslation();
   const [subject, setSubject] = useState("");
@@ -104,6 +91,10 @@ export default function FeatureRequestPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  /**
+   * @brief Submit a typed feature support ticket.
+   * @param e Form submit event.
+   */
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -144,59 +135,81 @@ export default function FeatureRequestPage() {
           "Suggest an improvement for Cymasphere"
         )}
       />
-      <Page>
-        <Title>
+      <TicketsContainer>
+        <TicketsTitle>
           <FaLightbulb />
           {t("dashboard.featureRequest.title", "Feature Request")}
-        </Title>
-        <Subtitle>
+        </TicketsTitle>
+        <TicketsSubtitle>
           {t(
-            "dashboard.featureRequest.intro",
-            "Describe the workflow you want and why it would help. We read every suggestion."
+            "dashboard.featureRequest.subtitle",
+            "Suggest an improvement for Cymasphere"
           )}
-        </Subtitle>
+        </TicketsSubtitle>
 
-        <Form onSubmit={onSubmit}>
-          <Label>
-            {t("dashboard.featureRequest.subject", "Subject")}
-            <Input
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              required
-              placeholder={t(
-                "dashboard.featureRequest.subjectPlaceholder",
-                "Short summary of your idea"
-              )}
-            />
-          </Label>
-          <Label>
-            {t("dashboard.featureRequest.description", "Description")}
-            <TextArea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-              placeholder={t(
-                "dashboard.featureRequest.descriptionPlaceholder",
-                "What should it do? When would you use it?"
-              )}
-            />
-          </Label>
-          {error && <Message $error>{error}</Message>}
-          {success && <Message>{success}</Message>}
-          <Button type="submit" disabled={loading}>
-            {loading
-              ? t("dashboard.featureRequest.submitting", "Submitting…")
-              : t("dashboard.featureRequest.submit", "Submit feature request")}
-          </Button>
-        </Form>
+        <ContentCard>
+          <IntroText>
+            {t(
+              "dashboard.featureRequest.intro",
+              "Describe the workflow you want and why it would help. We read every suggestion."
+            )}
+          </IntroText>
+          <form onSubmit={onSubmit}>
+            <FormGroup>
+              <FormLabel htmlFor="feature-subject">
+                {t("dashboard.featureRequest.subject", "Subject")}
+              </FormLabel>
+              <FormInput
+                id="feature-subject"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                required
+                placeholder={t(
+                  "dashboard.featureRequest.subjectPlaceholder",
+                  "Short summary of your idea"
+                )}
+              />
+            </FormGroup>
+            <FormGroup>
+              <FormLabel htmlFor="feature-description">
+                {t("dashboard.featureRequest.description", "Description")}
+              </FormLabel>
+              <FormTextarea
+                id="feature-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+                placeholder={t(
+                  "dashboard.featureRequest.descriptionPlaceholder",
+                  "What should it do? When would you use it?"
+                )}
+              />
+            </FormGroup>
+            {error && <ErrorMessage>{error}</ErrorMessage>}
+            {success && <SuccessMessage>{success}</SuccessMessage>}
+            <PageFormActions>
+              <SubmitButton type="submit" disabled={loading}>
+                {loading
+                  ? t("dashboard.featureRequest.submitting", "Submitting…")
+                  : t(
+                      "dashboard.featureRequest.submit",
+                      "Submit feature request"
+                    )}
+              </SubmitButton>
+            </PageFormActions>
+          </form>
+        </ContentCard>
 
-        <FooterLink href="/support">
-          {t(
-            "dashboard.featureRequest.viewTickets",
-            "View my support tickets"
-          )}
-        </FooterLink>
-      </Page>
+        <FooterRow>
+          <TicketsLink href="/support">
+            <FaTicketAlt />
+            {t(
+              "dashboard.featureRequest.viewTickets",
+              "View my support tickets"
+            )}
+          </TicketsLink>
+        </FooterRow>
+      </TicketsContainer>
     </>
   );
 }
