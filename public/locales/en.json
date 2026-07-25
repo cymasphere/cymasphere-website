@@ -49,13 +49,13 @@
     "tryDemo": "Try Demo"
   },
   "hero": {
-    "title": "Generate Music With AI",
-    "titlePartA": "Intelligent",
-    "titlePartB": "Creation",
-    "subtitle": "Enter the next evolution of music creation, where theoretical foundations invisibly guide your workflow. Chords and melodies connect with purpose, empowering your unique musical vision.",
+    "title": "Cymasphere — First-Principles Harmony Engine",
+    "titlePartA": "First-Principles",
+    "titlePartB": "Harmony Engine",
+    "subtitle": "Write better music from harmony out. An intelligent audio/MIDI studio for progressions, voicings, and melody—built from the ground up around how music works.",
     "bundleEyebrow": "One subscription · two products",
     "bundleCymasphereTitle": "Cymasphere",
-    "bundleCymasphereDesc": "Composition & theory suite",
+    "bundleCymasphereDesc": "Harmony-centric composition",
     "bundleCymaSynthTitle": "CymaSynth",
     "bundleCymaSynthDesc": "Wavetable synth · $149 value included",
     "bundleFootnote": "CymaSynth is a $149 value when sold separately—included with every Cymasphere plan at no extra cost · Standalone, AU & VST3",
@@ -93,7 +93,7 @@
   },
   "features": {
     "title": "Features",
-    "subtitle": "Harmony, melody, arrangement—plus CymaSynth, a $149 wavetable instrument included with your plan. One suite, two products.",
+    "subtitle": "A first-principles harmony engine for audio and MIDI—plus CymaSynth, a $149 wavetable instrument included with your plan. One suite, two products.",
     "aiComposition": "AI Composition",
     "aiCompositionDesc": "Generate music with the click of a button using our advanced AI",
     "livePerformance": "Live Performance",
@@ -254,7 +254,7 @@
   },
   "howItWorks": {
     "title": "How It Works",
-    "subtitle": "Music creation made simple",
+    "subtitle": "Compose from harmony out—built from first principles",
     "createSubtitle": "Compose music with purpose",
     "learnSubtitle": "Master your favorite songs effortlessly",
     "integrateSubtitle": "Connect with your existing workflow",
@@ -387,7 +387,7 @@
     "questions": [
       {
         "question": "What is Cymasphere?",
-        "answer": "Cymasphere is a complete song creation suite available both as a standalone application and as a plugin (AU & VST3) for your DAW. It provides integrated tools for composing both harmony and melody, featuring intelligent chord voicing, melody pattern construction, and interactive visualization that makes music theory accessible and intuitive for all skill levels. Every subscription and lifetime license also includes CymaSynth—our professional wavetable synthesizer (standalone app, VST3 & AU)—bundled at no extra cost."
+        "answer": "Cymasphere is a first-principles harmony engine—an intelligent, harmony-centric audio/MIDI compositional environment available as a standalone app and as a plugin (AU & VST3) for your DAW. Write progressions, voicings, and melody from the ground up around how music works, with interactive visualization that makes theory feel intuitive. Every subscription and lifetime license also includes CymaSynth—our professional wavetable synthesizer (standalone app, VST3 & AU)—bundled at no extra cost."
       },
       {
         "question": "What is CymaSynth, and is it really included with Cymasphere?",
@@ -469,7 +469,7 @@
     "copyright": "© {{year}} Cymasphere. All rights reserved.",
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service",
-    "description": "Cymasphere is an interactive music compositional tool for producers, composers, performing musicians, educators, and students—bundled with CymaSynth, a $149 wavetable synth value included free on every plan.",
+    "description": "Cymasphere is a first-principles harmony engine—an intelligent audio/MIDI compositional environment for producers, composers, performing musicians, educators, and students—bundled with CymaSynth, a $149 wavetable synth value included free on every plan.",
     "navigation": "Navigation",
     "account": "Account",
     "accountDashboard": "Account Dashboard",

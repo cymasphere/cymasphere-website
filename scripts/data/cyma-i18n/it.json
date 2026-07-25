@@ -1,15 +1,19 @@
 {
   "hero": {
     "bundleEyebrow": "Un abbonamento · due prodotti",
-    "bundleCymasphereDesc": "Suite di composizione e teoria",
+    "bundleCymasphereDesc": "Composizione incentrata sull’armonia",
     "bundleCymaSynthDesc": "Synth wavetable · valore 149 $ incluso",
     "bundleFootnote": "CymaSynth vale 149 $ se acquistato separatamente—incluso in ogni piano Cymasphere senza costi extra · Standalone, AU e VST3",
     "bundleCymasphereImageAlt": "Cymasphere — artwork quadrato del catalogo",
     "bundleCymaSynthImageAlt": "Interfaccia prodotto del sintetizzatore wavetable CymaSynth",
-    "includedSynth": "Include CymaSynth—un sintetizzatore wavetable professionale (app standalone, VST3 e AU)—incluso con ogni abbonamento e licenza a vita. Suite di composizione completa e strumento di punta insieme."
+    "includedSynth": "Include CymaSynth—un sintetizzatore wavetable professionale (app standalone, VST3 e AU)—incluso con ogni abbonamento e licenza a vita. Suite di composizione completa e strumento di punta insieme.",
+    "title": "Cymasphere — Motore armonico dai primi principi",
+    "titlePartA": "Primi principi",
+    "titlePartB": "Motore armonico",
+    "subtitle": "Scrivi musica migliore partendo dall’armonia. Uno studio audio/MIDI intelligente per progressioni, voicing e melodia—costruito da zero attorno a come funziona la musica."
   },
   "features": {
-    "subtitle": "Armonia, melodia, arrangiamento—più CymaSynth, uno strumento wavetable del valore di 149 $ incluso nel piano. Una suite, due prodotti.",
+    "subtitle": "Un motore armonico dai primi principi per audio e MIDI—più CymaSynth, uno strumento wavetable del valore di 149 $ incluso nel piano. Una suite, due prodotti.",
     "cymaSynth": {
       "title": "CymaSynth incluso",
       "description": "Un synth wavetable professionale del valore di 149 $—triplo oscillatore, modulazione profonda, effetti da studio—in omaggio con Cymasphere.",
@@ -48,7 +52,7 @@
     }
   },
   "footer": {
-    "description": "Cymasphere è uno strumento compositivo interattivo per produttori, compositori, musicisti, educatori e studenti—con CymaSynth, un synth wavetable del valore di 149 $, incluso gratis in ogni piano."
+    "description": "Cymasphere è un motore armonico dai primi principi: un ambiente compositivo audio/MIDI intelligente per produttori, compositori, musicisti, educatori e studenti—con CymaSynth, un synth wavetable del valore di 149 $ incluso gratis in ogni piano."
   },
   "chat": {
     "greeting": "Ciao! Sono l’assistente Cymasphere. Chiedimi di armonia e melodia, CymaSynth (il synth wavetable incluso in ogni piano), prezzi o prime mosse. Cosa vuoi sapere?"
@@ -65,12 +69,15 @@
   "faq": {
     "questions": {
       "0": {
-        "answer": "Cymasphere è una suite completa per creare brani, come app standalone e come plugin (AU e VST3) per la tua DAW. Offre strumenti integrati per armonia e melodia, voicing intelligenti, costruzione di pattern e visualizzazione interattiva che rende la teoria accessibile a ogni livello. Ogni abbonamento e licenza a vita include anche CymaSynth—il nostro sintetizzatore wavetable professionale (app standalone, VST3 e AU)—senza costi aggiuntivi."
+        "answer": "Cymasphere è un motore armonico dai primi principi: un ambiente compositivo audio/MIDI intelligente incentrato sull’armonia, disponibile come app standalone e come plugin (AU e VST3) per la tua DAW. Scrivi progressioni, voicing e melodia da zero attorno a come funziona la musica, con visualizzazione interattiva che rende la teoria intuitiva. Ogni abbonamento e licenza a vita include anche CymaSynth—il nostro sintetizzatore wavetable professionale (app standalone, VST3 e AU)—senza costi aggiuntivi."
       },
       "1": {
         "question": "Cos’è CymaSynth ed è davvero incluso in Cymasphere?",
         "answer": "CymaSynth è il sintetizzatore wavetable professionale di NNAudio: oscillatori multipli, modulazione profonda, due filtri, effetti e polifonia a 32 voci. Funziona come app standalone e come plugin VST3 e AU. Da solo costa 149 $; con Cymasphere è incluso senza costi aggiuntivi su ogni abbonamento e licenza a vita. Non lo acquisti separatamente con l’abbonamento—suite di composizione e strumento di punta in un unico pacchetto."
       }
     }
+  },
+  "howItWorks": {
+    "subtitle": "Componi dall’armonia—progettato dai primi principi"
   }
 }

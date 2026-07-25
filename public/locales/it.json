@@ -59,10 +59,10 @@
     "tryDemo": "Prova la demo"
   },
   "hero": {
-    "title": "Genera musica con l'IA",
-    "titlePartA": "Creazione",
-    "titlePartB": "Intelligente",
-    "subtitle": "Entra nella prossima evoluzione della creazione musicale, dove le basi teoriche guidano invisibilmente il tuo flusso di lavoro. Accordi e melodie si connettono con uno scopo, potenziando la tua visione musicale unica.",
+    "title": "Cymasphere — Motore armonico dai primi principi",
+    "titlePartA": "Primi principi",
+    "titlePartB": "Motore armonico",
+    "subtitle": "Scrivi musica migliore partendo dall’armonia. Uno studio audio/MIDI intelligente per progressioni, voicing e melodia—costruito da zero attorno a come funziona la musica.",
     "cta": "Provalo ora",
     "titleWords": {
       "music": "Musica",
@@ -89,7 +89,7 @@
     "includedSynth": "Include CymaSynth—un sintetizzatore wavetable professionale (app standalone, VST3 e AU)—incluso con ogni abbonamento e licenza a vita. Suite di composizione completa e strumento di punta insieme.",
     "bundleEyebrow": "Un abbonamento · due prodotti",
     "bundleCymasphereTitle": "Cymasphere",
-    "bundleCymasphereDesc": "Suite di composizione e teoria",
+    "bundleCymasphereDesc": "Composizione incentrata sull’armonia",
     "bundleCymaSynthTitle": "CymaSynth",
     "bundleCymaSynthDesc": "Synth wavetable · valore 149 $ incluso",
     "bundleFootnote": "CymaSynth vale 149 $ se acquistato separatamente—incluso in ogni piano Cymasphere senza costi extra · Standalone, AU e VST3",
@@ -103,7 +103,7 @@
   },
   "features": {
     "title": "Funzionalità",
-    "subtitle": "Armonia, melodia, arrangiamento—più CymaSynth, uno strumento wavetable del valore di 149 $ incluso nel piano. Una suite, due prodotti.",
+    "subtitle": "Un motore armonico dai primi principi per audio e MIDI—più CymaSynth, uno strumento wavetable del valore di 149 $ incluso nel piano. Una suite, due prodotti.",
     "aiComposition": "Composizione IA",
     "aiCompositionDesc": "Genera musica con un clic usando la nostra IA avanzata",
     "livePerformance": "Performance dal vivo",
@@ -339,7 +339,7 @@
   },
   "howItWorks": {
     "title": "Come funziona",
-    "subtitle": "Creazione musicale resa semplice",
+    "subtitle": "Componi dall’armonia—progettato dai primi principi",
     "createSubtitle": "Componi musica con proposito",
     "learnSubtitle": "Padroneggia le tue canzoni preferite senza sforzo",
     "integrateSubtitle": "Connettiti al tuo flusso di lavoro esistente",
@@ -472,7 +472,7 @@
     "questions": [
       {
         "question": "Cos'è Cymasphere?",
-        "answer": "Cymasphere è una suite completa per creare brani, come app standalone e come plugin (AU e VST3) per la tua DAW. Offre strumenti integrati per armonia e melodia, voicing intelligenti, costruzione di pattern e visualizzazione interattiva che rende la teoria accessibile a ogni livello. Ogni abbonamento e licenza a vita include anche CymaSynth—il nostro sintetizzatore wavetable professionale (app standalone, VST3 e AU)—senza costi aggiuntivi."
+        "answer": "Cymasphere è un motore armonico dai primi principi: un ambiente compositivo audio/MIDI intelligente incentrato sull’armonia, disponibile come app standalone e come plugin (AU e VST3) per la tua DAW. Scrivi progressioni, voicing e melodia da zero attorno a come funziona la musica, con visualizzazione interattiva che rende la teoria intuitiva. Ogni abbonamento e licenza a vita include anche CymaSynth—il nostro sintetizzatore wavetable professionale (app standalone, VST3 e AU)—senza costi aggiuntivi."
       },
       {
         "question": "Cos’è CymaSynth ed è davvero incluso in Cymasphere?",
@@ -554,7 +554,7 @@
     "copyright": "© {{year}} Cymasphere. Tutti i diritti riservati.",
     "privacyPolicy": "Informativa privacy",
     "termsOfService": "Termini di servizio",
-    "description": "Cymasphere è uno strumento compositivo interattivo per produttori, compositori, musicisti, educatori e studenti—con CymaSynth, un synth wavetable del valore di 149 $, incluso gratis in ogni piano.",
+    "description": "Cymasphere è un motore armonico dai primi principi: un ambiente compositivo audio/MIDI intelligente per produttori, compositori, musicisti, educatori e studenti—con CymaSynth, un synth wavetable del valore di 149 $ incluso gratis in ogni piano.",
     "navigation": "Navigazione",
     "account": "Account",
     "accountDashboard": "Dashboard account",

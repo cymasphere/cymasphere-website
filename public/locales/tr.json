@@ -59,10 +59,10 @@
     "tryDemo": "Demo'yu dene"
   },
   "hero": {
-    "title": "AI ile müzik oluştur",
-    "titlePartA": "Akıllı",
-    "titlePartB": "Yaratım",
-    "subtitle": "Teorik temellerin iş akışınızı görünmez şekilde yönlendirdiği müzik yaratımının yeni evrimine girin. Akorlar ve melodiler amaçla bağlanır, benzersiz müzikal vizyonunuzu güçlendirir.",
+    "title": "Cymasphere — İlk İlkelere Dayalı Armoni Motoru",
+    "titlePartA": "İlk ilkeler",
+    "titlePartB": "Armoni motoru",
+    "subtitle": "Daha iyi müziği armoniden yazın. Progresyonlar, voicing’ler ve melodi için akıllı bir audio/MIDI stüdyosu—müziğin nasıl işlediğinin temellerinden tasarlandı.",
     "cta": "Şimdi dene",
     "titleWords": {
       "music": "Müzik",
@@ -89,7 +89,7 @@
     "includedSynth": "CymaSynth—profesyonel wavetable sentezleyici (bağımsız uygulama, VST3 ve AU)—her abonelik ve ömür boyu lisansla birlikte gelir. Tam kompozisyon paketi ve amiral gemisi enstrüman tek pakette.",
     "bundleEyebrow": "Bir abonelik · iki ürün",
     "bundleCymasphereTitle": "Cymasphere",
-    "bundleCymasphereDesc": "Kompozisyon ve teori paketi",
+    "bundleCymasphereDesc": "Armoni odaklı kompozisyon",
     "bundleCymaSynthTitle": "CymaSynth",
     "bundleCymaSynthDesc": "Wavetable sentezleyici · 149 $ değerinde dahil",
     "bundleFootnote": "CymaSynth tek başına 149 $ değerinde—tüm Cymasphere planlarında ek ücret olmadan dahil · Bağımsız, AU ve VST3",
@@ -103,7 +103,7 @@
   },
   "features": {
     "title": "Özellikler",
-    "subtitle": "Armoni, melodi, düzenleme—artı planınıza dahil 149 $ değerinde wavetable enstrüman CymaSynth. Bir paket, iki ürün.",
+    "subtitle": "Audio ve MIDI için ilk ilkelere dayalı bir armoni motoru—artı planınıza dahil 149 $ değerinde wavetable enstrüman CymaSynth. Bir paket, iki ürün.",
     "aiComposition": "AI Kompozisyon",
     "aiCompositionDesc": "Gelişmiş AI'mızı kullanarak tek tıkla müzik oluşturun",
     "livePerformance": "Canlı Performans",
@@ -264,7 +264,7 @@
   },
   "howItWorks": {
     "title": "Nasıl çalışır",
-    "subtitle": "Müzik yaratımı basitleştirildi",
+    "subtitle": "Armoniden kompoze edin—ilk ilkelerden tasarlandı",
     "createSubtitle": "Amaçlı müzik besteleme",
     "learnSubtitle": "Favori şarkılarınızda zahmetsizce ustalaşın",
     "integrateSubtitle": "Mevcut iş akışınızla bağlantı kurun",
@@ -565,7 +565,7 @@
     "copyright": "© {{year}} Cymasphere. Tüm hakları saklıdır.",
     "privacyPolicy": "Gizlilik Politikası",
     "termsOfService": "Hizmet Şartları",
-    "description": "Cymasphere; yapımcılar, besteciler, müzisyenler, eğitmenler ve öğrenciler için etkileşimli bir kompozisyon aracıdır—her planda 149 $ değerinde wavetable sentezleyici CymaSynth ücretsiz dahildir.",
+    "description": "Cymasphere, ilk ilkelere dayalı bir armoni motorudur—yapımcılar, besteciler, müzisyenler, eğitmenler ve öğrenciler için akıllı bir audio/MIDI kompozisyon ortamı; her planda 149 $ değerinde wavetable synth CymaSynth ücretsiz dahildir.",
     "navigation": "Navigasyon",
     "account": "Hesap",
     "accountDashboard": "Hesap Kontrol Paneli",
@@ -999,7 +999,7 @@
     "questions": [
       {
         "question": "Cymasphere nedir?",
-        "answer": "Cymasphere; bağımsız uygulama ve DAW için eklenti (AU ve VST3) olarak kullanılabilen tam bir müzik üretim paketidir. Armoni ve melodi, akıllı voicing’ler, desen oluşturma ve teoriyi her seviyede erişilebilir kılan etkileşimli görselleştirme sunar. Her abonelik ve ömür boyu lisans, profesyonel wavetable sentezleyici CymaSynth’i (bağımsız uygulama, VST3 ve AU) ek ücret olmadan içerir."
+        "answer": "Cymasphere, ilk ilkelere dayalı bir armoni motorudur—armoni odaklı, akıllı bir audio/MIDI kompozisyon ortamı; bağımsız uygulama ve DAW eklentisi (AU ve VST3) olarak sunulur. Müziğin nasıl işlediğinin temellerinden progresyonlar, voicing’ler ve melodi yazın; etkileşimli görselleştirme teoriyi sezgisel kılar. Her abonelik ve ömür boyu lisans ayrıca CymaSynth’i—profesyonel wavetable synthesizer’ımızı (bağımsız uygulama, VST3 ve AU)—ek ücret olmadan içerir."
       },
       {
         "question": "CymaSynth nedir ve gerçekten Cymasphere ile mi geliyor?",

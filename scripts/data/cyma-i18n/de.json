@@ -1,15 +1,19 @@
 {
   "hero": {
     "bundleEyebrow": "Ein Abo · zwei Produkte",
-    "bundleCymasphereDesc": "Kompositions- & Theorie-Suite",
+    "bundleCymasphereDesc": "Harmoniezentrierte Komposition",
     "bundleCymaSynthDesc": "Wavetable-Synth · 149 $ Wert inklusive",
     "bundleFootnote": "CymaSynth hat einen Wert von 149 $ beim Einzelkauf—bei jedem Cymasphere-Tarif ohne Aufpreis dabei · Standalone, AU & VST3",
     "bundleCymasphereImageAlt": "Cymasphere — quadratisches Katalogmotiv",
     "bundleCymaSynthImageAlt": "CymaSynth Wavetable-Synthesizer Produktansicht",
-    "includedSynth": "Enthält CymaSynth—einen professionellen Wavetable-Synthesizer (Standalone-App, VST3 & AU)—bei jedem Abonnement und jeder Lifetime-Lizenz gebündelt. Komplette Kompositions-Suite und Flaggschiff-Instrument in einem."
+    "includedSynth": "Enthält CymaSynth—einen professionellen Wavetable-Synthesizer (Standalone-App, VST3 & AU)—bei jedem Abonnement und jeder Lifetime-Lizenz gebündelt. Komplette Kompositions-Suite und Flaggschiff-Instrument in einem.",
+    "title": "Cymasphere — Harmonie-Engine aus ersten Prinzipien",
+    "titlePartA": "Erste Prinzipien",
+    "titlePartB": "Harmonie-Engine",
+    "subtitle": "Schreibe bessere Musik aus der Harmonie heraus. Ein intelligentes Audio/MIDI-Studio für Progressionen, Voicings und Melodie—von Grund auf rund um die Funktionsweise von Musik gebaut."
   },
   "features": {
-    "subtitle": "Harmonie, Melodie, Arrangement—plus CymaSynth, ein 149 $ Wavetable-Instrument in Ihrem Plan enthalten. Eine Suite, zwei Produkte.",
+    "subtitle": "Eine Harmonie-Engine aus ersten Prinzipien für Audio und MIDI—plus CymaSynth, ein Wavetable-Instrument im Wert von 149 $, das in Ihrem Plan enthalten ist. Eine Suite, zwei Produkte.",
     "cymaSynth": {
       "title": "CymaSynth inklusive",
       "description": "Ein professioneller Wavetable-Synth im Wert von 149 $—drei Oszillatoren, tiefe Modulation, Studio-Effekte—kostenlos zu Cymasphere.",
@@ -48,7 +52,7 @@
     }
   },
   "footer": {
-    "description": "Cymasphere ist ein interaktives Kompositionstool für Produzenten, Komponisten, Musiker, Pädagogen und Studierende—mit CymaSynth, einem Wavetable-Synth im Wert von 149 $, auf jedem Plan kostenlos dabei."
+    "description": "Cymasphere ist eine Harmonie-Engine aus ersten Prinzipien—eine intelligente Audio/MIDI-Kompositionsumgebung für Produzenten, Komponisten, Musiker, Pädagogen und Studierende—mit CymaSynth, einem Wavetable-Synth im Wert von 149 $, auf jedem Plan kostenlos dabei."
   },
   "chat": {
     "greeting": "Hallo! Ich bin Ihr Cymasphere-Assistent. Fragen Sie zu Harmonie- und Melodiewerkzeugen, CymaSynth (Wavetable-Synth in jedem Tarif), Preisen oder den ersten Schritten. Womit kann ich helfen?"
@@ -65,12 +69,15 @@
   "faq": {
     "questions": {
       "0": {
-        "answer": "Cymasphere ist eine komplette Song-Erstellungs-Suite als Standalone-App und als Plugin (AU & VST3) für Ihre DAW. Integrierte Werkzeuge für Harmonie und Melodie, intelligente Akkord-Voicings, Muster-Konstruktion und interaktive Visualisierung—Musiktheorie für alle Levels. Jedes Abo und jede Lifetime-Lizenz enthält auch CymaSynth—unseren professionellen Wavetable-Synthesizer (VST3 & AU)—ohne Aufpreis."
+        "answer": "Cymasphere ist eine Harmonie-Engine aus ersten Prinzipien—eine intelligente, harmoniezentrierte Audio/MIDI-Kompositionsumgebung als Standalone-App und als Plugin (AU & VST3) für Ihre DAW. Schreiben Sie Progressionen, Voicings und Melodie von Grund auf rund um die Funktionsweise von Musik, mit interaktiver Visualisierung, die Theorie intuitiv spürbar macht. Jedes Abonnement und jede Lifetime-Lizenz enthält außerdem CymaSynth—unseren professionellen Wavetable-Synthesizer (Standalone-App, VST3 & AU)—ohne Aufpreis."
       },
       "1": {
         "question": "Was ist CymaSynth und ist es wirklich in Cymasphere enthalten?",
         "answer": "CymaSynth ist NNAudios professioneller Wavetable-Synthesizer: mehrere Oszillatoren, tiefe Modulation, zwei Filter, Effekte und 32-stimmige Polyphonie—für ernsthaftes Sounddesign. Es läuft als Standalone-App und als VST3- und AU-Plugins. Einzeln kostet er 149 $; mit Cymasphere ist er bei jedem Abo und jeder Lifetime-Lizenz ohne Aufpreis dabei. Sie kaufen ihn beim Abo nicht separat—Kompositions-Suite und Flaggschiff-Instrument in einem Paket."
       }
     }
+  },
+  "howItWorks": {
+    "subtitle": "Komponieren aus der Harmonie heraus—gebaut aus ersten Prinzipien"
   }
 }

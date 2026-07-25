@@ -1,15 +1,19 @@
 {
   "hero": {
     "bundleEyebrow": "一次订阅 · 两款产品",
-    "bundleCymasphereDesc": "作曲与理论套件",
+    "bundleCymasphereDesc": "以和声为中心的作曲",
     "bundleCymaSynthDesc": "波表合成器 · 价值 149 美元已包含",
     "bundleFootnote": "CymaSynth 单独售价 149 美元—已包含在所有 Cymasphere 方案中，无额外费用 · 独立版、AU 与 VST3",
     "bundleCymasphereImageAlt": "Cymasphere — 目录方形主图",
     "bundleCymaSynthImageAlt": "波表合成器 CymaSynth 产品界面",
-    "includedSynth": "包含 CymaSynth—专业波表合成器（独立应用、VST3 与 AU）—随每次订阅与终身许可捆绑。完整作曲套件与旗舰乐器合一。"
+    "includedSynth": "包含 CymaSynth—专业波表合成器（独立应用、VST3 与 AU）—随每次订阅与终身许可捆绑。完整作曲套件与旗舰乐器合一。",
+    "title": "Cymasphere — 第一性原理和声引擎",
+    "titlePartA": "第一性原理",
+    "titlePartB": "和声引擎",
+    "subtitle": "从和声出发，写出更好的音乐。面向进行、声部与旋律的智能音频／MIDI 工作室—围绕音乐如何运作，从底层构建。"
   },
   "features": {
-    "subtitle": "和声、旋律、编曲—另有价值 149 美元的波表乐器 CymaSynth 已纳入您的方案。一套产品，两款工具。",
+    "subtitle": "面向音频与 MIDI 的第一性原理和声引擎—另有价值 149 美元的波表乐器 CymaSynth 已纳入您的方案。一套产品，两款工具。",
     "cymaSynth": {
       "title": "包含 CymaSynth",
       "description": "价值 149 美元的专业波表合成器—三振荡器、深度调制、录音室级效果—随 Cymasphere 免费提供。",
@@ -48,7 +52,7 @@
     }
   },
   "footer": {
-    "description": "Cymasphere 是面向制作人、作曲家、演奏者、教育工作者与学生的互动作曲工具—每个方案均免费包含价值 149 美元的波表合成器 CymaSynth。"
+    "description": "Cymasphere 是第一性原理和声引擎—面向制作人、作曲家、演奏者、教育工作者与学生的智能音频／MIDI 作曲环境—每个方案均免费包含价值 149 美元的波表合成器 CymaSynth。"
   },
   "chat": {
     "greeting": "您好！我是 Cymasphere 助手。可询问和声与旋律、CymaSynth（每个方案均含的波表合成器）、价格或入门步骤。您想了解什么？"
@@ -65,12 +69,15 @@
   "faq": {
     "questions": {
       "0": {
-        "answer": "Cymasphere 是完整的音乐创作套件，可作为独立应用，也可作为 DAW 插件（AU 与 VST3）。提供和声与旋律、智能 voicing、pattern 构建与交互式可视化，让各水平用户都能运用理论。每次订阅与终身许可还包含专业波表合成器 CymaSynth（VST3 与 AU），无额外费用。"
+        "answer": "Cymasphere 是第一性原理和声引擎—以和声为中心的智能音频／MIDI 作曲环境，可作为独立应用，也可作为 DAW 插件（AU 与 VST3）。围绕音乐如何运作，从底层编写进行、声部与旋律，并以交互可视化让理论更直观。每次订阅与终身许可还包含专业波表合成器 CymaSynth（独立应用、VST3 与 AU），无额外费用。"
       },
       "1": {
         "question": "什么是 CymaSynth？真的包含在 Cymasphere 中吗？",
         "answer": "CymaSynth 是 NNAudio 的专业波表合成器：多振荡器、深度调制、双滤波器、效果与 32 复音。单独售价 149 美元；搭配 Cymasphere，每次订阅与终身许可均无需加价。订阅时无需另购—作曲套件与旗舰乐器合二为一。"
       }
     }
+  },
+  "howItWorks": {
+    "subtitle": "从和声出发作曲—按第一性原理构建"
   }
 }

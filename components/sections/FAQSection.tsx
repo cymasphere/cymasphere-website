@@ -143,7 +143,7 @@ const DEFAULT_FAQ_QUESTIONS: FAQItemData[] = [
   {
     question: "What is Cymasphere?",
     answer:
-      "Cymasphere is a complete song creation suite available both as a standalone application and as a plugin (AU & VST3) for your DAW. It provides integrated tools for composing both harmony and melody, featuring intelligent chord voicing, melody pattern construction, and interactive visualization that makes music theory accessible and intuitive for all skill levels. Every subscription and lifetime license also includes CymaSynth—our professional wavetable synthesizer (standalone app, VST3 & AU)—bundled at no extra cost.",
+      "Cymasphere is a first-principles harmony engine—an intelligent, harmony-centric audio/MIDI compositional environment available as a standalone app and as a plugin (AU & VST3) for your DAW. Write progressions, voicings, and melody from the ground up around how music works, with interactive visualization that makes theory feel intuitive. Every subscription and lifetime license also includes CymaSynth—our professional wavetable synthesizer (standalone app, VST3 & AU)—bundled at no extra cost.",
   },
   {
     question: "What is CymaSynth, and is it really included with Cymasphere?",

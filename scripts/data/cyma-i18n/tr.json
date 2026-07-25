@@ -1,15 +1,19 @@
 {
   "hero": {
     "bundleEyebrow": "Bir abonelik · iki ürün",
-    "bundleCymasphereDesc": "Kompozisyon ve teori paketi",
+    "bundleCymasphereDesc": "Armoni odaklı kompozisyon",
     "bundleCymaSynthDesc": "Wavetable sentezleyici · 149 $ değerinde dahil",
     "bundleFootnote": "CymaSynth tek başına 149 $ değerinde—tüm Cymasphere planlarında ek ücret olmadan dahil · Bağımsız, AU ve VST3",
     "bundleCymasphereImageAlt": "Cymasphere — katalog kare görseli",
     "bundleCymaSynthImageAlt": "Wavetable sentezleyici CymaSynth ürün arayüzü",
-    "includedSynth": "CymaSynth—profesyonel wavetable sentezleyici (bağımsız uygulama, VST3 ve AU)—her abonelik ve ömür boyu lisansla birlikte gelir. Tam kompozisyon paketi ve amiral gemisi enstrüman tek pakette."
+    "includedSynth": "CymaSynth—profesyonel wavetable sentezleyici (bağımsız uygulama, VST3 ve AU)—her abonelik ve ömür boyu lisansla birlikte gelir. Tam kompozisyon paketi ve amiral gemisi enstrüman tek pakette.",
+    "title": "Cymasphere — İlk İlkelere Dayalı Armoni Motoru",
+    "titlePartA": "İlk ilkeler",
+    "titlePartB": "Armoni motoru",
+    "subtitle": "Daha iyi müziği armoniden yazın. Progresyonlar, voicing’ler ve melodi için akıllı bir audio/MIDI stüdyosu—müziğin nasıl işlediğinin temellerinden tasarlandı."
   },
   "features": {
-    "subtitle": "Armoni, melodi, düzenleme—artı planınıza dahil 149 $ değerinde wavetable enstrüman CymaSynth. Bir paket, iki ürün.",
+    "subtitle": "Audio ve MIDI için ilk ilkelere dayalı bir armoni motoru—artı planınıza dahil 149 $ değerinde wavetable enstrüman CymaSynth. Bir paket, iki ürün.",
     "cymaSynth": {
       "title": "CymaSynth dahil",
       "description": "149 $ değerinde profesyonel wavetable sentezleyici—üç osilatör, derin modülasyon, stüdyo efektleri—Cymasphere ile ücretsiz.",
@@ -48,7 +52,7 @@
     }
   },
   "footer": {
-    "description": "Cymasphere; yapımcılar, besteciler, müzisyenler, eğitmenler ve öğrenciler için etkileşimli bir kompozisyon aracıdır—her planda 149 $ değerinde wavetable sentezleyici CymaSynth ücretsiz dahildir."
+    "description": "Cymasphere, ilk ilkelere dayalı bir armoni motorudur—yapımcılar, besteciler, müzisyenler, eğitmenler ve öğrenciler için akıllı bir audio/MIDI kompozisyon ortamı; her planda 149 $ değerinde wavetable synth CymaSynth ücretsiz dahildir."
   },
   "chat": {
     "greeting": "Merhaba! Ben Cymasphere asistanıyım. Armoni ve melodi, CymaSynth (her planda dahil wavetable sentezleyici), fiyatlar veya ilk adımlar hakkında sorabilirsiniz. Ne öğrenmek istersiniz?"
@@ -65,12 +69,15 @@
   "faq": {
     "questions": {
       "0": {
-        "answer": "Cymasphere; bağımsız uygulama ve DAW için eklenti (AU ve VST3) olarak kullanılabilen tam bir müzik üretim paketidir. Armoni ve melodi, akıllı voicing’ler, desen oluşturma ve teoriyi her seviyede erişilebilir kılan etkileşimli görselleştirme sunar. Her abonelik ve ömür boyu lisans, profesyonel wavetable sentezleyici CymaSynth’i (bağımsız uygulama, VST3 ve AU) ek ücret olmadan içerir."
+        "answer": "Cymasphere, ilk ilkelere dayalı bir armoni motorudur—armoni odaklı, akıllı bir audio/MIDI kompozisyon ortamı; bağımsız uygulama ve DAW eklentisi (AU ve VST3) olarak sunulur. Müziğin nasıl işlediğinin temellerinden progresyonlar, voicing’ler ve melodi yazın; etkileşimli görselleştirme teoriyi sezgisel kılar. Her abonelik ve ömür boyu lisans ayrıca CymaSynth’i—profesyonel wavetable synthesizer’ımızı (bağımsız uygulama, VST3 ve AU)—ek ücret olmadan içerir."
       },
       "1": {
         "question": "CymaSynth nedir ve gerçekten Cymasphere ile mi geliyor?",
         "answer": "CymaSynth, NNAudio’nun profesyonel wavetable sentezleyicisidir: çoklu osilatörler, derin modülasyon, iki filtre, efektler ve 32 ses polifoni. Tek başına 149 $; Cymasphere ile her abonelik ve ömür boyu lisansa ek ücret olmadan dahildir. Abonelikle ayrıca satın almanız gerekmez—kompozisyon paketi ve amiral gemisi enstrüman tek çatı altında."
       }
     }
+  },
+  "howItWorks": {
+    "subtitle": "Armoniden kompoze edin—ilk ilkelerden tasarlandı"
   }
 }

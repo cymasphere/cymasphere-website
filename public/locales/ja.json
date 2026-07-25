@@ -59,10 +59,10 @@
     "tryDemo": "デモを試す"
   },
   "hero": {
-    "title": "AIで音楽を作成",
-    "titlePartA": "インテリジェント",
-    "titlePartB": "クリエーション",
-    "subtitle": "音楽制作の次なる進化へ。理論的基盤が目に見えずにワークフローを導き、コードとメロディが目的を持って結びつき、あなた独自の音楽的ビジョンを強化します。",
+    "title": "Cymasphere — 第一原理のハーモニーエンジン",
+    "titlePartA": "第一原理の",
+    "titlePartB": "ハーモニーエンジン",
+    "subtitle": "ハーモニーから、より良い音楽を。進行・ボイシング・メロディのためのインテリジェントなオーディオ／MIDIスタジオ—音楽の仕組みを土台から設計。",
     "cta": "今すぐ試す",
     "titleWords": {
       "music": "音楽",
@@ -89,7 +89,7 @@
     "includedSynth": "CymaSynth—プロ仕様のウェーブテーブルシンセ（スタンドアロンアプリ、VST3・AU）—を全サブスクリプションと永久ライセンスに同梱。作曲スイートとフラッグシップ楽器をひとつに。",
     "bundleEyebrow": "1つのサブスクリプション · 2つのプロダクト",
     "bundleCymasphereTitle": "Cymasphere",
-    "bundleCymasphereDesc": "作曲・理論スイート",
+    "bundleCymasphereDesc": "ハーモニー中心の作曲",
     "bundleCymaSynthTitle": "CymaSynth",
     "bundleCymaSynthDesc": "ウェーブテーブルシンセ · 149ドル相当が同梱",
     "bundleFootnote": "CymaSynthは単体で149ドル相当—Cymasphereの全プランに追加料金なしで同梱 · スタンドアロン、AU、VST3",
@@ -103,7 +103,7 @@
   },
   "features": {
     "title": "機能",
-    "subtitle": "和声、メロディ、アレンジ—さらにプランに含まれる149ドル相当のウェーブテーブル楽器 CymaSynth。1つのスイート、2つのプロダクト。",
+    "subtitle": "オーディオとMIDIのための第一原理ハーモニーエンジン—さらにプランに含まれる149ドル相当のウェーブテーブル楽器 CymaSynth。1つのスイート、2つのプロダクト。",
     "aiComposition": "AI作曲",
     "aiCompositionDesc": "高度なAIを使ってボタン一つで音楽を生成",
     "livePerformance": "ライブパフォーマンス",
@@ -341,7 +341,7 @@
   },
   "howItWorks": {
     "title": "使い方",
-    "subtitle": "簡単な音楽作成",
+    "subtitle": "ハーモニーから作曲する—第一原理で設計",
     "createSubtitle": "目的を持って音楽を作曲",
     "learnSubtitle": "お気に入りの曲を簡単にマスター",
     "integrateSubtitle": "既存のワークフローと連携",
@@ -413,7 +413,7 @@
     "copyright": "© {{year}} Cymasphere. すべての権利を保有。",
     "privacyPolicy": "プライバシーポリシー",
     "termsOfService": "利用規約",
-    "description": "Cymasphereは、プロデューサー、作曲家、演奏者、教育者、学生向けのインタラクティブ作曲ツールです。全プランに149ドル相当のウェーブテーブルシンセ CymaSynthが無償で含まれます。",
+    "description": "Cymasphereは第一原理のハーモニーエンジン—プロデューサー、作曲家、演奏者、教育者、学生向けのインテリジェントなオーディオ／MIDI作曲環境です。全プランに149ドル相当のウェーブテーブルシンセ CymaSynthが無償で含まれます。",
     "navigation": "ナビゲーション",
     "account": "アカウント",
     "accountDashboard": "アカウントダッシュボード",
@@ -501,7 +501,7 @@
     "questions": [
       {
         "question": "Cymasphereとは何ですか？",
-        "answer": "Cymasphereは、スタンドアロンアプリとDAW用プラグイン（AU・VST3）として使える、曲づくりのためのフルスイートです。和声・メロディ、インテリジェントなボイシング、パターン構築、理論をどのレベルでも扱いやすくするインタラクティブな可視化を統合しています。各サブスクリプションと永久ライセンスには、プロ仕様のウェーブテーブルシンセ CymaSynth（VST3・AU）も追加費用なしで含まれます。"
+        "answer": "Cymasphereは第一原理のハーモニーエンジンです。ハーモニー中心のインテリジェントなオーディオ／MIDI作曲環境で、スタンドアロンアプリとDAW用プラグイン（AU・VST3）として使えます。音楽の仕組みを土台に、進行・ボイシング・メロディを書き、理論を直感的にするインタラクティブな可視化を備えます。すべてのサブスクリプションとライフタイムライセンスに、プロ向けウェーブテーブルシンセ CymaSynth（スタンドアロン、VST3、AU）が追加料金なしで含まれます。"
       },
       {
         "question": "CymaSynthとは何ですか。本当にCymasphereに含まれますか。",

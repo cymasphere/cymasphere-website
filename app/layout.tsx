@@ -22,21 +22,21 @@ import "./globals.css";
  * @description Defines SEO metadata, title, description, and favicon configurations.
  */
 export const metadata: Metadata = {
-  title: "Cymasphere — Intelligent music creation + CymaSynth",
+  title: "Cymasphere — First-Principles Harmony Engine",
   description:
-    "Complete song-creation suite (standalone & AU/VST3) with harmony, melody, and AI-assisted tools. Every plan includes CymaSynth—a professional wavetable synthesizer (standalone app, VST3 & AU).",
+    "Write better music from harmony out. An intelligent audio/MIDI studio for progressions, voicings, and melody—built from the ground up around how music works.",
   openGraph: {
-    title: "Cymasphere — Intelligent music creation + CymaSynth",
+    title: "Cymasphere — First-Principles Harmony Engine",
     description:
-      "Harmony, melody, arrangement, and a bundled wavetable synth (standalone app, VST3 & AU). Subscriptions and lifetime licenses include CymaSynth.",
+      "Write better music from harmony out. An intelligent audio/MIDI studio for progressions, voicings, and melody—built from the ground up around how music works.",
     siteName: "Cymasphere",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Cymasphere — Intelligent music creation + CymaSynth",
+    title: "Cymasphere — First-Principles Harmony Engine",
     description:
-      "Every plan includes CymaSynth. Composition suite + flagship instrument.",
+      "Write better music from harmony out. An intelligent audio/MIDI studio for progressions, voicings, and melody—built from the ground up around how music works.",
   },
   icons: {
     icon: [

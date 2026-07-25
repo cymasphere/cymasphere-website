@@ -1,12 +1,11 @@
 /**
  * @fileoverview HeroSection Component
  * @module components/sections/HeroSection
- * 
- * Main hero section component for the landing page. Features animated title with
- * cycling words, floating musical notes with voice-leading animations, chord
- * progression playback, and background video. Includes interactive elements for
- * playing notes and chords.
- * 
+ *
+ * Main hero section for the landing page. Positions Cymasphere as a
+ * first-principles harmony engine, with floating musical notes (voice-leading),
+ * chord progression playback, product bundle lockup, and background video.
+ *
  * @example
  * // Basic usage
  * <HeroSection />
@@ -24,12 +23,11 @@ import React, {
 import { useTranslation } from "react-i18next";
 import styled, { keyframes } from "styled-components";
 import { FaApple, FaWindows, FaTabletAlt, FaPlug } from "react-icons/fa";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import * as Tone from "tone";
 import { getPresetById } from "@/utils/presets";
 import { createSynth, disposeSynth, DisposableSynth } from "@/utils/synthUtils";
 import useEffectsChain from "@/hooks/useEffectsChain";
-import dynamic from "next/dynamic";
 import Image from "next/image";
 
 /**
@@ -168,15 +166,36 @@ const HeroContent = styled.div`
 `;
 
 const HeroTitle = styled(motion.h1)`
-  font-size: 3.5rem;
+  font-size: clamp(2.15rem, 5.2vw, 3.5rem);
   margin-bottom: 0.85rem;
   text-align: center;
-  line-height: 1.08;
+  line-height: 1.12;
+  font-weight: 700;
+  max-width: 18ch;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.28em 0.35em;
 
   @media (max-width: 768px) {
-    font-size: 2.65rem;
     margin-bottom: 0.65rem;
+    max-width: 14ch;
   }
+`;
+
+/** @brief Static lead phrase in the hero H1 (e.g. “First-Principles”). */
+const HeroTitleLead = styled.span`
+  color: #fff;
+  white-space: nowrap;
+`;
+
+/** @brief Accented product category in the hero H1 (e.g. “Harmony Engine”). */
+const HeroTitleAccent = styled.span`
+  white-space: nowrap;
+  background: linear-gradient(105deg, var(--primary), var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 `;
 
 const HeroSubtitle = styled(motion.p)`
@@ -184,7 +203,7 @@ const HeroSubtitle = styled(motion.p)`
   line-height: 1.45;
   color: var(--text-secondary);
   margin-bottom: 0.55rem;
-  max-width: 900px;
+  max-width: 720px;
   text-align: center;
 `;
 
@@ -533,45 +552,21 @@ const useWindowSize = () => {
   return windowSize;
 };
 
-// Client-only component to ensure proper measurement
-const ClientOnlyHeroTitle: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) {
-    // Return a simple placeholder during SSR
-    return <div style={{ minHeight: "200px" }}></div>;
-  }
-
-  return <>{children}</>;
-};
-
-// Use dynamic import with ssr: false to completely prevent server-side rendering
-const ClientOnly = dynamic(() => Promise.resolve(ClientOnlyHeroTitle), {
-  ssr: false,
-});
-
 /**
  * @brief HeroSection component
- * 
- * Main landing page hero section with:
- * - Animated title with cycling words (Music, Song, Chord, etc.)
+ *
+ * Main landing page hero with:
+ * - First-Principles Harmony Engine headline
  * - Floating musical notes that transition between chords using voice-leading
  * - Interactive note and chord playback
  * - Background video with fade-in effect
  * - Call-to-action buttons
- * 
+ *
  * @returns {JSX.Element} The rendered hero section component
- * 
+ *
  * @note Uses Tone.js for audio synthesis and playback
  * @note Applies "atmospheric" preset to synth for ambient sound
  * @note Chord progression cycles every 4 seconds
- * @note Title words cycle every 2 seconds
  * @note Notes use voice-leading principles for smooth transitions
  * @note Synth initialization is deferred to avoid blocking FCP
  * @note Video background fades in when loaded
@@ -594,125 +589,9 @@ const HeroSection = () => {
     []
   );
 
-  // Words to cycle through in the hero title - WRAPPED IN USEMEMO TO PREVENT RECREATION
-  const titleWords = useMemo(
-    () => [
-      t("hero.titleWords.music", "Music"),
-      t("hero.titleWords.song", "Song"),
-      t("hero.titleWords.chord", "Chord"),
-      t("hero.titleWords.pattern", "Pattern"),
-      t("hero.titleWords.progression", "Progression"),
-      t("hero.titleWords.voicing", "Voicing"),
-      t("hero.titleWords.harmony", "Harmony"),
-    ],
-    [t]
-  ); // Only recreate when translation function or language changes
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [centerWordWidth, setCenterWordWidth] = useState(120); // Default width
-  const centerWordRef = useRef<HTMLSpanElement>(null);
-
-  // Pre-measure word widths to avoid mixing them up during transitions
-  const [wordWidths, setWordWidths] = useState<Record<number, number>>({});
-  const wordMeasureRef = useRef<HTMLDivElement>(null);
-
   // Use windowSize hook to get both width and height
   const { width: windowWidth, height: windowHeight } = useWindowSize();
   const isMobile = windowWidth <= 768;
-
-  // Measure all word widths once on first render and when language changes
-  // Defer this to avoid blocking FCP
-  useEffect(() => {
-    // Skip SSR execution
-    if (typeof window === "undefined") return;
-
-    // Use a longer timeout to ensure DOM is fully rendered and FCP is done
-    const timeoutId = setTimeout(() => {
-      if (wordMeasureRef.current) {
-        const widths: Record<number, number> = {};
-
-        const tempDiv = wordMeasureRef.current;
-        const baseStyle = {
-          visibility: "hidden",
-          position: "absolute",
-          fontSize: !isMobile ? "3.5rem" : "2.65rem", // Match HeroTitle font sizes
-          whiteSpace: "nowrap",
-          padding: "0 10px",
-          fontWeight: "bold", // Match the actual font weight
-        };
-
-        // Apply base style to the measurement div
-        Object.assign(tempDiv.style, baseStyle);
-        document.body.appendChild(tempDiv);
-
-        // Measure each word
-        titleWords.forEach((word, index) => {
-          tempDiv.textContent = word;
-          widths[index] = tempDiv.offsetWidth;
-        });
-
-        // Clean up
-        document.body.removeChild(tempDiv);
-        setWordWidths(widths);
-        
-        // Also update the current center word width
-        setCenterWordWidth(widths[currentWordIndex] || 120);
-      }
-    }, 800); // Increased timeout to 800ms to ensure FCP is complete before measurement
-    
-    return () => clearTimeout(timeoutId);
-  }, [titleWords, isMobile]);
-
-  // Update center word width whenever the currentWordIndex changes
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    
-    // If we have measured widths, use them
-    if (wordWidths && Object.keys(wordWidths).length > 0) {
-      const newWidth = wordWidths[currentWordIndex] || 120;
-      setCenterWordWidth(newWidth);
-    }
-    // Also update from the DOM if possible (as a fallback)
-    else if (centerWordRef.current) {
-      setCenterWordWidth(centerWordRef.current.offsetWidth);
-    }
-  }, [currentWordIndex, wordWidths, titleWords]);
-
-  // ROBUST WORD CYCLING IMPLEMENTATION
-  useEffect(() => {
-    // Only run on client side
-    if (typeof window === "undefined") return;
-
-    // Create an interval that cycles the words every 2 seconds
-    const intervalId = setInterval(() => {
-      // Use function form of state update to ensure we're using the latest state
-      setCurrentWordIndex((prevIndex) => {
-        const nextIndex = (prevIndex + 1) % titleWords.length;
-        // console.log(
-        //   `Cycling word from ${prevIndex} (${titleWords[prevIndex]}) to ${nextIndex} (${titleWords[nextIndex]})`
-        // );
-        return nextIndex;
-      });
-    }, 2000);
-
-    // Clean up the interval on unmount
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [titleWords.length]); // Only depend on the length of titleWords, not the array itself
-
-  // Function to get color for each title word
-  const getWordColor = useCallback((index: number): string => {
-    const colors = [
-      "#E74C3C", // Red - Music
-      "#FF5E5B", // Coral - Song
-      "#FFD166", // Yellow - Chord
-      "#06D6A0", // Green - Pattern
-      "#118AB2", // Blue - Progression
-      "#9370DB", // Purple - Voicing
-      "#3F51B5", // Indigo - Harmony
-    ];
-    return colors[index % colors.length];
-  }, []);
 
   // Basic state for the current chord
   const [currentChordIndex, setCurrentChordIndex] = useState(0);
@@ -782,36 +661,6 @@ const HeroSection = () => {
     { x: 0, y: 0, delay: 0.8 }, // Second position offset - delay by 0.8s
     { x: 0, y: 0, delay: 1.5 }, // Third position offset - delay by 1.5s
   ]);
-
-  // Add a specific effect to force re-measurement after client-side mounting
-  useEffect(() => {
-    // This effect will run after the component has mounted on the client side
-    if (typeof window !== "undefined" && wordMeasureRef.current) {
-      // Force re-measurement by triggering a measurement cycle
-      const widths: Record<number, number> = {};
-
-      const tempDiv = wordMeasureRef.current;
-      const baseStyle = {
-        visibility: "hidden",
-        position: "absolute",
-        fontSize: !isMobile ? "3.5rem" : "2.65rem",
-        whiteSpace: "nowrap",
-        padding: "0 10px",
-        fontWeight: "bold",
-      };
-
-      Object.assign(tempDiv.style, baseStyle);
-      document.body.appendChild(tempDiv);
-
-      titleWords.forEach((word, index) => {
-        tempDiv.textContent = word;
-        widths[index] = tempDiv.offsetWidth;
-      });
-
-      document.body.removeChild(tempDiv);
-      setWordWidths(widths);
-    }
-  }, [titleWords, isMobile]);
 
   // Use the synth in a way consistent with the Try Me section
   // Defer initialization to avoid blocking FCP
@@ -1276,132 +1125,20 @@ const HeroSection = () => {
   ]);
 
   const renderContent = useCallback(() => {
-    // Get the current word from titleWords array
-    const currentWord = titleWords[currentWordIndex];
-
     return (
       <HeroContent>
-        {/* Hidden div for measuring text widths */}
-        <div
-          ref={wordMeasureRef}
-          style={{
-            position: "absolute",
-            visibility: "hidden",
-            pointerEvents: "none",
-          }}
-        />
-
-        <ClientOnly>
-          <HeroTitle
-            style={{
-              position: "relative",
-              minHeight: isMobile ? "200px" : "88px",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            {/* Title container */}
-            <div
-              style={{
-                position: "relative",
-                display: "inline-block",
-                textAlign: "center",
-                width: "100%",
-              }}
-              className="title-container"
-            >
-              {/* Left word - Intelligent */}
-              <motion.span
-                animate={{
-                  x: !isMobile ? -(centerWordWidth / 2) - 24 : 0,
-                  opacity: 1,
-                }}
-                transition={{
-                  type: "tween",
-                  ease: "easeInOut",
-                  duration: 0.5,
-                }}
-                style={{
-                  position: !isMobile ? "absolute" : "relative",
-                  right: !isMobile ? "50%" : "auto",
-                  color: "white",
-                  whiteSpace: "nowrap",
-                  fontSize: !isMobile ? "3.5rem" : "2.65rem",
-                  display: !isMobile ? "inline-block" : "block",
-                  textAlign: !isMobile ? "right" : "center",
-                  marginBottom: !isMobile ? "0" : "1.1rem",
-                  lineHeight: isMobile ? "1.2" : "inherit",
-                  fontWeight: "bold",
-                }}
-              >
-                {t("hero.titlePartA", "Intelligent")}
-              </motion.span>
-
-              {/* Center changing word - using a simpler approach */}
-              <div
-                style={{
-                  display: "inline-block",
-                  position: !isMobile ? "relative" : "static",
-                  minWidth: "120px",
-                  padding: "0 10px",
-                  textAlign: "center",
-                  marginBottom: !isMobile ? "0" : "1.1rem",
-                  width: !isMobile ? "auto" : "100%",
-                }}
-              >
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={currentWordIndex}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{
-                      duration: 0.4,
-                      ease: "easeInOut",
-                    }}
-                    style={{
-                      display: "inline-block",
-                      color: getWordColor(currentWordIndex),
-                      fontSize: !isMobile ? "3.5rem" : "2.65rem",
-                      lineHeight: isMobile ? "1.2" : "inherit",
-                      fontWeight: "bold",
-                    }}
-                    ref={centerWordRef}
-                  >
-                    {currentWord}
-                  </motion.span>
-                </AnimatePresence>
-              </div>
-
-              {/* Right word - Creation */}
-              <motion.span
-                animate={{
-                  x: !isMobile ? centerWordWidth / 2 + 24 : 0,
-                  opacity: 1,
-                }}
-                transition={{
-                  type: "tween",
-                  ease: "easeInOut",
-                  duration: 0.5,
-                }}
-                style={{
-                  position: !isMobile ? "absolute" : "relative",
-                  left: !isMobile ? "50%" : "auto",
-                  color: "white",
-                  whiteSpace: "nowrap",
-                  fontSize: !isMobile ? "3.5rem" : "2.65rem",
-                  display: !isMobile ? "inline-block" : "block",
-                  textAlign: !isMobile ? "left" : "center",
-                  lineHeight: isMobile ? "1.2" : "inherit",
-                  fontWeight: "bold",
-                }}
-              >
-                {t("hero.titlePartB", "Creation")}
-              </motion.span>
-            </div>
-          </HeroTitle>
-        </ClientOnly>
+        <HeroTitle
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.75, ease: "easeOut" }}
+        >
+          <HeroTitleLead>
+            {t("hero.titlePartA", "First-Principles")}
+          </HeroTitleLead>
+          <HeroTitleAccent>
+            {t("hero.titlePartB", "Harmony Engine")}
+          </HeroTitleAccent>
+        </HeroTitle>
 
         <HeroBundleLockup
           role="region"
@@ -1439,7 +1176,7 @@ const HeroSection = () => {
                 <HeroProductDesc>
                   {t(
                     "hero.bundleCymasphereDesc",
-                    "Composition & theory suite",
+                    "Harmony-centric composition",
                   )}
                 </HeroProductDesc>
               </HeroProductTextBlock>
@@ -1488,7 +1225,10 @@ const HeroSection = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 1.2, delay: 0.2 }}
         >
-          {t("hero.subtitle", "Enter the next evolution of music creation, where theoretical foundations invisibly guide your workflow. Chords and melodies connect with purpose, empowering your unique musical vision.")}
+          {t(
+            "hero.subtitle",
+            "Write better music from harmony out. An intelligent audio/MIDI studio for progressions, voicings, and melody—built from the ground up around how music works.",
+          )}
         </HeroSubtitle>
 
         <PlatformAvailability
@@ -1543,18 +1283,13 @@ const HeroSection = () => {
       </HeroContent>
     );
   }, [
-    titleWords,
-    currentWordIndex,
     t,
     audioContextStarted,
     playChord,
     synthRef,
-    wordMeasureRef,
-    centerWordWidth,
     isMobile,
-    getWordColor,
     displayedChord,
-    previousChord, 
+    previousChord,
     transitioning,
     positionAnimationOffsets,
     textContentLoaded,

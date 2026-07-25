@@ -49,10 +49,10 @@
     "tryDemo": "试用演示"
   },
   "hero": {
-    "title": "AI生成音乐",
-    "titlePartA": "智能",
-    "titlePartB": "创作",
-    "subtitle": "进入音乐创作的下一个进化阶段，理论基础在此无形地指导您的工作流程。和弦与旋律有目的地连接，增强您独特的音乐愿景。",
+    "title": "Cymasphere — 第一性原理和声引擎",
+    "titlePartA": "第一性原理",
+    "titlePartB": "和声引擎",
+    "subtitle": "从和声出发，写出更好的音乐。面向进行、声部与旋律的智能音频／MIDI 工作室—围绕音乐如何运作，从底层构建。",
     "cta": "立即试用",
     "titleWords": {
       "music": "音乐",
@@ -79,7 +79,7 @@
     "includedSynth": "包含 CymaSynth—专业波表合成器（独立应用、VST3 与 AU）—随每次订阅与终身许可捆绑。完整作曲套件与旗舰乐器合一。",
     "bundleEyebrow": "一次订阅 · 两款产品",
     "bundleCymasphereTitle": "Cymasphere",
-    "bundleCymasphereDesc": "作曲与理论套件",
+    "bundleCymasphereDesc": "以和声为中心的作曲",
     "bundleCymaSynthTitle": "CymaSynth",
     "bundleCymaSynthDesc": "波表合成器 · 价值 149 美元已包含",
     "bundleFootnote": "CymaSynth 单独售价 149 美元—已包含在所有 Cymasphere 方案中，无额外费用 · 独立版、AU 与 VST3",
@@ -93,7 +93,7 @@
   },
   "features": {
     "title": "功能特色",
-    "subtitle": "和声、旋律、编曲—另有价值 149 美元的波表乐器 CymaSynth 已纳入您的方案。一套产品，两款工具。",
+    "subtitle": "面向音频与 MIDI 的第一性原理和声引擎—另有价值 149 美元的波表乐器 CymaSynth 已纳入您的方案。一套产品，两款工具。",
     "aiComposition": "AI作曲",
     "aiCompositionDesc": "使用我们先进的AI，一键生成音乐",
     "livePerformance": "现场演奏",
@@ -254,7 +254,7 @@
   },
   "howItWorks": {
     "title": "工作原理",
-    "subtitle": "音乐创作变得简单",
+    "subtitle": "从和声出发作曲—按第一性原理构建",
     "createSubtitle": "有目的地作曲",
     "learnSubtitle": "轻松掌握您喜爱的歌曲",
     "integrateSubtitle": "连接到您现有的工作流程",
@@ -387,7 +387,7 @@
     "questions": [
       {
         "question": "什么是Cymasphere？",
-        "answer": "Cymasphere 是完整的音乐创作套件，可作为独立应用，也可作为 DAW 插件（AU 与 VST3）。提供和声与旋律、智能 voicing、pattern 构建与交互式可视化，让各水平用户都能运用理论。每次订阅与终身许可还包含专业波表合成器 CymaSynth（VST3 与 AU），无额外费用。"
+        "answer": "Cymasphere 是第一性原理和声引擎—以和声为中心的智能音频／MIDI 作曲环境，可作为独立应用，也可作为 DAW 插件（AU 与 VST3）。围绕音乐如何运作，从底层编写进行、声部与旋律，并以交互可视化让理论更直观。每次订阅与终身许可还包含专业波表合成器 CymaSynth（独立应用、VST3 与 AU），无额外费用。"
       },
       {
         "question": "什么是 CymaSynth？真的包含在 Cymasphere 中吗？",
@@ -469,7 +469,7 @@
     "copyright": "© {{year}} Cymasphere。保留所有权利。",
     "privacyPolicy": "隐私政策",
     "termsOfService": "服务条款",
-    "description": "Cymasphere 是面向制作人、作曲家、演奏者、教育工作者与学生的互动作曲工具—每个方案均免费包含价值 149 美元的波表合成器 CymaSynth。",
+    "description": "Cymasphere 是第一性原理和声引擎—面向制作人、作曲家、演奏者、教育工作者与学生的智能音频／MIDI 作曲环境—每个方案均免费包含价值 149 美元的波表合成器 CymaSynth。",
     "navigation": "导航",
     "account": "账户",
     "accountDashboard": "账户仪表板",

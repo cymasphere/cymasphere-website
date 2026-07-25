@@ -305,7 +305,10 @@ const HowItWorksSection = () => {
           "Connect with your existing workflow"
         );
       default:
-        return t("howItWorks.subtitle", "Music creation made simple");
+        return t(
+          "howItWorks.subtitle",
+          "Compose from harmony out—built from first principles",
+        );
     }
   };
 
