@@ -12,6 +12,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
+import type { Database } from "@/database.types";
 import {
   getAllUsersForCRM,
   getUsersForCRMCount,
@@ -1299,15 +1300,23 @@ export async function getSupportTicketAdmin(ticketId: string): Promise<{
       console.error("Error fetching messages:", messagesError);
     }
 
-    // Get attachments for all messages
+    // Get attachments for all messages (service role — RLS can hide rows from
+    // cookie clients even when is_admin checkAdmin() passed at the app layer).
     const messageIds = messages?.map((m) => m.id) || [];
-    const { data: attachments, error: attachmentsError } = await supabase
-      .from("support_attachments")
-      .select("*")
-      .in("message_id", messageIds);
+    let attachments: Database["public"]["Tables"]["support_attachments"]["Row"][] =
+      [];
+    if (messageIds.length > 0) {
+      const { data: attachmentRows, error: attachmentsError } =
+        await serviceSupabase
+          .from("support_attachments")
+          .select("*")
+          .in("message_id", messageIds);
 
-    if (attachmentsError) {
-      console.error("Error fetching attachments:", attachmentsError);
+      if (attachmentsError) {
+        console.error("Error fetching attachments:", attachmentsError);
+      } else {
+        attachments = attachmentRows ?? [];
+      }
     }
 
     // Get user emails for messages using service role client
@@ -1335,12 +1344,17 @@ export async function getSupportTicketAdmin(ticketId: string): Promise<{
         if (!url || !url.includes("supabase.co")) {
           try {
             const { data: signedUrlData, error: signedUrlError } =
-              await supabase.storage
+              await serviceSupabase.storage
                 .from(bucketName)
                 .createSignedUrl(att.storage_path, 31536000); // 1 year expiry
 
             if (!signedUrlError && signedUrlData) {
               url = signedUrlData.signedUrl;
+            } else if (signedUrlError) {
+              console.error(
+                `Error generating signed URL for attachment ${att.id}:`,
+                signedUrlError
+              );
             }
           } catch (error) {
             console.error(

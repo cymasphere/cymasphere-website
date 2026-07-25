@@ -50,7 +50,9 @@ function attachmentTypeForFile(
     fileName.endsWith(".txt") ||
     fileName.endsWith(".log") ||
     fileName.endsWith(".db") ||
-    fileName.endsWith(".lz4")
+    fileName.endsWith(".lz4") ||
+    fileName.endsWith(".zip") ||
+    mimeType.includes("zip")
   ) {
     return "document";
   }
@@ -143,15 +145,21 @@ export async function createTypedSupportTicket(
   }
 
   const attachments = input.attachments ?? [];
+  if (attachments.length > 0 && !input.serviceSupabase) {
+    console.error(
+      "[createTypedSupportTicket] Attachments present but serviceSupabase missing"
+    );
+  }
   if (attachments.length > 0 && input.serviceSupabase) {
     const messageId = String(message.id);
-    const prefix = `feedback/${ticketId}`;
+    // Match web uploadSupportTicketAttachment path convention so storage policies
+    // and signed-URL helpers that expect support-attachments/… keep working.
     for (const att of attachments) {
       if (!att.bytes?.length) continue;
       const ext = att.fileName.includes(".")
         ? att.fileName.split(".").pop()
         : "bin";
-      const storagePath = `${prefix}/${Date.now()}-${att.fieldName}.${ext}`;
+      const storagePath = `support-attachments/feedback-${ticketId}-${Date.now()}-${att.fieldName}.${ext}`;
       const buffer = Buffer.from(att.bytes);
 
       const { error: uploadError } = await input.serviceSupabase.storage
@@ -165,7 +173,8 @@ export async function createTypedSupportTicket(
       if (uploadError) {
         console.error(
           "[createTypedSupportTicket] Storage upload error:",
-          uploadError
+          uploadError,
+          { storagePath, fieldName: att.fieldName, bytes: att.bytes.length }
         );
         continue;
       }
@@ -191,7 +200,8 @@ export async function createTypedSupportTicket(
       if (attachmentError) {
         console.error(
           "[createTypedSupportTicket] Attachment insert error:",
-          attachmentError
+          attachmentError,
+          { storagePath, fieldName: att.fieldName }
         );
       }
     }

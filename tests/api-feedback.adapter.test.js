@@ -27,8 +27,8 @@ describe("feedback API adapter invariants", () => {
       form.set("description", "Freeze when opening mixer");
       form.set(
         "database",
-        new File([new Uint8Array([7, 8])], "song.db.lz4", {
-          type: "application/octet-stream",
+        new File([new Uint8Array([7, 8])], "song.db.zip", {
+          type: "application/zip",
         })
       );
       form.set(
@@ -43,7 +43,7 @@ describe("feedback API adapter invariants", () => {
       assert.strictEqual(parsed.value.description, "Freeze when opening mixer");
       assert.strictEqual(parsed.value.attachments.length, 2);
       assert.strictEqual(parsed.value.attachments[0].fieldName, "database");
-      assert.strictEqual(parsed.value.attachments[0].fileName, "song.db.lz4");
+      assert.strictEqual(parsed.value.attachments[0].fileName, "song.db.zip");
       assert.strictEqual(parsed.value.attachments[1].fieldName, "crash_report");
     }
   );
@@ -128,6 +128,30 @@ describe("feedback API adapter invariants", () => {
       const missing = selectFeedbackTicketSupabase("jwt-token", cookieClient, null);
       assert.strictEqual(missing.ok, false);
       assert.strictEqual(missing.status, 500);
+    }
+  );
+
+  it(
+    "parseFeedbackForm maps Blob-like multipart parts without requiring File instanceof",
+    { timeout: TEST_TIMEOUT_MS },
+    async () => {
+      const { parseFeedbackForm } = await loadFeedbackLib();
+      const form = new FormData();
+      form.set("type", "bug");
+      form.set("subject", "UI freeze");
+      form.set("description", "Freeze when opening mixer");
+      // Blob (not File) — mirrors some Node/undici multipart runtimes
+      form.set(
+        "database",
+        new Blob([new Uint8Array([9, 9])], { type: "application/octet-stream" })
+      );
+
+      const parsed = await parseFeedbackForm(form);
+      assert.strictEqual(parsed.ok, true);
+      assert.strictEqual(parsed.value.attachments.length, 1);
+      assert.strictEqual(parsed.value.attachments[0].fieldName, "database");
+      assert.strictEqual(parsed.value.attachments[0].fileName, "song.db.zip");
+      assert.strictEqual(parsed.value.attachments[0].bytes.length, 2);
     }
   );
 });

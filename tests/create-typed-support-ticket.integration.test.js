@@ -126,8 +126,8 @@ describe("createTypedSupportTicket invariants", () => {
         attachments: [
           {
             fieldName: "database",
-            fileName: "song.db.lz4",
-            contentType: "application/octet-stream",
+            fileName: "song.db.zip",
+            contentType: "application/zip",
             bytes: dbBytes,
           },
           {
@@ -142,10 +142,14 @@ describe("createTypedSupportTicket invariants", () => {
       assert.strictEqual(result.success, true);
       const attachments = fake.dumpTable("support_attachments");
       assert.strictEqual(attachments.length, 2);
-      assert.strictEqual(attachments[0].file_name, "song.db.lz4");
+      assert.strictEqual(attachments[0].file_name, "song.db.zip");
       assert.strictEqual(attachments[1].file_name, "stack.txt");
       assert.ok(
-        attachments[0].storage_path.includes(result.ticket.id),
+        String(attachments[0].storage_path).startsWith("support-attachments/feedback-"),
+        "storage path must use support-attachments/feedback- prefix"
+      );
+      assert.ok(
+        String(attachments[0].storage_path).includes(result.ticket.id),
         "storage path must include ticket id"
       );
       assert.strictEqual(fake.storage.length, 2);

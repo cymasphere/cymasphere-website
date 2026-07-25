@@ -32,6 +32,39 @@ const ALLOWED_TYPES = new Set<TicketType>(["support", "bug", "feature", "crash"]
 const FILE_KEYS = ["database", "log", "crash_report"] as const;
 const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 
+const DEFAULT_FILE_NAMES: Record<(typeof FILE_KEYS)[number], string> = {
+  database: "song.db.zip",
+  log: "log.txt",
+  crash_report: "crash-report.zip",
+};
+
+/**
+ * @brief True for multipart file parts (File or Blob). Avoids cross-realm instanceof File failures.
+ */
+function isMultipartBlob(value: unknown): value is Blob {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as Blob).arrayBuffer === "function" &&
+    typeof (value as Blob).size === "number" &&
+    (value as Blob).size > 0
+  );
+}
+
+function multipartFileName(
+  value: Blob,
+  field: (typeof FILE_KEYS)[number]
+): string {
+  if (typeof File !== "undefined" && value instanceof File && value.name) {
+    return value.name;
+  }
+  const named = value as Blob & { name?: string };
+  if (typeof named.name === "string" && named.name.length > 0) {
+    return named.name;
+  }
+  return DEFAULT_FILE_NAMES[field];
+}
+
 /**
  * @brief Maps multipart feedback form into createTypedSupportTicket args.
  */
@@ -73,16 +106,15 @@ export async function parseFeedbackForm(
   const attachments: FeedbackParseOk["value"]["attachments"] = [];
   for (const key of FILE_KEYS) {
     const value = formData.get(key);
-    if (value instanceof File && value.size > 0) {
-      if (value.size > MAX_FILE_SIZE_BYTES) continue;
-      const buffer = new Uint8Array(await value.arrayBuffer());
-      attachments.push({
-        fieldName: key,
-        fileName: value.name || key,
-        contentType: value.type || "application/octet-stream",
-        bytes: buffer,
-      });
-    }
+    if (!isMultipartBlob(value)) continue;
+    if (value.size > MAX_FILE_SIZE_BYTES) continue;
+    const buffer = new Uint8Array(await value.arrayBuffer());
+    attachments.push({
+      fieldName: key,
+      fileName: multipartFileName(value, key),
+      contentType: value.type || "application/octet-stream",
+      bytes: buffer,
+    });
   }
 
   return {
