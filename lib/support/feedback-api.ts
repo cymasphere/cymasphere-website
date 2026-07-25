@@ -3,6 +3,8 @@
  * @module lib/support/feedback-api
  */
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/database.types";
 import type { TicketType } from "@/lib/support/create-typed-support-ticket";
 
 export type FeedbackParseOk = {
@@ -113,4 +115,40 @@ export async function requireFeedbackUser(
     return { ok: false, status: 401, error: "Not authenticated" };
   }
   return { ok: true, user: { id: data.user.id } };
+}
+
+export type FeedbackTicketClientOk = {
+  ok: true;
+  supabase: SupabaseClient<Database>;
+};
+
+export type FeedbackTicketClientErr = {
+  ok: false;
+  status: number;
+  error: string;
+};
+
+/**
+ * @brief Supabase client for ticket/message inserts after auth.
+ *
+ * Native app Bearer requests cannot rely on cookie SSR sessions for RLS — global
+ * Authorization headers do not always propagate auth.uid() in Route Handlers.
+ * After JWT verification, use the service-role client and pass the verified user id.
+ */
+export function selectFeedbackTicketSupabase(
+  accessToken: string | null,
+  cookieClient: SupabaseClient<Database>,
+  serviceClient: SupabaseClient<Database> | null
+): FeedbackTicketClientOk | FeedbackTicketClientErr {
+  if (accessToken) {
+    if (!serviceClient) {
+      return {
+        ok: false,
+        status: 500,
+        error: "Server configuration error",
+      };
+    }
+    return { ok: true, supabase: serviceClient };
+  }
+  return { ok: true, supabase: cookieClient };
 }

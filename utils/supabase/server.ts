@@ -81,6 +81,11 @@ export function createClientWithAccessToken(
           Authorization: `Bearer ${accessToken}`,
         },
       },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false,
+      },
     }
   );
 }

@@ -109,4 +109,25 @@ describe("feedback API adapter invariants", () => {
       assert.strictEqual(result.user.id, "u1");
     }
   );
+
+  it(
+    "selectFeedbackTicketSupabase uses service client for Bearer native app requests",
+    { timeout: TEST_TIMEOUT_MS },
+    async () => {
+      const { selectFeedbackTicketSupabase } = await loadFeedbackLib();
+      const cookieClient = { tag: "cookie" };
+      const serviceClient = { tag: "service" };
+      const bearer = selectFeedbackTicketSupabase("jwt-token", cookieClient, serviceClient);
+      assert.strictEqual(bearer.ok, true);
+      assert.strictEqual(bearer.supabase, serviceClient);
+
+      const cookie = selectFeedbackTicketSupabase(null, cookieClient, serviceClient);
+      assert.strictEqual(cookie.ok, true);
+      assert.strictEqual(cookie.supabase, cookieClient);
+
+      const missing = selectFeedbackTicketSupabase("jwt-token", cookieClient, null);
+      assert.strictEqual(missing.ok, false);
+      assert.strictEqual(missing.status, 500);
+    }
+  );
 });

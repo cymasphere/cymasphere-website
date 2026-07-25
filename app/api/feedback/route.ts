@@ -13,6 +13,7 @@ import { createTypedSupportTicket } from "@/lib/support/create-typed-support-tic
 import {
   parseFeedbackForm,
   requireFeedbackUser,
+  selectFeedbackTicketSupabase,
 } from "@/lib/support/feedback-api";
 
 /**
@@ -50,6 +51,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const serviceSupabase = await createSupabaseServiceRole();
+
+    const ticketClient = selectFeedbackTicketSupabase(
+      accessToken,
+      supabase,
+      serviceSupabase
+    );
+    if (!ticketClient.ok) {
+      return NextResponse.json(
+        { success: false, error: ticketClient.error },
+        { status: ticketClient.status }
+      );
+    }
+
     const formData = await request.formData();
     const parsed = await parseFeedbackForm(formData);
     if (!parsed.ok) {
@@ -59,7 +74,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const serviceSupabase = await createSupabaseServiceRole();
     if (!serviceSupabase && parsed.value.attachments.length > 0) {
       return NextResponse.json(
         { success: false, error: "Server configuration error" },
@@ -68,7 +82,7 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await createTypedSupportTicket({
-      supabase,
+      supabase: ticketClient.supabase,
       serviceSupabase: serviceSupabase ?? undefined,
       userId: auth.user.id,
       subject: parsed.value.subject,
