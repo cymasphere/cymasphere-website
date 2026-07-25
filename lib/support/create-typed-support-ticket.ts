@@ -5,6 +5,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/database.types";
+import { sendSupportTicketEmailNotificationToAdmin } from "@/lib/support/notify-admin-support-ticket";
 
 export type TicketType = "support" | "bug" | "feature" | "crash";
 
@@ -75,6 +76,7 @@ function asInsertable(client: { from: (t: string) => unknown }, table: string) {
 /**
  * @brief Creates a typed support ticket, initial message, and optional attachments.
  * Caller owns authentication; this helper does not check auth.
+ * @note Always emails the support inbox after a successful create (all ticket types).
  */
 export async function createTypedSupportTicket(
   input: CreateTypedSupportTicketInput
@@ -144,6 +146,7 @@ export async function createTypedSupportTicket(
     };
   }
 
+  const messageId = String(message.id);
   const attachments = input.attachments ?? [];
   if (attachments.length > 0 && !input.serviceSupabase) {
     console.error(
@@ -151,7 +154,6 @@ export async function createTypedSupportTicket(
     );
   }
   if (attachments.length > 0 && input.serviceSupabase) {
-    const messageId = String(message.id);
     // Match web uploadSupportTicketAttachment path convention so storage policies
     // and signed-URL helpers that expect support-attachments/… keep working.
     for (const att of attachments) {
@@ -205,6 +207,15 @@ export async function createTypedSupportTicket(
         );
       }
     }
+  }
+
+  try {
+    await sendSupportTicketEmailNotificationToAdmin(ticketId, messageId);
+  } catch (emailError) {
+    console.error(
+      "[createTypedSupportTicket] Admin email notification failed:",
+      emailError
+    );
   }
 
   return {

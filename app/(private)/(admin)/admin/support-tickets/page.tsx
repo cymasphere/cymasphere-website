@@ -59,6 +59,9 @@ import {
   SupportReplyTranslate,
   type CustomerLanguage,
 } from "@/components/admin/SupportReplyTranslate";
+import SupportAttachmentTextPreview, {
+  canPreviewSupportAttachmentText,
+} from "@/components/admin/SupportAttachmentTextPreview";
 
 import TableLoadingRow from "@/components/common/TableLoadingRow";
 
@@ -258,11 +261,11 @@ const TableContainer = styled.div`
   overflow: visible !important;
   position: relative;
 
-  @media (max-width: 768px) {
+  @media (max-width: 1100px) {
     overflow-x: auto;
-    
+
     table {
-      min-width: 1200px;
+      min-width: 1280px;
     }
   }
 `;
@@ -274,14 +277,42 @@ const Table = styled.table`
   table-layout: fixed;
   overflow: visible !important;
 
-  /* Define column widths */
-  th:nth-child(1), td:nth-child(1) { width: 100px; } /* Ticket ID */
-  th:nth-child(2), td:nth-child(2) { width: 300px; } /* Subject */
-  th:nth-child(3), td:nth-child(3) { width: 350px; } /* User */
-  th:nth-child(4), td:nth-child(4) { width: 150px; } /* Subscription */
-  th:nth-child(5), td:nth-child(5) { width: 120px; } /* Status */
-  th:nth-child(6), td:nth-child(6) { width: 110px; } /* Created */
-  th:nth-child(7), td:nth-child(7) { width: 160px; } /* Actions */
+  /**
+   * @brief Fixed column widths for the 8-column ticket list.
+   * @note Order: ID | Subject | User | Subscription | Status | Type | Created | Actions
+   */
+  th:nth-child(1),
+  td:nth-child(1) {
+    width: 96px;
+  }
+  th:nth-child(2),
+  td:nth-child(2) {
+    width: 22%;
+  }
+  th:nth-child(3),
+  td:nth-child(3) {
+    width: 20%;
+  }
+  th:nth-child(4),
+  td:nth-child(4) {
+    width: 130px;
+  }
+  th:nth-child(5),
+  td:nth-child(5) {
+    width: 120px;
+  }
+  th:nth-child(6),
+  td:nth-child(6) {
+    width: 110px;
+  }
+  th:nth-child(7),
+  td:nth-child(7) {
+    width: 110px;
+  }
+  th:nth-child(8),
+  td:nth-child(8) {
+    width: 96px;
+  }
 `;
 
 const TableHeader = styled.thead`
@@ -352,39 +383,20 @@ const TableCell = styled.td`
   white-space: nowrap;
   position: relative;
 
-  /* Allow wrapping and overflow for action buttons */
-`;
-
-const SubjectTableCell = styled(TableCell)`
-  min-width: 250px;
-  max-width: 400px;
-`;
-
-const UserTableCell = styled(TableCell)`
-  min-width: 300px;
-  max-width: 500px;
-`;
-
-const SubjectHeaderCell = styled(TableHeaderCell)`
-  min-width: 250px;
-  max-width: 400px;
-`;
-
-const UserHeaderCell = styled(TableHeaderCell)`
-  min-width: 300px;
-  max-width: 500px;
-  &:last-child {
-    white-space: normal;
-    overflow: visible;
-  }
-
-  /* Allow overflow for cells with dropdowns (status, more menu) */
+  /* Status / actions menus need to escape the clipped cell box */
   &[data-has-dropdown] {
     overflow: visible !important;
-    position: relative;
-    z-index: 10010 !important;
+    z-index: 10010;
   }
 `;
+
+const SubjectTableCell = styled(TableCell)``;
+
+const UserTableCell = styled(TableCell)``;
+
+const SubjectHeaderCell = styled(TableHeaderCell)``;
+
+const UserHeaderCell = styled(TableHeaderCell)``;
 
 const TicketId = styled.span`
   font-family: monospace;
@@ -460,11 +472,15 @@ const SubscriptionBadge = styled.span<{
   }
 `;
 
-const SubscriptionCell = styled(TableCell)`
+const SubscriptionCell = styled(TableCell)``;
+
+/** @brief Inner flex wrapper so subscription badges don't break table cell layout. */
+const SubscriptionCellInner = styled.div`
   display: flex;
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
+  min-width: 0;
 `;
 
 const StatusBadge = styled.span<{ $status: string; $clickable?: boolean }>`
@@ -528,6 +544,38 @@ const StatusBadge = styled.span<{ $status: string; $clickable?: boolean }>`
     font-size: 0.7rem;
     filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
   }
+`;
+
+/**
+ * @brief Badge for ticket_type (support | bug | feature | crash).
+ * @note Colors are distinct from status badges so type is scannable at a glance.
+ */
+const TypeBadge = styled.span<{ $type: string }>`
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+
+  ${(props) => {
+    switch (props.$type) {
+      case "bug":
+        return `background-color: #e74c3c;`;
+      case "feature":
+        return `background-color: #9b59b6;`;
+      case "crash":
+        return `background-color: #e67e22;`;
+      case "support":
+      default:
+        return `background-color: #5b8def;`;
+    }
+  }}
 `;
 
 const StatusDropdown = styled(motion.div)<{ $top?: number; $left?: number }>`
@@ -986,6 +1034,31 @@ const AttachmentLink = styled.a`
     background-color: rgba(108, 99, 255, 0.2);
     text-decoration: underline;
   }
+`;
+
+/** @brief Button twin of AttachmentLink for inline crash/log preview. */
+const AttachmentActionButton = styled.button`
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  border: 1px dashed rgba(108, 99, 255, 0.45);
+  background-color: rgba(108, 99, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: rgba(108, 99, 255, 0.2);
+  }
+`;
+
+const AttachmentActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
 `;
 
 const ImagePreview = styled.img`
@@ -1681,6 +1754,10 @@ function SupportTicketsPage() {
   const [isScrolledUp, setIsScrolledUp] = useState<Map<string, boolean>>(new Map());
   const messagesContainerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [attachmentTextPreview, setAttachmentTextPreview] = useState<{
+    id: string;
+    fileName: string;
+  } | null>(null);
   const [ticketToDelete, setTicketToDelete] = useState<Ticket | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [newMessages, setNewMessages] = useState<{[key: string]: string}>({});
@@ -2890,19 +2967,21 @@ function SupportTicketsPage() {
                     )}
                   </UserTableCell>
                   <SubscriptionCell>
-                    <SubscriptionBadge
-                      $color={getSubscriptionBadgeColor(
-                        ticket.user_has_nfr ? "nfr" : (ticket.user_subscription || "none")
-                      )}
-                      $variant={
-                        ticket.user_has_nfr || isSubscriptionPremium(ticket.user_subscription || "none")
-                          ? "premium"
-                          : "default"
-                      }
-                    >
-                      {ticket.user_has_nfr ? <FaCrown /> : getSubscriptionIcon(ticket.user_subscription || "none")}
-                      {ticket.user_has_nfr ? "NFR" : (ticket.user_subscription || "none")}
-                    </SubscriptionBadge>
+                    <SubscriptionCellInner>
+                      <SubscriptionBadge
+                        $color={getSubscriptionBadgeColor(
+                          ticket.user_has_nfr ? "nfr" : (ticket.user_subscription || "none")
+                        )}
+                        $variant={
+                          ticket.user_has_nfr || isSubscriptionPremium(ticket.user_subscription || "none")
+                            ? "premium"
+                            : "default"
+                        }
+                      >
+                        {ticket.user_has_nfr ? <FaCrown /> : getSubscriptionIcon(ticket.user_subscription || "none")}
+                        {ticket.user_has_nfr ? "NFR" : (ticket.user_subscription || "none")}
+                      </SubscriptionBadge>
+                    </SubscriptionCellInner>
                   </SubscriptionCell>
                   <TableCell data-has-dropdown>
                     <StatusContainer data-status-dropdown>
@@ -2972,10 +3051,10 @@ function SupportTicketsPage() {
                     </StatusContainer>
                   </TableCell>
                   <TableCell>
-                    <StatusBadge $status="open">
+                    <TypeBadge $type={ticket.ticket_type || "support"}>
                       {(ticket.ticket_type || "support").charAt(0).toUpperCase() +
                         (ticket.ticket_type || "support").slice(1)}
-                    </StatusBadge>
+                    </TypeBadge>
                   </TableCell>
                   <TableCell>{formatDate(ticket.created_at)}</TableCell>
                   <TableCell data-has-dropdown>
@@ -3237,6 +3316,14 @@ function SupportTicketsPage() {
           getDisplayName={getDisplayName}
         />
 
+        {attachmentTextPreview && (
+          <SupportAttachmentTextPreview
+            attachmentId={attachmentTextPreview.id}
+            fileName={attachmentTextPreview.fileName}
+            onClose={() => setAttachmentTextPreview(null)}
+          />
+        )}
+
         {/* Ticket Conversation Modal */}
         <AnimatePresence>
           {selectedTicketId && (() => {
@@ -3471,11 +3558,30 @@ function SupportTicketsPage() {
                                           <AttachmentName>{att.file_name}</AttachmentName>
                                           <AttachmentSize>{(att.file_size / 1024).toFixed(2)} KB</AttachmentSize>
                                         </AttachmentInfo>
-                                        {att.url && (
-                                          <AttachmentLink href={att.url} target="_blank" rel="noopener noreferrer">
-                                            View
-                                          </AttachmentLink>
-                                        )}
+                                        <AttachmentActions>
+                                          {canPreviewSupportAttachmentText(
+                                            att.file_name,
+                                            att.file_type,
+                                            att.attachment_type
+                                          ) && (
+                                            <AttachmentActionButton
+                                              type="button"
+                                              onClick={() =>
+                                                setAttachmentTextPreview({
+                                                  id: att.id,
+                                                  fileName: att.file_name,
+                                                })
+                                              }
+                                            >
+                                              Preview / Copy
+                                            </AttachmentActionButton>
+                                          )}
+                                          {att.url && (
+                                            <AttachmentLink href={att.url} target="_blank" rel="noopener noreferrer">
+                                              Download
+                                            </AttachmentLink>
+                                          )}
+                                        </AttachmentActions>
                                       </AttachmentContainer>
                                     )}
                                   </MessageAttachment>
