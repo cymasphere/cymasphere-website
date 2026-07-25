@@ -95,15 +95,20 @@ export type FeedbackAuthErr = { ok: false; status: 401; error: string };
 /**
  * @brief Resolves authenticated user from a supabase.auth-like getUser API.
  */
-export async function requireFeedbackUser(auth: {
-  getUser: (
-    jwt?: string
-  ) => Promise<{
-    data: { user: { id: string } | null };
-    error: { message?: string } | null;
-  }>;
-}): Promise<FeedbackAuthOk | FeedbackAuthErr> {
-  const { data, error } = await auth.getUser();
+export async function requireFeedbackUser(
+  auth: {
+    getUser: (
+      jwt?: string
+    ) => Promise<{
+      data: { user: { id: string } | null };
+      error: { message?: string } | null;
+    }>;
+  },
+  accessToken?: string | null
+): Promise<FeedbackAuthOk | FeedbackAuthErr> {
+  const { data, error } = accessToken
+    ? await auth.getUser(accessToken)
+    : await auth.getUser();
   if (error || !data.user) {
     return { ok: false, status: 401, error: "Not authenticated" };
   }

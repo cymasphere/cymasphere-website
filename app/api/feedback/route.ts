@@ -27,15 +27,15 @@ export async function POST(request: NextRequest) {
       : null;
 
     const authApi = {
-      getUser: async () => {
-        if (accessToken) {
-          return supabase.auth.getUser(accessToken);
+      getUser: async (jwt?: string) => {
+        if (jwt) {
+          return supabase.auth.getUser(jwt);
         }
         return supabase.auth.getUser();
       },
     };
 
-    const auth = await requireFeedbackUser(authApi);
+    const auth = await requireFeedbackUser(authApi, accessToken);
     if (!auth.ok) {
       return NextResponse.json(
         { success: false, error: auth.error },
