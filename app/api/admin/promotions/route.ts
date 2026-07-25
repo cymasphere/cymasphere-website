@@ -23,9 +23,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 /**
  * @brief GET endpoint to retrieve all promotions
  * 
- * Fetches all promotional campaigns from the database, ordered by priority
- * (highest first) and creation date (newest first). Returns complete promotion
- * data including discount details, sale prices, and Stripe coupon information.
+ * Fetches all promotional campaigns from the database, ordered by start_date
+ * then end_date (earliest first). Returns complete promotion data including
+ * discount details, sale prices, and Stripe coupon information.
  * 
  * Responses:
  * 
@@ -74,7 +74,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
  * @param request Next.js request object
  * @returns NextResponse with promotions array or error
  * @note Requires admin authentication
- * @note Results ordered by priority (descending) then creation date (descending)
+ * @note Results ordered by start_date (ascending), then end_date (ascending)
  * 
  * @example
  * ```typescript
@@ -104,12 +104,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Fetch all promotions
+    // Fetch all promotions chronologically by campaign window
     const { data: promotions, error } = await supabase
       .from('promotions')
       .select('*')
-      .order('priority', { ascending: false })
-      .order('created_at', { ascending: false });
+      .order('start_date', { ascending: true, nullsFirst: false })
+      .order('end_date', { ascending: true, nullsFirst: false });
 
     if (error) {
       console.error('Error fetching promotions:', error);

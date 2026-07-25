@@ -1,6 +1,12 @@
+/**
+ * @fileoverview Admin Promotions Manager — create, edit, and toggle promotional campaigns.
+ * @module app/(private)/(admin)/admin/promotions/page
+ * @description Lists promotions sorted by date, hides inactive by default, and supports
+ * Stripe coupon creation plus banner/pricing configuration.
+ */
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import styled, { keyframes } from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -19,6 +25,8 @@ import {
   FaCheckCircle,
   FaExclamationTriangle,
   FaEye,
+  FaEyeSlash,
+  FaEllipsisV,
   FaSync,
   FaStripe,
 } from "react-icons/fa";
@@ -96,6 +104,53 @@ const Header = styled.div`
 `;
 
 const HeaderContent = styled.div``;
+
+const HeaderActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    width: 100%;
+  }
+`;
+
+/**
+ * @brief Toggle control to show or hide inactive promotions in the table.
+ */
+const InactiveToggle = styled.button<{ $on: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: ${(props) =>
+    props.$on ? "rgba(108, 99, 255, 0.15)" : "rgba(255, 255, 255, 0.05)"};
+  color: ${(props) => (props.$on ? "var(--primary)" : "var(--text-secondary)")};
+  border: 1px solid
+    ${(props) =>
+      props.$on ? "rgba(108, 99, 255, 0.4)" : "rgba(255, 255, 255, 0.15)"};
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: var(--text);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  svg {
+    font-size: 1rem;
+  }
+`;
+
+const FilterHint = styled.p`
+  margin: -1rem 0 1.25rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+`;
 
 const Title = styled.h1`
   font-size: 2.5rem;
@@ -199,21 +254,82 @@ const Td = styled.td`
   }
 `;
 
-const StatusBadge = styled.span<{ $active: boolean }>`
+/** @brief Dates column — slightly wider so start/end ranges don’t wrap tightly. */
+const DatesTh = styled(Th)`
+  min-width: 9.5rem;
+  white-space: nowrap;
+`;
+
+const DatesTd = styled(Td)`
+  min-width: 9.5rem;
+  white-space: nowrap;
+`;
+
+/** @brief Discount column — slightly wider for percentage/amount labels. */
+const DiscountTh = styled(Th)`
+  min-width: 7.5rem;
+  white-space: nowrap;
+`;
+
+const DiscountTd = styled(Td)`
+  min-width: 7.5rem;
+  white-space: nowrap;
+`;
+
+/** @brief Coupon column — slightly wider for codes + Stripe status. */
+const CouponTh = styled(Th)`
+  min-width: 8.5rem;
+  white-space: nowrap;
+`;
+
+const CouponTd = styled(Td)`
+  min-width: 8.5rem;
+  white-space: nowrap;
+`;
+
+/** @brief Stats column — slightly wider for views/conversions/revenue lines. */
+const StatsTh = styled(Th)`
+  min-width: 8.5rem;
+  white-space: nowrap;
+`;
+
+const StatsTd = styled(Td)`
+  min-width: 8.5rem;
+  white-space: nowrap;
+`;
+
+/**
+ * @brief Clickable on/off control for promotion active status (icon only).
+ */
+const StatusToggle = styled.button<{ $active: boolean }>`
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0.8rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  background: ${props => props.$active 
-    ? 'rgba(16, 185, 129, 0.2)' 
-    : 'rgba(107, 114, 128, 0.2)'};
-  color: ${props => props.$active ? '#10b981' : '#6b7280'};
-  border: 1px solid ${props => props.$active 
-    ? 'rgba(16, 185, 129, 0.3)' 
-    : 'rgba(107, 114, 128, 0.3)'};
+  justify-content: center;
+  padding: 0.25rem;
+  margin: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: ${(props) => (props.$active ? "#10b981" : "#6b7280")};
+  font-size: 1.75rem;
+  line-height: 1;
+  transition: color 0.2s ease, transform 0.15s ease;
+
+  &:hover:not(:disabled) {
+    color: ${(props) => (props.$active ? "#34d399" : "#9ca3af")};
+    transform: scale(1.08);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${(props) => (props.$active ? "#10b981" : "#6b7280")};
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 `;
 
 const PriceBadge = styled.span`
@@ -227,29 +343,75 @@ const PriceBadge = styled.span`
   border: 1px solid rgba(255, 107, 107, 0.3);
 `;
 
-const ActionButton = styled.button<{ $variant?: 'edit' | 'delete' | 'toggle' }>`
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: ${props => {
-    switch (props.$variant) {
-      case 'delete': return '#ef4444';
-      case 'edit': return 'var(--primary)';
-      default: return 'var(--text-secondary)';
-    }
-  }};
+const MoreMenuContainer = styled.div`
+  position: relative;
+  display: inline-flex;
+  justify-content: flex-end;
+  width: 100%;
+`;
 
-  &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.1);
-    transform: scale(1.1);
+const MoreMenuButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
   }
 
-  &:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
+  svg {
+    font-size: 1.05rem;
+  }
+`;
+
+const MoreMenuDropdown = styled(motion.div)<{ $top: number; $right: number }>`
+  position: fixed;
+  top: ${(props) => props.$top}px;
+  right: ${(props) => props.$right}px;
+  min-width: 160px;
+  background: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  z-index: 10050;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+`;
+
+const MoreMenuItem = styled.button<{ $variant?: "danger" }>`
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: none;
+  color: ${(props) =>
+    props.$variant === "danger" ? "#ef4444" : "var(--text)"};
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: ${(props) =>
+      props.$variant === "danger"
+        ? "rgba(239, 68, 68, 0.12)"
+        : "rgba(255, 255, 255, 0.06)"};
+  }
+
+  svg {
+    font-size: 0.85rem;
+    width: 1rem;
+    flex-shrink: 0;
   }
 `;
 
@@ -493,10 +655,16 @@ const EmptyState = styled.div`
   }
 `;
 
+/**
+ * @brief Admin page for managing promotional sales campaigns.
+ * @returns Promotions manager UI with inactive rows hidden by default.
+ */
 export default function PromotionsPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
+  /** @brief When false (default), inactive promotions are hidden from the table. */
+  const [showInactive, setShowInactive] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [promotionToDelete, setPromotionToDelete] = useState<Promotion | null>(null);
@@ -504,6 +672,23 @@ export default function PromotionsPage() {
   const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'warning'; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [openMoreMenuId, setOpenMoreMenuId] = useState<string | null>(null);
+  const [moreMenuPosition, setMoreMenuPosition] = useState<{
+    top: number;
+    right: number;
+  } | null>(null);
+
+  const visiblePromotions = useMemo(
+    () =>
+      showInactive
+        ? promotions
+        : promotions.filter((promotion) => promotion.active),
+    [promotions, showInactive],
+  );
+  const inactiveCount = useMemo(
+    () => promotions.filter((promotion) => !promotion.active).length,
+    [promotions],
+  );
 
   // Form state
   const [formData, setFormData] = useState({
@@ -526,6 +711,31 @@ export default function PromotionsPage() {
   useEffect(() => {
     loadPromotions();
   }, []);
+
+  useEffect(() => {
+    if (!openMoreMenuId) return;
+
+    const closeMenu = () => {
+      setOpenMoreMenuId(null);
+      setMoreMenuPosition(null);
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeMenu();
+    };
+
+    document.addEventListener("mousedown", closeMenu);
+    document.addEventListener("keydown", onKeyDown);
+    window.addEventListener("resize", closeMenu);
+    window.addEventListener("scroll", closeMenu, true);
+
+    return () => {
+      document.removeEventListener("mousedown", closeMenu);
+      document.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("resize", closeMenu);
+      window.removeEventListener("scroll", closeMenu, true);
+    };
+  }, [openMoreMenuId]);
 
   const loadPromotions = async () => {
     try {
@@ -629,7 +839,32 @@ export default function PromotionsPage() {
     }
   };
 
+  /**
+   * @brief Opens or closes the row actions menu and anchors it to the trigger.
+   * @param promotionId Promotion row id
+   * @param event Click event from the more-menu button
+   */
+  const handleMoreMenuClick = (
+    promotionId: string,
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    event.stopPropagation();
+    if (openMoreMenuId === promotionId) {
+      setOpenMoreMenuId(null);
+      setMoreMenuPosition(null);
+      return;
+    }
+    const rect = event.currentTarget.getBoundingClientRect();
+    setMoreMenuPosition({
+      top: rect.bottom + 6,
+      right: Math.max(8, window.innerWidth - rect.right),
+    });
+    setOpenMoreMenuId(promotionId);
+  };
+
   const handleDeleteClick = (promotion: Promotion) => {
+    setOpenMoreMenuId(null);
+    setMoreMenuPosition(null);
     setPromotionToDelete(promotion);
     setShowDeleteModal(true);
   };
@@ -754,11 +989,37 @@ export default function PromotionsPage() {
             Manage sales, discounts, and promotional campaigns
           </Subtitle>
         </HeaderContent>
-        <Button $variant="primary" onClick={handleCreate}>
-          <FaPlus />
-          Create Promotion
-        </Button>
+        <HeaderActions>
+          <InactiveToggle
+            type="button"
+            $on={showInactive}
+            onClick={() => setShowInactive((prev) => !prev)}
+            aria-pressed={showInactive}
+            title={
+              showInactive
+                ? "Hide inactive promotions"
+                : "Show inactive promotions"
+            }
+          >
+            {showInactive ? <FaEye /> : <FaEyeSlash />}
+            {showInactive
+              ? `Showing inactive (${inactiveCount})`
+              : `Show inactive (${inactiveCount})`}
+          </InactiveToggle>
+          <Button $variant="primary" onClick={handleCreate}>
+            <FaPlus />
+            Create Promotion
+          </Button>
+        </HeaderActions>
       </Header>
+
+      {!showInactive && inactiveCount > 0 && (
+        <FilterHint>
+          Hiding {inactiveCount} inactive promotion
+          {inactiveCount === 1 ? "" : "s"}. Toggle &quot;Show inactive&quot; to
+          view them.
+        </FilterHint>
+      )}
 
       {message && (
         <Alert
@@ -783,28 +1044,52 @@ export default function PromotionsPage() {
             Create Your First Promotion
           </Button>
         </EmptyState>
+      ) : visiblePromotions.length === 0 ? (
+        <EmptyState>
+          <FaEyeSlash />
+          <h3>No Active Promotions</h3>
+          <p>
+            {inactiveCount} inactive promotion
+            {inactiveCount === 1 ? "" : "s"} hidden. Show inactive to manage
+            them, or create a new campaign.
+          </p>
+          <Button $variant="secondary" onClick={() => setShowInactive(true)}>
+            <FaEye />
+            Show Inactive
+          </Button>
+        </EmptyState>
       ) : (
         <Table>
           <Thead>
             <tr>
               <Th>Status</Th>
               <Th>Campaign</Th>
-              <Th>Discount</Th>
+              <DiscountTh>Discount</DiscountTh>
               <Th>Sale Price</Th>
-              <Th>Dates</Th>
-              <Th>Coupon</Th>
-              <Th>Stats</Th>
+              <DatesTh>Dates</DatesTh>
+              <CouponTh>Coupon</CouponTh>
+              <StatsTh>Stats</StatsTh>
               <Th>Actions</Th>
             </tr>
           </Thead>
           <Tbody>
-            {promotions.map(promotion => (
+            {visiblePromotions.map(promotion => (
               <Tr key={promotion.id}>
                 <Td>
-                  <StatusBadge $active={promotion.active}>
+                  <StatusToggle
+                    type="button"
+                    $active={promotion.active}
+                    onClick={() => handleToggle(promotion)}
+                    aria-pressed={promotion.active}
+                    aria-label={
+                      promotion.active
+                        ? `Deactivate ${promotion.title}`
+                        : `Activate ${promotion.title}`
+                    }
+                    title={promotion.active ? "On — click to deactivate" : "Off — click to activate"}
+                  >
                     {promotion.active ? <FaToggleOn /> : <FaToggleOff />}
-                    {promotion.active ? 'ACTIVE' : 'INACTIVE'}
-                  </StatusBadge>
+                  </StatusToggle>
                 </Td>
                 <Td>
                   <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: '0.25rem' }}>
@@ -814,12 +1099,12 @@ export default function PromotionsPage() {
                     {promotion.description}
                   </div>
                 </Td>
-                <Td>
+                <DiscountTd>
                   {promotion.discount_type === 'percentage' 
                     ? `${promotion.discount_value}% OFF`
                     : `$${promotion.discount_value} OFF`
                   }
-                </Td>
+                </DiscountTd>
                 <Td>
                   {promotion.applicable_plans.map(plan => (
                     <PriceBadge key={plan} style={{ marginRight: '0.5rem' }}>
@@ -827,14 +1112,14 @@ export default function PromotionsPage() {
                     </PriceBadge>
                   ))}
                 </Td>
-                <Td>
+                <DatesTd>
                   <div style={{ fontSize: '0.8rem' }}>
                     {formatDate(promotion.start_date)}
                     <br />
                     to {formatDate(promotion.end_date)}
                   </div>
-                </Td>
-                <Td>
+                </DatesTd>
+                <CouponTd>
                   <div style={{ fontSize: '0.8rem' }}>
                     {promotion.stripe_coupon_code}
                     {promotion.stripe_coupon_created && (
@@ -843,38 +1128,62 @@ export default function PromotionsPage() {
                       </div>
                     )}
                   </div>
-                </Td>
-                <Td>
+                </CouponTd>
+                <StatsTd>
                   <div style={{ fontSize: '0.8rem' }}>
                     <div>Views: {promotion.views}</div>
                     <div>Conversions: {promotion.conversions}</div>
                     <div>Revenue: ${promotion.revenue || 0}</div>
                   </div>
-                </Td>
+                </StatsTd>
                 <Td>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <ActionButton
-                      $variant="toggle"
-                      onClick={() => handleToggle(promotion)}
-                      title={promotion.active ? 'Deactivate' : 'Activate'}
+                  <MoreMenuContainer onMouseDown={(e) => e.stopPropagation()}>
+                    <MoreMenuButton
+                      type="button"
+                      aria-label={`Actions for ${promotion.title}`}
+                      aria-haspopup="menu"
+                      aria-expanded={openMoreMenuId === promotion.id}
+                      onClick={(e) => handleMoreMenuClick(promotion.id, e)}
                     >
-                      {promotion.active ? <FaToggleOff /> : <FaToggleOn />}
-                    </ActionButton>
-                    <ActionButton
-                      $variant="edit"
-                      onClick={() => handleEdit(promotion)}
-                      title="Edit"
-                    >
-                      <FaEdit />
-                    </ActionButton>
-                    <ActionButton
-                      $variant="delete"
-                      onClick={() => handleDeleteClick(promotion)}
-                      title="Delete"
-                    >
-                      <FaTrash />
-                    </ActionButton>
-                  </div>
+                      <FaEllipsisV />
+                    </MoreMenuButton>
+                    <AnimatePresence>
+                      {openMoreMenuId === promotion.id && moreMenuPosition && (
+                        <MoreMenuDropdown
+                          role="menu"
+                          $top={moreMenuPosition.top}
+                          $right={moreMenuPosition.right}
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          transition={{ duration: 0.12 }}
+                          onMouseDown={(e) => e.stopPropagation()}
+                        >
+                          <MoreMenuItem
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              setOpenMoreMenuId(null);
+                              setMoreMenuPosition(null);
+                              handleEdit(promotion);
+                            }}
+                          >
+                            <FaEdit />
+                            Edit
+                          </MoreMenuItem>
+                          <MoreMenuItem
+                            type="button"
+                            role="menuitem"
+                            $variant="danger"
+                            onClick={() => handleDeleteClick(promotion)}
+                          >
+                            <FaTrash />
+                            Delete
+                          </MoreMenuItem>
+                        </MoreMenuDropdown>
+                      )}
+                    </AnimatePresence>
+                  </MoreMenuContainer>
                 </Td>
               </Tr>
             ))}
